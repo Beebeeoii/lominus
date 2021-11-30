@@ -1,17 +1,25 @@
 package auth
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 )
 
 type JsonResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
+}
+
+type JwtData struct {
+	JwtToken string
+	ExpiryU  int64
 }
 
 const CODE_URL = "https://vafs.nus.edu.sg/adfs/oauth2/authorize?response_type=code&client_id=E10493A3B1024F14BDC7D0D8B9F649E9-234390&state=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8&redirect_uri=https://luminus.nus.edu.sg/auth/callback&scope=&resource=sg_edu_nus_oauth&nonce=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8"
@@ -26,6 +34,8 @@ const CONTENT_TYPE = "application/x-www-form-urlencoded"
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
 const POST = "POST"
 const AUTH_METHOD = "FormsAuthentication"
+
+const JWT_DATA_FILE_NAME = "jwt.gob"
 
 func Authenticate(username string, password string) (string, error) {
 	var jwtToken string
@@ -97,5 +107,21 @@ func Authenticate(username string, password string) (string, error) {
 		jwtToken = jsonResponse.AccessToken
 	}
 
+	jwtData := JwtData{jwtToken, time.Now().Add(time.Hour * 1).Unix()}
+	jwtFile, _ := os.Create(JWT_DATA_FILE_NAME)
+	defer jwtFile.Close()
+	encoder := gob.NewEncoder(jwtFile)
+	encoder.Encode(jwtData)
+
 	return jwtToken, nil
+}
+
+func RetrieveJwtToken() string {
+	jwtData := JwtData{}
+	jwtFile, _ := os.Open(JWT_DATA_FILE_NAME)
+	defer jwtFile.Close()
+	decoder := gob.NewDecoder(jwtFile)
+	decoder.Decode(&jwtData)
+
+	return jwtData.JwtToken
 }
