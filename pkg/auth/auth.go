@@ -1,15 +1,21 @@
 package auth
 
 import (
-	"encoding/gob"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
+
+	file "github.com/beebeeoii/lominus/internal"
 )
+
+type Credentials struct {
+	Username string
+	Password string
+}
 
 type JsonResponse struct {
 	AccessToken string `json:"access_token"`
@@ -19,7 +25,7 @@ type JsonResponse struct {
 
 type JwtData struct {
 	JwtToken string
-	ExpiryU  int64
+	Expiry   int64
 }
 
 const CODE_URL = "https://vafs.nus.edu.sg/adfs/oauth2/authorize?response_type=code&client_id=E10493A3B1024F14BDC7D0D8B9F649E9-234390&state=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8&redirect_uri=https://luminus.nus.edu.sg/auth/callback&scope=&resource=sg_edu_nus_oauth&nonce=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8"
@@ -35,9 +41,12 @@ const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/201
 const POST = "POST"
 const AUTH_METHOD = "FormsAuthentication"
 
+const CREDENTIALS_FILE_NAME = "creds.gob"
 const JWT_DATA_FILE_NAME = "jwt.gob"
 
-func Authenticate(username string, password string) (string, error) {
+const EXPIRY_HOURS = 1
+
+func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	var jwtToken string
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -46,8 +55,8 @@ func Authenticate(username string, password string) (string, error) {
 	}
 
 	codeBody := url.Values{}
-	codeBody.Set("UserName", username)
-	codeBody.Set("Password", password)
+	codeBody.Set("UserName", credentials.Username)
+	codeBody.Set("Password", credentials.Password)
 	codeBody.Set("AuthMethod", AUTH_METHOD)
 	codeReq, codeReqErr := http.NewRequest(POST, CODE_URL, strings.NewReader(codeBody.Encode()))
 
@@ -100,28 +109,60 @@ func Authenticate(username string, password string) (string, error) {
 	}
 
 	var jsonResponse JsonResponse
-	toJsonErr := json.Unmarshal([]byte(string(body)), &jsonResponse)
+	toJsonErr := json.Unmarshal(body, &jsonResponse)
 	if toJsonErr != nil {
 		return jwtToken, toJsonErr
 	} else {
 		jwtToken = jsonResponse.AccessToken
 	}
 
-	jwtData := JwtData{jwtToken, time.Now().Add(time.Hour * 1).Unix()}
-	jwtFile, _ := os.Create(JWT_DATA_FILE_NAME)
-	defer jwtFile.Close()
-	encoder := gob.NewEncoder(jwtFile)
-	encoder.Encode(jwtData)
+	if save {
+		SaveJwtData(jwtToken)
+	}
 
 	return jwtToken, nil
 }
 
-func RetrieveJwtToken() string {
-	jwtData := JwtData{}
-	jwtFile, _ := os.Open(JWT_DATA_FILE_NAME)
-	defer jwtFile.Close()
-	decoder := gob.NewDecoder(jwtFile)
-	decoder.Decode(&jwtData)
+func SaveJwtData(jwtToken string) {
+	jwtData := JwtData{jwtToken, time.Now().Add(time.Hour * 24).Unix()}
+	err := file.EncodeStructToFile(JWT_DATA_FILE_NAME, jwtData)
 
-	return jwtData.JwtToken
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func LoadJwtData() (JwtData, error) {
+	jwtData := JwtData{}
+	if !file.Exists(JWT_DATA_FILE_NAME) {
+		return jwtData, &file.FileNotFoundError{FileName: JWT_DATA_FILE_NAME}
+	}
+	err := file.DecodeStructFromFile(JWT_DATA_FILE_NAME, &jwtData)
+
+	return jwtData, err
+}
+
+func SaveCredentials(credentials Credentials) error {
+	return file.EncodeStructToFile(CREDENTIALS_FILE_NAME, credentials)
+}
+
+func LoadCredentials() (Credentials, error) {
+	credentials := Credentials{}
+	if !file.Exists(CREDENTIALS_FILE_NAME) {
+		return credentials, &file.FileNotFoundError{FileName: CREDENTIALS_FILE_NAME}
+	}
+	err := file.DecodeStructFromFile(CREDENTIALS_FILE_NAME, &credentials)
+
+	return credentials, err
+}
+
+func (jwtData JwtData) IsExpired() bool {
+	expiry := time.Unix(jwtData.Expiry, 0)
+	return time.Until(expiry).Hours() <= EXPIRY_HOURS
+}
+
+type JwtExpiredError struct{}
+
+func (e *JwtExpiredError) Error() string {
+	return "JwtExpiredError: JWT token has expired."
 }
