@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	file "github.com/beebeeoii/lominus/internal/file"
+	file "github.com/beebeeoii/lominus/internal"
 )
 
 type Credentials struct {
