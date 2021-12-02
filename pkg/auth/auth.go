@@ -116,7 +116,7 @@ func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	}
 
 	if save {
-		saveJwtData(jwtToken)
+		return jwtToken, saveJwtData(jwtToken)
 	}
 
 	return jwtToken, nil
