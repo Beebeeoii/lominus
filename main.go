@@ -1,17 +1,37 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"time"
 
+	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/auth"
 )
 
 func main() {
 	jwtData, err := auth.LoadJwtData()
 
+	_, fileFound := os.Stat(auth.CREDENTIALS_FILE_NAME)
+
+	if !(fileFound == nil) {
+		var un string
+		var pw string
+		log.Println("creds.gob file not detected...")
+		log.Println("Creating new creds.gob file...")
+		log.Println("Enter your NUSNET username: ")
+		fmt.Scanln(&un)
+		log.Println("Enter your NUSNET password: ")
+		fmt.Scanln(&pw)
+
+		cred := auth.Credentials{Username: un, Password: pw}
+		auth.SaveCredentials(cred)
+
+	}
+
 	if jwtData.IsExpired() {
-		log.Fatalln(&auth.JwtExpiredError{})
+		log.Println(&auth.JwtExpiredError{}) //seems to be causing some probs if Fatalln is used
 		log.Println("Retrieving new JWT token...")
 
 		credentials, err := auth.LoadCredentials()
@@ -33,5 +53,6 @@ func main() {
 		return
 	}
 
+	fmt.Println(api.GetModules(jwtData.JwtToken))
 	log.Printf("Time to expiry: %d hours", int(time.Until(time.Unix(jwtData.Expiry, 0)).Hours()))
 }
