@@ -13,7 +13,7 @@ import (
 func main() {
 	jwtData, err := auth.LoadJwtData()
 
-	_, fileFound := os.Stat(auth.CREDENTIALS_FILE_NAME)
+	_, fileFound := os.Stat(auth.CREDENTIALS_FILE_NAME) // checks if there is creds.gob
 
 	if !(fileFound == nil) {
 		var un string
@@ -53,6 +53,12 @@ func main() {
 		return
 	}
 
-	fmt.Println(api.GetModules(jwtData.JwtToken))
+	modReq := api.Request{
+		Url:       api.MODULE_URL_ENDPOINT,
+		JwtToken:  jwtData.JwtToken,
+		UserAgent: api.USER_AGENT,
+	}
+
+	fmt.Println(modReq.GetModules())
 	log.Printf("Time to expiry: %d hours", int(time.Until(time.Unix(jwtData.Expiry, 0)).Hours()))
 }
