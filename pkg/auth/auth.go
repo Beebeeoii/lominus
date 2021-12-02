@@ -3,13 +3,12 @@ package auth
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	file "github.com/beebeeoii/lominus/internal"
+	file "github.com/beebeeoii/lominus/internal/file"
 )
 
 type Credentials struct {
@@ -117,19 +116,15 @@ func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	}
 
 	if save {
-		SaveJwtData(jwtToken)
+		saveJwtData(jwtToken)
 	}
 
 	return jwtToken, nil
 }
 
-func SaveJwtData(jwtToken string) {
+func saveJwtData(jwtToken string) error {
 	jwtData := JwtData{jwtToken, time.Now().Add(time.Hour * 24).Unix()}
-	err := file.EncodeStructToFile(JWT_DATA_FILE_NAME, jwtData)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
+	return file.EncodeStructToFile(JWT_DATA_FILE_NAME, jwtData)
 }
 
 func LoadJwtData() (JwtData, error) {
