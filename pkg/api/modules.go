@@ -16,15 +16,6 @@ type Module struct {
 	Period       string
 }
 
-// raw struct is the datapack for containing api raw data
-type raw struct {
-	Status string                   `json:"status"`
-	Code   int                      `json:"code"`
-	Total  int                      `json:"total"`
-	Offset int                      `json:"offset"`
-	Data   []map[string]interface{} `json:"data"`
-}
-
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator%2CtermDetail%2CisMandatory"
 
 func (req Request) GetModules() ([]Module, error) {
@@ -52,7 +43,7 @@ func (req Request) GetModules() ([]Module, error) {
 		return modules, err
 	}
 
-	var obj raw                                        //variable which holds the raw data
+	var obj RawResponse                                //variable which holds the raw data
 	json.Unmarshal([]byte(string([]byte(body))), &obj) //Converting from byte to struct
 
 	for _, content := range obj.Data {
