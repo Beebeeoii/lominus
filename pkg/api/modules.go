@@ -14,12 +14,11 @@ type module struct {
 }
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator%2CtermDetail%2CisMandatory"
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
 
-func GetModules(token string) (string, error) {
-	var modules string
+func (req Request) GetModules() ([]module, error) {
+	var modules []module //Initialise slice to capture of modules
 
-	req := &Request{MODULE_URL_ENDPOINT, token, USER_AGENT}
+
 	request, err := http.NewRequest("GET", req.Url, nil)
 
 	if err != nil {
