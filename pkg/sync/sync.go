@@ -6,11 +6,21 @@ import (
 	"github.com/beebeeoii/lominus/internal/indexing"
 )
 
-func sync() {
-	//TODO
+func Sync() {
+	//TODO 	compare new and current IndexMap for differences in ids
+	// 		if id in new IndexMap but not in current IndexMap:
+	//				download directory/file into the correct location
+	//		if id in current IndexMap but not in new IndexMap:
+	//				do nothing
+	//		if id in current and new IndexMap:
+	//				check that the file/dir actually exists on local storage. if non-existent, download.
+	//		overwrite current index_map.csv with new IndexMap
 }
 
-func CreateIndexMap(indexMapArray []indexing.IndexMap) {
+func RetrieveNewIndexMap() {
+	// TODO get all directories and files, and their corresponding ids and lastUpdated
+	//		return IndexMap, error
+	//
 	// indexMap1 := indexing.IndexMap{Id: "1", FileName: "1.txt", LastUpdated: time.Now().Unix()}
 	// indexMap2 := indexing.IndexMap{Id: "2", FileName: "2.txt", LastUpdated: time.Now().Unix()}
 	// indexMap3 := indexing.IndexMap{Id: "3", FileName: "3.txt", LastUpdated: time.Now().Unix()}
@@ -18,14 +28,13 @@ func CreateIndexMap(indexMapArray []indexing.IndexMap) {
 	// indexMap5 := indexing.IndexMap{Id: "5", FileName: "5.txt", LastUpdated: time.Now().Unix()}
 	// indexMap6 := indexing.IndexMap{Id: "6", FileName: "6.txt", LastUpdated: time.Now().Unix()}
 	// indexMap := []indexing.IndexMap{indexMap1, indexMap2, indexMap3, indexMap4, indexMap5, indexMap6}
-	indexing.CreateIndexMap(indexing.Map{IndexMap: indexMapArray})
+	// indexing.CreateIndexMap(indexing.IndexMap{IndexMapEntries: indexMapArray})
 }
 
-func LoadIndexMap() (map[string]indexing.IndexMap, error) {
-	var indexMap map[string]indexing.IndexMap
+func LoadCurrentIndexMap() (map[string]indexing.IndexMapEntry, error) {
 	file, fileErr := os.Open(indexing.INDEX_MAP_FILE_NAME)
 	if fileErr != nil {
-		return indexMap, fileErr
+		return map[string]indexing.IndexMapEntry{}, fileErr
 	}
 	return indexing.LoadIndexMap(file)
 }
