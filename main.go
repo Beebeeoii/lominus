@@ -59,6 +59,15 @@ func main() {
 		UserAgent: api.USER_AGENT,
 	}
 
-	fmt.Println(modReq.GetModules())
+	foldersReq := api.Request{
+		Url:       api.FOLDER_URL_ENDPOINT,
+		JwtToken:  jwtData.JwtToken,
+		UserAgent: api.USER_AGENT,
+	}
+
+	modules, _ := modReq.GetModules()
+	fmt.Println(modules)
+	fmt.Println(foldersReq.GetAllDownloadableFolderNames(modules))
+
 	log.Printf("Time to expiry: %d hours", int(time.Until(time.Unix(jwtData.Expiry, 0)).Hours()))
 }
