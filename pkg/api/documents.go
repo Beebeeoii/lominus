@@ -69,7 +69,22 @@ func (req Request) GetAllDownloadableFolderNames(modules []Module) (map[string][
 }
 
 func (req Request) GetAllFileNames(modules []Module) {
-	//fols, err := req.GetAllDownloadableFolderNames(modules)
+	fols, err := req.GetAllDownloadableFolderNames(modules)
+	documents := make(map[string][]Document)
+
+	for module,folder := range fols {
+		var temp []Document
+		for _,f := range folder {
+			if f.Subfolder {
+				// get root files
+				// append to temp
+			} else {
+				// make api call
+				// append to temp
+			}
+		}
+		documents[module] = temp
+	}
 	//return (map[string][]Document, error)
 	/*
 		result = map of Document slices
@@ -83,4 +98,8 @@ func (req Request) GetAllFileNames(modules []Module) {
 					// add files to temp
 			add temp to result
 	*/
+}
+
+func getRootFiles() {
+
 }
