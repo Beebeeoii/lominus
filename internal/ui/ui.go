@@ -20,7 +20,7 @@ import (
 )
 
 func Init() error {
-	app := app.New()
+	app := app.NewWithID(lominus.APP_NAME)
 	app.SetIcon(resourceAppIconPng)
 
 	w := app.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
@@ -40,6 +40,9 @@ func Init() error {
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
 	w.SetFixedSize(true)
+	w.SetOnClosed(func() {
+		onMinimise()
+	})
 	w.ShowAndRun()
 	return nil
 }
@@ -47,7 +50,8 @@ func Init() error {
 func getCredentialsUi(parentWindow fyne.Window) (*fyne.Container, error) {
 	divider := widget.NewSeparator()
 	label := widget.NewLabelWithStyle("Login Info", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
-	subLabel := widget.NewLabel("Your credentials are saved locally.\nIt is ONLY used to login to your account on https://luminus.nus.edu.sg.")
+	subLabel := widget.NewRichTextFromMarkdown("Credentials are saved **locally**. It is **only** used to login to your [Luminus](https://luminus.nus.edu.sg) account.")
+	subLabel.Wrapping = fyne.TextWrapBreak
 
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetPlaceHolder("Eg: nusstu\\e0123456")
