@@ -10,28 +10,40 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
-	lominus "github.com/beebeeoii/lominus/internal/app"
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/file"
+	lominus "github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/pref"
 	fileDialog "github.com/sqweek/dialog"
 )
 
-func Init() {
+func Init() error {
 	app := app.New()
 
 	w := app.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
 	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 
-	content := container.NewVBox(header, getCredentialsUi(w), getDirectoryUi())
+	credentialsUi, credentialsUiErr := getCredentialsUi(w)
+	if credentialsUiErr != nil {
+		return credentialsUiErr
+	}
+
+	directoryUi, directoryUiErr := getDirectoryUi(w)
+	if directoryUiErr != nil {
+		return directoryUiErr
+	}
+	content := container.NewVBox(header, credentialsUi, directoryUi)
 
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
 	w.SetFixedSize(true)
 	w.ShowAndRun()
+	return nil
 }
 
-func getCredentialsUi(parentWindow fyne.Window) *fyne.Container {
+func getCredentialsUi(parentWindow fyne.Window) (*fyne.Container, error) {
 	divider := widget.NewSeparator()
 	label := widget.NewLabelWithStyle("Login Info", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 	subLabel := widget.NewLabel("Your credentials are saved locally.\nIt is ONLY used to login to your account on https://luminus.nus.edu.sg.")
@@ -40,15 +52,20 @@ func getCredentialsUi(parentWindow fyne.Window) *fyne.Container {
 	usernameEntry.SetPlaceHolder("Eg: nusstu\\e0123456")
 	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetPlaceHolder("Password")
-	if file.Exists(auth.CREDENTIALS_FILE_NAME) {
-		credentials, err := auth.LoadCredentials()
+
+	credentialsPath := appAuth.GetCredentialsPath()
+
+	if file.Exists(credentialsPath) {
+		credentials, err := auth.LoadCredentials(credentialsPath)
 		if err != nil {
-			log.Fatalln(err)
+			return container.NewVBox(), err
 		}
 
 		usernameEntry.SetText(credentials.Username)
 		passwordEntry.SetText(credentials.Password)
 	}
+
+	credentialsForm := widget.NewForm(widget.NewFormItem("Username", usernameEntry), widget.NewFormItem("Password", passwordEntry))
 
 	saveButtonText := "Save Credentials"
 	if usernameEntry.Text != "" && passwordEntry.Text != "" {
@@ -56,7 +73,7 @@ func getCredentialsUi(parentWindow fyne.Window) *fyne.Container {
 	}
 
 	saveButton := widget.NewButton(saveButtonText, func() {
-		credentials := auth.Credentials{Username: usernameEntry.Text, Password: passwordEntry.Text}
+		credentials := appAuth.Credentials{Username: usernameEntry.Text, Password: passwordEntry.Text}
 
 		status := widget.NewLabel("Please wait while we verify your credentials...")
 		progressBar := widget.NewProgressBarInfinite()
@@ -69,37 +86,51 @@ func getCredentialsUi(parentWindow fyne.Window) *fyne.Container {
 		if err != nil {
 			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
 		} else {
-			auth.SaveCredentials(credentials)
+			auth.SaveCredentials(credentialsPath, credentials)
 			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
 		}
 	})
 
-	return container.NewVBox(label, divider, subLabel, usernameEntry, passwordEntry, saveButton)
+	return container.NewVBox(label, divider, subLabel, credentialsForm, saveButton), nil
 }
 
-func getDirectoryUi() *fyne.Container {
-
+func getDirectoryUi(parentWindow fyne.Window) (*fyne.Container, error) {
 	divider := widget.NewSeparator()
 	label := widget.NewLabelWithStyle("File Directory", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 	subLabel := widget.NewLabel("Root directory for your Luminus files:")
 
 	fileDirLabel := widget.NewLabel(getDir())
+	fileDirLabel.Wrapping = fyne.TextWrapBreak
 	chooseDirButton := widget.NewButton("Choose directory", func() {
 		dir, err := fileDialog.Directory().Title("Choose directory").Browse()
 		if err != nil {
-			log.Println(err)
+			if err.Error() != "Cancelled" {
+				dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
+				log.Println(err)
+			}
+			return
 		}
-		pref.SavePreferences(pref.Preferences{Directory: dir, Frequency: 0})
+
+		prefPath := appPref.GetPreferencesPath()
+		currentPref, loadPrefErr := pref.LoadPreferences(prefPath)
+		if loadPrefErr != nil {
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
+			log.Println(loadPrefErr)
+			return
+		}
+
+		pref.SavePreferences(prefPath, appPref.Preferences{Directory: dir, Frequency: currentPref.Frequency})
 		fileDirLabel.SetText(getDir())
 	})
 
-	return container.NewVBox(label, divider, subLabel, fileDirLabel, chooseDirButton)
+	return container.NewVBox(label, divider, subLabel, fileDirLabel, chooseDirButton), nil
 }
 
 func getDir() string {
 	rootDir := "Not set"
-	if file.Exists(pref.PREFERENCES_FILE_NAME) {
-		preferences, err := pref.LoadPreferences()
+	prefPath := appPref.GetPreferencesPath()
+	if file.Exists(prefPath) {
+		preferences, err := pref.LoadPreferences(prefPath)
 		if err != nil {
 			log.Fatalln(err)
 		}
