@@ -78,7 +78,7 @@ func main() {
 				JwtToken:  jwtData.JwtToken,
 				UserAgent: api.USER_AGENT,
 			}
-			downloadReq.Download(f)
+			downloadReq.Download(f, "C:\\Users\\jiaju\\Desktop\\")
 			break
 		}
 	}

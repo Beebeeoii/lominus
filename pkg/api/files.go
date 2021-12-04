@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type Folder struct {
@@ -130,7 +131,7 @@ func (req Request) getRootFiles(folder Folder) ([]File, error) {
 	return files, nil
 }
 
-func (req Request) Download(file File) error {
+func (req Request) Download(fileDetails File, filePath string) error {
 	downloadResponse := DownloadResponse{}
 	err := req.GetRawResponse(&downloadResponse)
 	if err != nil {
@@ -146,7 +147,7 @@ func (req Request) Download(file File) error {
 	if response.StatusCode != 200 {
 		return errors.New("Received non 200 response code")
 	}
-	doc, err := os.Create("C:\\Users\\jiaju\\Desktop\\" + file.Name)
+	doc, err := os.Create(filepath.Join(filePath, fileDetails.Name))
 	if err != nil {
 		return err
 	}
