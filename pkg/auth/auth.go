@@ -8,13 +8,10 @@ import (
 	"strings"
 	"time"
 
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	file "github.com/beebeeoii/lominus/internal/file"
+	lominus "github.com/beebeeoii/lominus/internal/lominus"
 )
-
-type Credentials struct {
-	Username string
-	Password string
-}
 
 type JsonResponse struct {
 	AccessToken string `json:"access_token"`
@@ -26,6 +23,10 @@ type JwtData struct {
 	JwtToken string
 	Expiry   int64
 }
+
+const CREDENTIALS_FILE_NAME = lominus.CREDENTIALS_FILE_NAME
+
+var Creferences = appAuth.Credentials{}
 
 const CODE_URL = "https://vafs.nus.edu.sg/adfs/oauth2/authorize?response_type=code&client_id=E10493A3B1024F14BDC7D0D8B9F649E9-234390&state=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8&redirect_uri=https://luminus.nus.edu.sg/auth/callback&scope=&resource=sg_edu_nus_oauth&nonce=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8"
 
@@ -40,12 +41,9 @@ const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/201
 const POST = "POST"
 const AUTH_METHOD = "FormsAuthentication"
 
-const CREDENTIALS_FILE_NAME = "creds.gob"
-const JWT_DATA_FILE_NAME = "jwt.gob"
-
 const EXPIRY_HOURS = 1
 
-func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
+func RetrieveJwtToken(credentials appAuth.Credentials, save bool) (string, error) {
 	var jwtToken string
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -116,37 +114,37 @@ func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	}
 
 	if save {
-		return jwtToken, saveJwtData(jwtToken)
+		return jwtToken, saveJwtData(appAuth.GetJwtPath(), jwtToken)
 	}
 
 	return jwtToken, nil
 }
 
-func saveJwtData(jwtToken string) error {
+func saveJwtData(jwtPath string, jwtToken string) error {
 	jwtData := JwtData{jwtToken, time.Now().Add(time.Hour * 24).Unix()}
-	return file.EncodeStructToFile(JWT_DATA_FILE_NAME, jwtData)
+	return file.EncodeStructToFile(jwtPath, jwtData)
 }
 
-func LoadJwtData() (JwtData, error) {
+func LoadJwtData(jwtPath string) (JwtData, error) {
 	jwtData := JwtData{}
-	if !file.Exists(JWT_DATA_FILE_NAME) {
-		return jwtData, &file.FileNotFoundError{FileName: JWT_DATA_FILE_NAME}
+	if !file.Exists(jwtPath) {
+		return jwtData, &file.FileNotFoundError{FileName: jwtPath}
 	}
-	err := file.DecodeStructFromFile(JWT_DATA_FILE_NAME, &jwtData)
+	err := file.DecodeStructFromFile(jwtPath, &jwtData)
 
 	return jwtData, err
 }
 
-func SaveCredentials(credentials Credentials) error {
-	return file.EncodeStructToFile(CREDENTIALS_FILE_NAME, credentials)
+func SaveCredentials(credentialsPath string, credentials appAuth.Credentials) error {
+	return file.EncodeStructToFile(credentialsPath, credentials)
 }
 
-func LoadCredentials() (Credentials, error) {
-	credentials := Credentials{}
-	if !file.Exists(CREDENTIALS_FILE_NAME) {
-		return credentials, &file.FileNotFoundError{FileName: CREDENTIALS_FILE_NAME}
+func LoadCredentials(credentialsPath string) (appAuth.Credentials, error) {
+	credentials := appAuth.Credentials{}
+	if !file.Exists(credentialsPath) {
+		return credentials, &file.FileNotFoundError{FileName: credentialsPath}
 	}
-	err := file.DecodeStructFromFile(CREDENTIALS_FILE_NAME, &credentials)
+	err := file.DecodeStructFromFile(credentialsPath, &credentials)
 
 	return credentials, err
 }
