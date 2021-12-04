@@ -16,14 +16,19 @@ import (
 	lominus "github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/pref"
+	"github.com/getlantern/systray"
 	fileDialog "github.com/sqweek/dialog"
 )
 
-func Init() error {
-	app := app.NewWithID(lominus.APP_NAME)
-	app.SetIcon(resourceAppIconPng)
+var mainApp fyne.App
+var w fyne.Window
 
-	w := app.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
+func Init() error {
+	systray.Register(onReady, onExit)
+	mainApp = app.NewWithID(lominus.APP_NAME)
+	mainApp.SetIcon(resourceAppIconPng)
+
+	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
 	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 
 	credentialsUi, credentialsUiErr := getCredentialsUi(w)
@@ -40,8 +45,8 @@ func Init() error {
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
 	w.SetFixedSize(true)
-	w.SetOnClosed(func() {
-		onMinimise()
+	w.SetCloseIntercept(func() {
+		w.Hide()
 	})
 	w.ShowAndRun()
 	return nil

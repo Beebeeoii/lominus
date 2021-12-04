@@ -1,15 +1,10 @@
 package ui
 
 import (
-	"fyne.io/fyne/v2"
 	"github.com/getlantern/systray"
 
 	lominus "github.com/beebeeoii/lominus/internal/lominus"
 )
-
-func onMinimise() {
-	systray.Run(onReady, onExit)
-}
 
 func onReady() {
 	systray.SetIcon(resourceAppIconIco.Content())
@@ -23,16 +18,15 @@ func onReady() {
 		for {
 			select {
 			case <-openButton.ClickedCh:
-				systray.Quit()
-				fyne.CurrentApp().Run()
+				w.Show()
 			case <-quitButton.ClickedCh:
 				systray.Quit()
 				return
 			}
 		}
 	}()
-	// mQuit.SetIcon(resourceAppIconPng.StaticContent)
 }
 
 func onExit() {
+	mainApp.Quit()
 }
