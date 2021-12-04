@@ -1,6 +1,12 @@
 package api
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+)
 
 type Folder struct {
 	Id           string
@@ -16,11 +22,13 @@ type File struct {
 
 const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=totalFileCount,subFolderCount,TotalSize&ParentID=%s"
 const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?populate=Creator,lastUpdatedUser,comment"
+const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
 
 func (req Request) GetAllFolders() ([]Folder, error) {
 	folder := []Folder{}
 
-	rawResponse, err := req.GetRawResponse()
+	rawResponse := RawResponse{}
+	err := req.GetRawResponse(&rawResponse)
 	if err != nil {
 		return folder, err
 	}
@@ -105,7 +113,8 @@ func (req Request) getRootFiles(folder Folder) ([]File, error) {
 		UserAgent: USER_AGENT,
 	}
 
-	rawResponse, err := newReq.GetRawResponse()
+	rawResponse := RawResponse{}
+	err := newReq.GetRawResponse(&rawResponse)
 	if err != nil {
 		return files, err
 	}
@@ -119,4 +128,32 @@ func (req Request) getRootFiles(folder Folder) ([]File, error) {
 	}
 
 	return files, nil
+}
+
+func (req Request) Download(file File) error {
+	downloadResponse := DownloadResponse{}
+	err := req.GetRawResponse(&downloadResponse)
+	if err != nil {
+		return err
+	}
+	fmt.Println(downloadResponse)
+
+	response, err := http.Get(downloadResponse.Data)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return errors.New("Received non 200 response code")
+	}
+	doc, err := os.Create("C:\\Users\\jiaju\\Desktop\\" + file.Name)
+	if err != nil {
+		return err
+	}
+	defer doc.Close()
+	_, err = io.Copy(doc, response.Body)
+	if err != nil {
+		return err
+	}
+	return nil
 }

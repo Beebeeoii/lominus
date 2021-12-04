@@ -73,8 +73,14 @@ func main() {
 		fs, _ := foldersReq.GetAllFiles()
 		for _, f := range fs {
 			log.Println(f.Name)
+			downloadReq := api.Request{
+				Url:       fmt.Sprintf(api.DOWNLOAD_URL_ENDPOINT, f.Id),
+				JwtToken:  jwtData.JwtToken,
+				UserAgent: api.USER_AGENT,
+			}
+			downloadReq.Download(f)
+			break
 		}
-		fmt.Println()
 	}
 
 	log.Printf("Time to expiry: %d hours", int(time.Until(time.Unix(jwtData.Expiry, 0)).Hours()))

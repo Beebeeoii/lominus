@@ -14,8 +14,8 @@ const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=
 
 func (req Request) GetModules() ([]Module, error) {
 	var modules []Module
-
-	rawResponse, err := req.GetRawResponse()
+	rawResponse := RawResponse{}
+	err := req.GetRawResponse(&rawResponse)
 	if err != nil {
 		return modules, err
 	}
