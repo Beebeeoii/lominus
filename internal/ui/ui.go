@@ -21,6 +21,7 @@ import (
 
 func Init() error {
 	app := app.New()
+	app.SetIcon(resourceAppIconPng)
 
 	w := app.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
 	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
