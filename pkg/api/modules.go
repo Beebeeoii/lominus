@@ -1,11 +1,5 @@
 package api
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-)
-
 // Module struct is the datapack for containing details about every module
 type Module struct {
 	Name         string
@@ -22,33 +16,16 @@ func (req Request) GetModules() ([]Module, error) {
 
 	var modules []Module //Initialise slice to capture of modules
 
-	request, err := http.NewRequest("GET", req.Url, nil)
+	RawResponse, err := req.GetRawResponse()
 
 	if err != nil {
 		return modules, err
 	}
 
-	request.Header.Add("Authorization", "Bearer "+req.JwtToken)
-
-	cl := &http.Client{}
-	response, err := cl.Do(request)
-
-	if err != nil {
-		return modules, err
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		return modules, err
-	}
-
-	var obj RawResponse                                //variable which holds the raw data
-	json.Unmarshal([]byte(string([]byte(body))), &obj) //Converting from byte to struct
-
-	for _, content := range obj.Data {
-
-		if _, ok := content["access"]; ok { // only modules that can be accessed will be placed in modules slice
+	for _, content := range RawResponse.Data {
+		_, found1 := content["access"]
+		found2, _ := content["usedNusCalendar"].(bool)
+		if found1 && !found2 { // only modules that can be accessed will be placed in modules slice
 
 			termDetail := content["termDetail"].(map[string]interface{}) //getting inner map
 			newStruct := Module{

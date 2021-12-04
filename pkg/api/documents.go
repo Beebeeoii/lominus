@@ -1,10 +1,6 @@
 package api
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-)
+import "fmt"
 
 type Folder struct {
 	Id           string
@@ -18,88 +14,106 @@ type Document struct {
 	Name string
 }
 
-const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=totalFileCount%2CsubFolderCount%2CTotalSize&ParentID="
+const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=totalFileCount,subFolderCount,TotalSize&ParentID=%s"
+const DOC_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?populate=Creator,lastUpdatedUser,comment"
 
-func (req Request) GetAllDownloadableFolderNames(modules []Module) (map[string][]Folder, error) { //consider making this method private
-	folders := make(map[string][]Folder)
+func (req Request) GetAllFolders() ([]Folder, error) { //consider making this method private
+	folder := []Folder{}
 
-	for _, module := range modules {
+	RawResponse, err := req.GetRawResponse()
 
-		var folder []Folder
-		request, err := http.NewRequest("GET", req.Url+module.Id, nil)
-
-		if err != nil {
-			return folders, err
-		}
-
-		request.Header.Add("Authorization", "Bearer "+req.JwtToken)
-
-		cl := &http.Client{}
-		response, err := cl.Do(request)
-
-		if err != nil {
-			return folders, err
-		}
-
-		body, err := ioutil.ReadAll(response.Body)
-
-		if err != nil {
-			return folders, err
-		}
-
-		var obj RawResponse                                //variable which holds the raw data
-		json.Unmarshal([]byte(string([]byte(body))), &obj) //Converting from byte to struct
-
-		for _, content := range obj.Data {
-
-			if _, ok := content["access"]; ok { // only folder that can be accessed will be placed in folders slice
-
-				newStruct := Folder{
-					content["id"].(string),
-					content["name"].(string),
-					content["subFolderCount"].(float64) > 0,
-					content["isActive"].(bool) && !content["allowUpload"].(bool), // downloadable = active folder + does not allow uploads
-				}
-				folder = append(folder, newStruct)
-			}
-		}
-		folders[module.ModuleCode] = folder
+	if err != nil {
+		return folder, err
 	}
-	return folders, nil
+
+	for _, content := range RawResponse.Data {
+
+		if _, ok := content["access"]; ok { // only folder that can be accessed will be placed in folders slice
+
+			newFolder := Folder{
+				content["id"].(string),
+				content["name"].(string),
+				content["subFolderCount"].(float64) > 0,
+				content["isActive"].(bool) && !content["allowUpload"].(bool), // downloadable = active folder + does not allow uploads
+			}
+			folder = append(folder, newFolder)
+		}
+	}
+	return folder, nil
 }
 
-func (req Request) GetAllFileNames(modules []Module) {
-	fols, err := req.GetAllDownloadableFolderNames(modules)
-	documents := make(map[string][]Document)
-
-	for module,folder := range fols {
-		var temp []Document
-		for _,f := range folder {
-			if f.Subfolder {
-				// get root files
-				// append to temp
-			} else {
-				// make api call
-				// append to temp
-			}
-		}
-		documents[module] = temp
+func (req Request) GetAllFileNames() ([]Document, error) {
+	documents := []Document{}
+	fols, err := req.GetAllFolders()
+	if err != nil {
+		return documents, err
 	}
-	//return (map[string][]Document, error)
-	/*
-		result = map of Document slices
-		for key,value in map:
-			temp = slice of documents
-			for folder in folders:
-				if !folder.subFolder:
-					add files into temp
-				else:
-					// get to the bottom folder
-					// add files to temp
-			add temp to result
-	*/
+
+	for _, f := range fols {
+		newReq := Request{
+			Url:       fmt.Sprintf(FOLDER_URL_ENDPOINT, f.Id),
+			JwtToken:  req.JwtToken,
+			UserAgent: USER_AGENT,
+		}
+		docs, err := newReq.getRootFiles(f)
+
+		if err != nil {
+			return documents, err
+		}
+
+		documents = append(documents, docs...)
+	}
+	return documents, nil
 }
 
-func getRootFiles() {
+func (req Request) getRootFiles(folder Folder) ([]Document, error) {
+	documents := []Document{}
 
+	if !folder.Subfolder && folder.downloadable {
+		newReq := Request{
+			Url:       fmt.Sprintf(DOC_URL_ENDPOINT, folder.Id),
+			JwtToken:  req.JwtToken,
+			UserAgent: USER_AGENT,
+		}
+		RawResponse, err := newReq.GetRawResponse()
+
+		if err != nil {
+			return documents, err
+		}
+		for _, content := range RawResponse.Data {
+
+			newDoc := Document{
+				content["id"].(string),
+				content["name"].(string),
+			}
+			documents = append(documents, newDoc)
+		}
+	} else {
+		newReq := Request{
+			Url:       fmt.Sprintf(FOLDER_URL_ENDPOINT, folder.Id),
+			JwtToken:  req.JwtToken,
+			UserAgent: USER_AGENT,
+		}
+		rawFols, err := newReq.GetAllFolders()
+
+		if err != nil {
+			return documents, err
+		}
+
+		for _, fol := range rawFols {
+			newreq := Request{
+				Url:       fmt.Sprintf(FOLDER_URL_ENDPOINT, fol.Id),
+				JwtToken:  req.JwtToken,
+				UserAgent: USER_AGENT,
+			}
+			docs, err := newreq.getRootFiles(fol)
+
+			if err != nil {
+				return documents, err
+			}
+
+			documents = append(documents, docs...)
+		}
+	}
+	return documents, nil
 }
