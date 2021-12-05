@@ -1,10 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
 )
 
@@ -20,36 +16,17 @@ type Grade struct {
 const GRADE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/gradebook/?populate=scores&ParentID=%s"
 
 // Retrieves all grades for a particular module represented by moduleCode.
-func (req Request) GetGrades(moduleCode string) ([]Grade, error) {
+func (req Request) GetGrades() ([]Grade, error) {
 	var grades []Grade
 
-	request, err := http.NewRequest("GET", fmt.Sprintf(req.Url, moduleCode), nil)
-
+	rawResponse := RawResponse{}
+	err := req.GetRawResponse(&rawResponse)
 	if err != nil {
 		return grades, err
 	}
 
-	request.Header.Add("Authorization", "Bearer "+req.JwtToken)
-
-	cl := &http.Client{}
-	response, err := cl.Do(request)
-
-	if err != nil {
-		return grades, err
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		return grades, err
-	}
-
-	var obj RawResponse                                //variable which holds the raw data
-	json.Unmarshal([]byte(string([]byte(body))), &obj) //Converting from byte to struct
-
-	for _, content := range obj.Data {
-
-		if _, ok := content["access"]; ok { // only grades that can be accessed will be placed in grades slice
+	for _, content := range rawResponse.Data {
+		if _, exists := content["access"]; exists { // only grades that can be accessed will be placed in grades slice
 			scoreDetail := make(map[string]interface{})
 			if len(content["scores"].([]interface{})) > 0 {
 				scoreDetail = (content["scores"].([]interface{})[0]).(map[string]interface{})
@@ -73,14 +50,14 @@ func (req Request) GetGrades(moduleCode string) ([]Grade, error) {
 				lastUpdated = lastUpdatedTime.Unix()
 			}
 
-			newStruct := Grade{
+			grade := Grade{
 				testName,
 				mark,
 				maxMark,
 				remark,
 				lastUpdated,
 			}
-			grades = append(grades, newStruct)
+			grades = append(grades, grade)
 		}
 	}
 	return grades, nil
