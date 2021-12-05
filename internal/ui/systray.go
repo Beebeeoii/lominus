@@ -1,15 +1,22 @@
 package ui
 
 import (
+	"fmt"
+
 	"github.com/getlantern/systray"
 
+	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
+
+var lastRanItem *systray.MenuItem
 
 func onReady() {
 	systray.SetIcon(resourceAppIconIco.Content())
 	systray.SetTitle(lominus.APP_NAME)
 	systray.SetTooltip(lominus.APP_NAME)
+	lastRanItem = systray.AddMenuItem("Last ran: Nil", "Shows when Lominus last checked for updates")
+	lastRanItem.Disable()
 	openButton := systray.AddMenuItem("Open", "Open Lominus")
 	systray.AddSeparator()
 	quitButton := systray.AddMenuItem("Quit", "Quit Lominus")
@@ -23,6 +30,12 @@ func onReady() {
 				systray.Quit()
 				return
 			}
+		}
+	}()
+
+	go func() {
+		for {
+			lastRanItem.SetTitle(fmt.Sprintf("Last ran: %s", <-cron.LastRanChannel))
 		}
 	}()
 }

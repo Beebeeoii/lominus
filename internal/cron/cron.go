@@ -12,9 +12,11 @@ import (
 
 var mainScheduler *gocron.Scheduler
 var mainJob *gocron.Job
+var LastRanChannel chan string
 
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
+	LastRanChannel = make(chan string)
 
 	preferences, loadPrefErr := pref.LoadPreferences(appPref.GetPreferencesPath())
 	if loadPrefErr != nil {
@@ -61,6 +63,6 @@ func GetLastRan() time.Time {
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Seconds().Do(func() {
 		log.Println(GetLastRan())
-		log.Println(GetNextRun())
+		LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 	})
 }
