@@ -10,12 +10,13 @@ type Module struct {
 	Period       string
 }
 
-const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator%2CtermDetail%2CisMandatory"
+const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
 
-func (req Request) GetModules() ([]Module, error) {
+func (req ModuleRequest) GetModules() ([]Module, error) {
 	var modules []Module
+
 	rawResponse := RawResponse{}
-	err := req.GetRawResponse(&rawResponse)
+	err := req.Request.GetRawResponse(&rawResponse)
 	if err != nil {
 		return modules, err
 	}

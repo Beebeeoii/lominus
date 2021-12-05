@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -25,11 +24,14 @@ const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=t
 const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?populate=Creator,lastUpdatedUser,comment"
 const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
 
-func (req Request) GetAllFolders() ([]Folder, error) {
+func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 	folder := []Folder{}
+	if req.Mode != GET_FOLDERS {
+		return folder, errors.New("mode mismatched: ensure DocumentRequest mode is GET_FOLDERS (0)")
+	}
 
 	rawResponse := RawResponse{}
-	err := req.GetRawResponse(&rawResponse)
+	err := req.Request.GetRawResponse(&rawResponse)
 	if err != nil {
 		return folder, err
 	}
@@ -48,22 +50,25 @@ func (req Request) GetAllFolders() ([]Folder, error) {
 	return folder, nil
 }
 
-func (req Request) GetAllFiles() ([]File, error) {
+func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	files := []File{}
+	if req.Mode != GET_ALL_FILES {
+		return files, errors.New("mode mismatched: ensure DocumentRequest mode is GET_ALL_FILES (1)")
+	}
 
+	req.Mode = 0
 	folders, err := req.GetAllFolders()
 	if err != nil {
 		return files, err
 	}
 
 	for _, folder := range folders {
-		newReq := Request{
-			Url:       fmt.Sprintf(FOLDER_URL_ENDPOINT, folder.Id),
-			JwtToken:  req.JwtToken,
-			UserAgent: USER_AGENT,
+		rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(folder, get_files)
+		if rootFilesBuildErr != nil {
+			return files, rootFilesBuildErr
 		}
 
-		subFiles, err := newReq.getRootFiles(folder)
+		subFiles, err := rootFilesReq.getRootFiles()
 		if err != nil {
 			return files, err
 		}
@@ -73,33 +78,34 @@ func (req Request) GetAllFiles() ([]File, error) {
 	return files, nil
 }
 
-func (req Request) getRootFiles(folder Folder) ([]File, error) {
+func (req DocumentRequest) getRootFiles() ([]File, error) {
 	files := []File{}
+	if req.Mode != get_files {
+		return files, errors.New("mode mismatched: ensure DocumentRequest mode is get_files (3)")
+	}
 
-	if !folder.Downloadable {
+	if !req.Folder.Downloadable {
 		return files, nil
 	}
 
-	if folder.HasSubFolder {
-		newReq := Request{
-			Url:       fmt.Sprintf(FOLDER_URL_ENDPOINT, folder.Id),
-			JwtToken:  req.JwtToken,
-			UserAgent: USER_AGENT,
+	if req.Folder.HasSubFolder {
+		subFolderReq, subFolderReqBuildErr := BuildDocumentRequest(req.Folder, GET_FOLDERS)
+		if subFolderReqBuildErr != nil {
+			return files, subFolderReqBuildErr
 		}
 
-		subFolders, err := newReq.GetAllFolders()
+		subFolders, err := subFolderReq.GetAllFolders()
 		if err != nil {
 			return files, err
 		}
 
 		for _, subFolder := range subFolders {
-			newReq := Request{
-				Url:       fmt.Sprintf(FOLDER_URL_ENDPOINT, subFolder.Id),
-				JwtToken:  req.JwtToken,
-				UserAgent: USER_AGENT,
+			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, get_files)
+			if rootFilesBuildErr != nil {
+				return files, rootFilesBuildErr
 			}
 
-			subFiles, err := newReq.getRootFiles(subFolder)
+			subFiles, err := rootFilesReq.getRootFiles()
 			if err != nil {
 				return files, err
 			}
@@ -108,14 +114,8 @@ func (req Request) getRootFiles(folder Folder) ([]File, error) {
 		}
 	}
 
-	newReq := Request{
-		Url:       fmt.Sprintf(FILE_URL_ENDPOINT, folder.Id),
-		JwtToken:  req.JwtToken,
-		UserAgent: USER_AGENT,
-	}
-
 	rawResponse := RawResponse{}
-	err := newReq.GetRawResponse(&rawResponse)
+	err := req.Request.GetRawResponse(&rawResponse)
 	if err != nil {
 		return files, err
 	}
@@ -131,9 +131,13 @@ func (req Request) getRootFiles(folder Folder) ([]File, error) {
 	return files, nil
 }
 
-func (req Request) Download(fileDetails File, filePath string) error {
+func (req DocumentRequest) Download(filePath string) error {
+	if req.Mode != DOWNLOAD_FILE {
+		return errors.New("mode mismatched: ensure DocumentRequest mode is DOWNLOAD_FILE (2)")
+	}
+
 	downloadResponse := DownloadResponse{}
-	err := req.GetRawResponse(&downloadResponse)
+	err := req.Request.GetRawResponse(&downloadResponse)
 	if err != nil {
 		return err
 	}
@@ -149,7 +153,7 @@ func (req Request) Download(fileDetails File, filePath string) error {
 		return errors.New("received non 200 response code")
 	}
 
-	file, err := os.Create(filepath.Join(filePath, fileDetails.Name))
+	file, err := os.Create(filepath.Join(filePath, req.File.Name))
 	if err != nil {
 		return err
 	}

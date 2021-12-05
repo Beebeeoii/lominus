@@ -16,11 +16,11 @@ type Grade struct {
 const GRADE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/gradebook/?populate=scores&ParentID=%s"
 
 // Retrieves all grades for a particular module represented by moduleCode.
-func (req Request) GetGrades() ([]Grade, error) {
+func (req GradeRequest) GetGrades() ([]Grade, error) {
 	var grades []Grade
 
 	rawResponse := RawResponse{}
-	err := req.GetRawResponse(&rawResponse)
+	err := req.Request.GetRawResponse(&rawResponse)
 	if err != nil {
 		return grades, err
 	}
