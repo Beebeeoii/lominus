@@ -10,7 +10,7 @@ import (
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	file "github.com/beebeeoii/lominus/internal/file"
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
 type JsonResponse struct {

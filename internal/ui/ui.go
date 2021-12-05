@@ -13,7 +13,7 @@ import (
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/file"
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/pref"
 	"github.com/getlantern/systray"

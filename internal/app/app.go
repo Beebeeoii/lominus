@@ -7,7 +7,7 @@ import (
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/file"
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/pref"
 )
 

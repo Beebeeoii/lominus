@@ -3,7 +3,7 @@ package ui
 import (
 	"github.com/getlantern/systray"
 
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
 func onReady() {

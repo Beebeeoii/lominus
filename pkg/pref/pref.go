@@ -3,7 +3,7 @@ package pref
 import (
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/file"
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
 const PREFERENCES_FILE_NAME = lominus.PREFERENCES_FILE_NAME

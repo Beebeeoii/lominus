@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
 type Credentials struct {
