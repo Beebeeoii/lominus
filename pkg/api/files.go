@@ -137,24 +137,29 @@ func (req Request) Download(fileDetails File, filePath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(downloadResponse)
 
-	response, err := http.Get(downloadResponse.Data)
+	response, err := http.Get(downloadResponse.DownloadUrl)
 	if err != nil {
 		return err
 	}
+
 	defer response.Body.Close()
+
 	if response.StatusCode != 200 {
-		return errors.New("Received non 200 response code")
+		return errors.New("received non 200 response code")
 	}
-	doc, err := os.Create(filepath.Join(filePath, fileDetails.Name))
+
+	file, err := os.Create(filepath.Join(filePath, fileDetails.Name))
 	if err != nil {
 		return err
 	}
-	defer doc.Close()
-	_, err = io.Copy(doc, response.Body)
+
+	defer file.Close()
+
+	_, err = io.Copy(file, response.Body)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

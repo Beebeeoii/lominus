@@ -16,9 +16,9 @@ type RawResponse struct {
 }
 
 type DownloadResponse struct {
-	Code   int    `json:"code"`
-	Data   string `json:"data"`
-	Status string `json:"status"`
+	Code        int    `json:"code"`
+	Status      string `json:"status"`
+	DownloadUrl string `json:"data"`
 }
 
 func (req Request) GetRawResponse(res interface{}) error {
