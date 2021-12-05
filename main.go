@@ -1,87 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"time"
 
-	"github.com/beebeeoii/lominus/pkg/api"
-	"github.com/beebeeoii/lominus/pkg/auth"
+	"github.com/beebeeoii/lominus/internal/app"
+	appLock "github.com/beebeeoii/lominus/internal/app/lock"
+	"github.com/beebeeoii/lominus/internal/ui"
+	"github.com/juju/fslock"
 )
 
 func main() {
-	jwtData, err := auth.LoadJwtData()
-
-	_, fileFound := os.Stat(auth.CREDENTIALS_FILE_NAME) // checks if there is creds.gob
-
-	if !(fileFound == nil) {
-		var un string
-		var pw string
-		log.Println("creds.gob file not detected...")
-		log.Println("Creating new creds.gob file...")
-		log.Println("Enter your NUSNET username: ")
-		fmt.Scanln(&un)
-		log.Println("Enter your NUSNET password: ")
-		fmt.Scanln(&pw)
-
-		cred := auth.Credentials{Username: un, Password: pw}
-		auth.SaveCredentials(cred)
-
+	appInitErr := app.Init()
+	if appInitErr != nil {
+		log.Fatalln(appInitErr)
 	}
 
-	if jwtData.IsExpired() {
-		log.Println(&auth.JwtExpiredError{}) //seems to be causing some probs if Fatalln is used
-		log.Println("Retrieving new JWT token...")
+	lock := fslock.New(appLock.GetLockPath())
+	lockErr := lock.TryLock()
 
-		credentials, err := auth.LoadCredentials()
-		if err != nil {
-			log.Fatalln(err)
-			return
-		}
-		_, err = auth.RetrieveJwtToken(credentials, true)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		log.Println("Retrieved successfully.")
-		jwtData, err = auth.LoadJwtData()
+	if lockErr != nil {
+		log.Fatalln(lockErr)
 	}
+	defer lock.Unlock()
 
-	if err != nil {
-		log.Fatalln(err)
-		return
+	uiInitErr := ui.Init()
+	if uiInitErr != nil {
+		log.Fatalln(uiInitErr)
 	}
-
-	modReq := api.Request{
-		Url:       api.MODULE_URL_ENDPOINT,
-		JwtToken:  jwtData.JwtToken,
-		UserAgent: api.USER_AGENT,
-	}
-
-	modules, _ := modReq.GetModules()
-	for _, mod := range modules {
-
-		fmt.Println(mod.ModuleCode)
-
-		foldersReq := api.Request{
-			Url:       fmt.Sprintf(api.FOLDER_URL_ENDPOINT, mod.Id),
-			JwtToken:  jwtData.JwtToken,
-			UserAgent: api.USER_AGENT,
-		}
-
-		fs, _ := foldersReq.GetAllFiles()
-		for _, f := range fs {
-			log.Println(f.Name)
-			downloadReq := api.Request{
-				Url:       fmt.Sprintf(api.DOWNLOAD_URL_ENDPOINT, f.Id),
-				JwtToken:  jwtData.JwtToken,
-				UserAgent: api.USER_AGENT,
-			}
-			downloadReq.Download(f, "C:\\Users\\jiaju\\Desktop\\")
-			break
-		}
-	}
-
-	log.Printf("Time to expiry: %d hours", int(time.Until(time.Unix(jwtData.Expiry, 0)).Hours()))
 }
