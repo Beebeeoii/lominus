@@ -12,6 +12,7 @@ import (
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/auth"
@@ -198,8 +199,15 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			log.Println(savePrefErr)
 			return
 		}
+
+		cronUpdateErr := cron.UpdateFrequency(preferences.Frequency)
+		if cronUpdateErr != nil {
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
+			log.Println(savePrefErr)
+			return
+		}
 	})
-	frequencySelect.SetSelected(frequencyMap[getPreferences().Frequency])
+	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
 	tab.Content = container.NewVBox(
 		fileDirHeader,
