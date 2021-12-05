@@ -6,6 +6,7 @@ import (
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/pref"
@@ -23,6 +24,12 @@ func Init() error {
 		preferences := appPref.Preferences{Directory: "", Frequency: 1}
 
 		return pref.SavePreferences(prefDir, preferences)
+	}
+
+	cronErr := cron.Init()
+
+	if cronErr != nil {
+		return cronErr
 	}
 
 	return nil
