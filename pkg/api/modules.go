@@ -1,16 +1,10 @@
 package api
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-)
-
 // Module struct is the datapack for containing details about every module
 type Module struct {
+	Id           string
 	Name         string
 	ModuleCode   string
-	Id           string
 	CreatorName  string
 	CreatorEmail string
 	Period       string
@@ -19,48 +13,28 @@ type Module struct {
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator%2CtermDetail%2CisMandatory"
 
 func (req Request) GetModules() ([]Module, error) {
-
-	var modules []Module //Initialise slice to capture of modules
-
-	request, err := http.NewRequest("GET", req.Url, nil)
-
+	var modules []Module
+	rawResponse := RawResponse{}
+	err := req.GetRawResponse(&rawResponse)
 	if err != nil {
 		return modules, err
 	}
 
-	request.Header.Add("Authorization", "Bearer "+req.JwtToken)
-
-	cl := &http.Client{}
-	response, err := cl.Do(request)
-
-	if err != nil {
-		return modules, err
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		return modules, err
-	}
-
-	var obj RawResponse                                //variable which holds the raw data
-	json.Unmarshal([]byte(string([]byte(body))), &obj) //Converting from byte to struct
-
-	for _, content := range obj.Data {
-
-		if _, ok := content["access"]; ok { // only modules that can be accessed will be placed in modules slice
-
-			termDetail := content["termDetail"].(map[string]interface{}) //getting inner map
-			newStruct := Module{
-				content["courseName"].(string),
-				content["name"].(string),
-				content["id"].(string),
-				content["creatorName"].(string),
-				content["creatorEmail"].(string),
-				termDetail["description"].(string),
+	for _, content := range rawResponse.Data {
+		_, accessible := content["access"]
+		if accessible {
+			termDetail := content["termDetail"].(map[string]interface{})
+			module := Module{
+				Id:           content["id"].(string),
+				Name:         content["courseName"].(string),
+				ModuleCode:   content["name"].(string),
+				CreatorName:  content["creatorName"].(string),
+				CreatorEmail: content["creatorEmail"].(string),
+				Period:       termDetail["description"].(string),
 			}
-			modules = append(modules, newStruct)
+			modules = append(modules, module)
 		}
 	}
+
 	return modules, nil
 }

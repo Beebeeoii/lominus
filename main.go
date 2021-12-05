@@ -59,6 +59,29 @@ func main() {
 		UserAgent: api.USER_AGENT,
 	}
 
-	fmt.Println(modReq.GetModules())
+	modules, _ := modReq.GetModules()
+	for _, mod := range modules {
+
+		fmt.Println(mod.ModuleCode)
+
+		foldersReq := api.Request{
+			Url:       fmt.Sprintf(api.FOLDER_URL_ENDPOINT, mod.Id),
+			JwtToken:  jwtData.JwtToken,
+			UserAgent: api.USER_AGENT,
+		}
+
+		fs, _ := foldersReq.GetAllFiles()
+		for _, f := range fs {
+			log.Println(f.Name)
+			downloadReq := api.Request{
+				Url:       fmt.Sprintf(api.DOWNLOAD_URL_ENDPOINT, f.Id),
+				JwtToken:  jwtData.JwtToken,
+				UserAgent: api.USER_AGENT,
+			}
+			downloadReq.Download(f, "C:\\Users\\jiaju\\Desktop\\")
+			break
+		}
+	}
+
 	log.Printf("Time to expiry: %d hours", int(time.Until(time.Unix(jwtData.Expiry, 0)).Hours()))
 }
