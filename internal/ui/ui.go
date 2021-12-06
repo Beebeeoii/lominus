@@ -65,7 +65,13 @@ func Init() error {
 	}
 
 	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab)
-	content := container.NewVBox(header, tabsContainer, layout.NewSpacer(), getQuitButton())
+	content := container.NewVBox(
+		header,
+		tabsContainer,
+		layout.NewSpacer(),
+		getSyncButton(),
+		getQuitButton(),
+	)
 
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
@@ -206,13 +212,6 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			log.Println(savePrefErr)
 			return
 		}
-
-		cronUpdateErr := cron.UpdateFrequency(preferences.Frequency)
-		if cronUpdateErr != nil {
-			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-			log.Println(savePrefErr)
-			return
-		}
 	})
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
@@ -239,6 +238,12 @@ func getPreferences() appPref.Preferences {
 	}
 
 	return preference
+}
+
+func getSyncButton() *widget.Button {
+	return widget.NewButton("Sync Now", func() {
+		cron.Rerun(getPreferences().Frequency)
+	})
 }
 
 func getQuitButton() *widget.Button {
