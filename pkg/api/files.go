@@ -2,10 +2,12 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Folder struct {
@@ -13,11 +15,14 @@ type Folder struct {
 	Name         string
 	Downloadable bool
 	HasSubFolder bool
+	Ancestors    []string
 }
 
 type File struct {
-	Id   string
-	Name string
+	Id          string
+	Name        string
+	Ancestors   []string
+	LastUpdated time.Time
 }
 
 const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=totalFileCount,subFolderCount,TotalSize&ParentID=%s"
@@ -43,6 +48,7 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 				Name:         content["name"].(string),
 				Downloadable: content["isActive"].(bool) && !content["allowUpload"].(bool), // downloadable = active folder + does not allow uploads
 				HasSubFolder: int(content["subFolderCount"].(float64)) > 0,
+				Ancestors:    []string{req.Module.ModuleCode},
 			}
 			folder = append(folder, newFolder)
 		}
@@ -63,6 +69,8 @@ func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	}
 
 	for _, folder := range folders {
+		folder.Ancestors = append(folder.Ancestors, folder.Name)
+
 		rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(folder, get_files)
 		if rootFilesBuildErr != nil {
 			return files, rootFilesBuildErr
@@ -100,6 +108,9 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 		}
 
 		for _, subFolder := range subFolders {
+			subFolder.Ancestors = append(subFolder.Ancestors, req.Folder.Ancestors...)
+			subFolder.Ancestors = append(subFolder.Ancestors, subFolder.Name)
+			fmt.Println(subFolder)
 			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, get_files)
 			if rootFilesBuildErr != nil {
 				return files, rootFilesBuildErr
@@ -121,9 +132,16 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 	}
 
 	for _, content := range rawResponse.Data {
+		lastUpdated, timeParseErr := time.Parse(time.RFC3339, content["lastUpdatedDate"].(string))
+
+		if timeParseErr != nil {
+			return files, timeParseErr
+		}
 		newFile := File{
-			Id:   content["id"].(string),
-			Name: content["name"].(string),
+			Id:          content["id"].(string),
+			Name:        content["name"].(string),
+			LastUpdated: lastUpdated,
+			Ancestors:   req.Folder.Ancestors,
 		}
 		files = append(files, newFile)
 	}
