@@ -73,7 +73,6 @@ func Init() error {
 	w.SetMaster()
 	w.SetCloseIntercept(func() {
 		w.Hide()
-		mainApp.SendNotification(fyne.NewNotification("Lominus", "App is still running"))
 	})
 	mainApp.Lifecycle().SetOnEnteredForeground(func() {
 		w.Show()
