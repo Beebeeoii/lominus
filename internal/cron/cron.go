@@ -27,6 +27,10 @@ func Init() error {
 		return loadPrefErr
 	}
 
+	if preferences.Frequency == -1 {
+		return nil
+	}
+
 	job, err := createJob(preferences.Frequency)
 	if err != nil {
 		return err
@@ -38,7 +42,7 @@ func Init() error {
 	return nil
 }
 
-func UpdateFrequency(frequency int) error {
+func Rerun(frequency int) error {
 	mainScheduler.Clear()
 
 	if frequency == -1 {
@@ -76,11 +80,13 @@ func createJob(frequency int) (*gocron.Job, error) {
 		if preferences.Directory != "" {
 			moduleRequest, modReqErr := api.BuildModuleRequest()
 			if modReqErr != nil {
+				log.Println(modReqErr)
 				return
 			}
 
 			modules, modErr := moduleRequest.GetModules()
 			if modErr != nil {
+				log.Println(modErr)
 				return
 			}
 
@@ -88,11 +94,13 @@ func createJob(frequency int) (*gocron.Job, error) {
 			for _, module := range modules {
 				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
 				if fileReqErr != nil {
+					log.Println(fileReqErr)
 					continue
 				}
 
 				files, fileErr := fileRequest.GetAllFiles()
 				if fileErr != nil {
+					log.Println(fileErr)
 					continue
 				}
 
@@ -114,6 +122,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
+				log.Println(currentFilesErr)
 				return
 			}
 
