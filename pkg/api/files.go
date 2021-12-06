@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -110,7 +109,6 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 		for _, subFolder := range subFolders {
 			subFolder.Ancestors = append(subFolder.Ancestors, req.Folder.Ancestors...)
 			subFolder.Ancestors = append(subFolder.Ancestors, subFolder.Name)
-			fmt.Println(subFolder)
 			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, get_files)
 			if rootFilesBuildErr != nil {
 				return files, rootFilesBuildErr
