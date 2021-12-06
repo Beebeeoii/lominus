@@ -3,11 +3,13 @@ package ui
 import (
 	"fmt"
 	"log"
+	"runtime"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
@@ -43,7 +45,9 @@ var mainApp fyne.App
 var w fyne.Window
 
 func Init() error {
-	systray.Register(onReady, onExit)
+	if runtime.GOOS == "windows" {
+		systray.Register(onReady, onExit)
+	}
 	mainApp = app.NewWithID(lominus.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
@@ -61,14 +65,17 @@ func Init() error {
 	}
 
 	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab)
-
-	content := container.NewVBox(header, tabsContainer)
+	content := container.NewVBox(header, tabsContainer, layout.NewSpacer(), getQuitButton())
 
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
 	w.SetFixedSize(true)
+	w.SetMaster()
 	w.SetCloseIntercept(func() {
 		w.Hide()
+	})
+	mainApp.Lifecycle().SetOnEnteredForeground(func() {
+		w.Show()
 	})
 	w.ShowAndRun()
 	return nil
@@ -232,4 +239,17 @@ func getPreferences() appPref.Preferences {
 	}
 
 	return preference
+}
+
+func getQuitButton() *widget.Button {
+	return widget.NewButton("Quit Lominus", func() {
+		if getOs() == "windows" {
+			systray.Quit()
+		}
+		mainApp.Quit()
+	})
+}
+
+func getOs() string {
+	return runtime.GOOS
 }
