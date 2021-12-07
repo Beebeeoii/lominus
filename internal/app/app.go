@@ -21,9 +21,12 @@ func Init() error {
 
 	prefDir := filepath.Join(baseDir, lominus.PREFERENCES_FILE_NAME)
 	if !file.Exists(prefDir) {
-		preferences := appPref.Preferences{Directory: "", Frequency: 1}
+		preferences := appPref.Preferences{Directory: "", Frequency: -1}
 
-		return pref.SavePreferences(prefDir, preferences)
+		savePrefErr := pref.SavePreferences(prefDir, preferences)
+		if savePrefErr != nil {
+			return savePrefErr
+		}
 	}
 
 	cronErr := cron.Init()

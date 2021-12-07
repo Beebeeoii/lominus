@@ -15,7 +15,7 @@ func onReady() {
 	systray.SetIcon(resourceAppIconIco.Content())
 	systray.SetTitle(lominus.APP_NAME)
 	systray.SetTooltip(lominus.APP_NAME)
-	lastRanItem = systray.AddMenuItem("Last ran: Nil", "Shows when Lominus last checked for updates")
+	lastRanItem = systray.AddMenuItem("Last sync: Nil", "Shows when Lominus last checked for updates")
 	lastRanItem.Disable()
 	openButton := systray.AddMenuItem("Open", "Open Lominus")
 	systray.AddSeparator()
@@ -35,7 +35,7 @@ func onReady() {
 
 	go func() {
 		for {
-			lastRanItem.SetTitle(fmt.Sprintf("Last ran: %s", <-cron.LastRanChannel))
+			lastRanItem.SetTitle(fmt.Sprintf("Last sync: %s", <-cron.LastRanChannel))
 		}
 	}()
 }

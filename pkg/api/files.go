@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -47,7 +48,7 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 				Name:         content["name"].(string),
 				Downloadable: content["isActive"].(bool) && !content["allowUpload"].(bool), // downloadable = active folder + does not allow uploads
 				HasSubFolder: int(content["subFolderCount"].(float64)) > 0,
-				Ancestors:    []string{req.Module.ModuleCode},
+				Ancestors:    []string{strings.TrimSpace(req.Module.ModuleCode)},
 			}
 			folder = append(folder, newFolder)
 		}
@@ -68,7 +69,7 @@ func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	}
 
 	for _, folder := range folders {
-		folder.Ancestors = append(folder.Ancestors, folder.Name)
+		folder.Ancestors = append(folder.Ancestors, strings.TrimSpace(folder.Name))
 
 		rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(folder, get_files)
 		if rootFilesBuildErr != nil {
@@ -108,7 +109,7 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 
 		for _, subFolder := range subFolders {
 			subFolder.Ancestors = append(subFolder.Ancestors, req.Folder.Ancestors...)
-			subFolder.Ancestors = append(subFolder.Ancestors, subFolder.Name)
+			subFolder.Ancestors = append(subFolder.Ancestors, strings.TrimSpace(subFolder.Name))
 			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, get_files)
 			if rootFilesBuildErr != nil {
 				return files, rootFilesBuildErr

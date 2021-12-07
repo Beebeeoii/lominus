@@ -51,7 +51,7 @@ func Init() error {
 	mainApp = app.NewWithID(lominus.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
-	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
+	w = mainApp.NewWindow(lominus.APP_NAME)
 	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(w)
@@ -65,7 +65,13 @@ func Init() error {
 	}
 
 	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab)
-	content := container.NewVBox(header, tabsContainer, layout.NewSpacer(), getQuitButton())
+	content := container.NewVBox(
+		header,
+		tabsContainer,
+		layout.NewSpacer(),
+		getSyncButton(w),
+		getQuitButton(),
+	)
 
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
@@ -206,13 +212,6 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			log.Println(savePrefErr)
 			return
 		}
-
-		cronUpdateErr := cron.UpdateFrequency(preferences.Frequency)
-		if cronUpdateErr != nil {
-			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-			log.Println(savePrefErr)
-			return
-		}
 	})
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
@@ -239,6 +238,17 @@ func getPreferences() appPref.Preferences {
 	}
 
 	return preference
+}
+
+func getSyncButton(parentWindow fyne.Window) *widget.Button {
+	return widget.NewButton("Sync Now", func() {
+		preferences := getPreferences()
+		if preferences.Directory == "" {
+			dialog.NewInformation(lominus.APP_NAME, "Please set the directory to store your Luminus files", parentWindow).Show()
+			return
+		}
+		cron.Rerun(getPreferences().Frequency)
+	})
 }
 
 func getQuitButton() *widget.Button {

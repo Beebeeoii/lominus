@@ -7,6 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+
+	appDir "github.com/beebeeoii/lominus/internal/app/dir"
+	"github.com/beebeeoii/lominus/pkg/api"
 )
 
 type IndexMap struct {
@@ -19,22 +23,10 @@ type IndexMapEntry struct {
 	LastUpdated int64
 }
 
-type Index struct {
-	Id          string
-	FileName    string
-	IsDir       bool
-	FileSize    int64
-	Directory   string
-	LastUpdated int64
-}
-
 const INDEX_MAP_FILE_NAME = "index_map.csv"
-const INDEX_FILE_NAME = "index.csv"
 
-func Build(dir string) error {
-	log.Printf("Creating index file: %s", INDEX_FILE_NAME)
-	indexFile, _ := os.Create(INDEX_FILE_NAME)
-	w := csv.NewWriter(indexFile)
+func Build(dir string) (map[string]api.File, error) {
+	filesMap := make(map[string]api.File)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -44,20 +36,22 @@ func Build(dir string) error {
 			return nil
 		}
 
-		w.Write([]string{info.Name(), path[len(dir)+1:], strconv.FormatBool(info.IsDir()), strconv.FormatInt(info.Size(), 10), strconv.FormatInt(info.ModTime().Unix(), 10)})
-		w.Flush()
+		if !info.IsDir() {
+			filesMap[info.Name()] = api.File{
+				Name:        info.Name(),
+				Ancestors:   strings.Split(path[len(dir)+1:], string(os.PathSeparator)),
+				LastUpdated: info.ModTime(),
+			}
+		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-	log.Printf("Index created: %s", INDEX_FILE_NAME)
-	return nil
+
+	return filesMap, err
 }
 
 func CreateIndexMap(indexMap IndexMap) error {
 	log.Printf("Creating index map: %s", INDEX_MAP_FILE_NAME)
-	indexMapFile, _ := os.Create(INDEX_MAP_FILE_NAME)
+	indexMapFile, _ := os.Create(getIndexMapPath())
 	w := csv.NewWriter(indexMapFile)
 
 	for _, entry := range indexMap.Entries {
@@ -92,4 +86,8 @@ func LoadIndexMap(file io.Reader) (map[string]IndexMapEntry, error) {
 		indexMap[id] = IndexMapEntry{Id: id, FileName: fileName, LastUpdated: lastUpdated}
 	}
 	return indexMap, nil
+}
+
+func getIndexMapPath() string {
+	return filepath.Join(appDir.GetBaseDir(), INDEX_MAP_FILE_NAME)
 }
