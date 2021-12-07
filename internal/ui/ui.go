@@ -51,7 +51,7 @@ func Init() error {
 	mainApp = app.NewWithID(lominus.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
-	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
+	w = mainApp.NewWindow(lominus.APP_NAME)
 	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(w)
@@ -69,7 +69,7 @@ func Init() error {
 		header,
 		tabsContainer,
 		layout.NewSpacer(),
-		getSyncButton(),
+		getSyncButton(w),
 		getQuitButton(),
 	)
 
@@ -240,8 +240,13 @@ func getPreferences() appPref.Preferences {
 	return preference
 }
 
-func getSyncButton() *widget.Button {
+func getSyncButton(parentWindow fyne.Window) *widget.Button {
 	return widget.NewButton("Sync Now", func() {
+		preferences := getPreferences()
+		if preferences.Directory == "" {
+			dialog.NewInformation(lominus.APP_NAME, "Please set the directory to store your Luminus files", parentWindow).Show()
+			return
+		}
 		cron.Rerun(getPreferences().Frequency)
 	})
 }
