@@ -12,9 +12,6 @@ import (
 
 func main() {
 	logs.Init()
-	logs.InfoLogger.Println("Test message")
-	logs.WarningLogger.Println("Test message")
-	logs.ErrorLogger.Println("Test message")
 
 	appInitErr := app.Init()
 	if appInitErr != nil {
