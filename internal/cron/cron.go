@@ -10,6 +10,7 @@ import (
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/pref"
+	"github.com/gen2brain/beeep"
 
 	"github.com/go-co-op/gocron"
 )
@@ -83,12 +84,22 @@ func createJob(frequency int) (*gocron.Job, error) {
 			moduleRequest, modReqErr := api.BuildModuleRequest()
 			if modReqErr != nil {
 				logs.WarningLogger.Println(modReqErr)
+				err := beeep.Notify("Sync", "Authentication failed", "assets/app-icon.png")
+				if err != nil {
+					logs.ErrorLogger.Println(err)
+					panic(err)
+				}
 				return
 			}
 
 			modules, modErr := moduleRequest.GetModules()
 			if modErr != nil {
 				logs.WarningLogger.Println(modErr)
+				err := beeep.Notify("Sync", "Unable to retrieve modules.", "assets/app-icon.png")
+				if err != nil {
+					logs.ErrorLogger.Println(err)
+					panic(err)
+				}
 				return
 			}
 
@@ -97,12 +108,22 @@ func createJob(frequency int) (*gocron.Job, error) {
 				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
 				if fileReqErr != nil {
 					logs.WarningLogger.Println(fileReqErr)
+					err := beeep.Notify("Sync", "Unable to retrieve files.", "assets/app-icon.png")
+					if err != nil {
+						logs.ErrorLogger.Println(err)
+						panic(err)
+					}
 					continue
 				}
 
 				files, fileErr := fileRequest.GetAllFiles()
 				if fileErr != nil {
 					logs.WarningLogger.Println(fileErr)
+					err := beeep.Notify("Sync", "Unable to retrieve files.", "assets/app-icon.png")
+					if err != nil {
+						logs.ErrorLogger.Println(err)
+						panic(err)
+					}
 					continue
 				}
 
@@ -125,6 +146,11 @@ func createJob(frequency int) (*gocron.Job, error) {
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
 				logs.WarningLogger.Println(currentFilesErr)
+				err := beeep.Notify("Sync", "Unable to sync files.", "assets/app-icon.png")
+				if err != nil {
+					logs.ErrorLogger.Println(err)
+					panic(err)
+				}
 				return
 			}
 
@@ -133,6 +159,11 @@ func createJob(frequency int) (*gocron.Job, error) {
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
 						logs.ErrorLogger.Println(downloadErr)
+						err := beeep.Notify("Sync", "Unable to download files.", "assets/app-icon.png")
+						if err != nil {
+							logs.ErrorLogger.Println(err)
+							panic(err)
+						}
 						continue
 					}
 				}
