@@ -1,10 +1,10 @@
 package cron
 
 import (
+	"log"
 	"time"
 
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/pkg/pref"
 
 	"github.com/go-co-op/gocron"
@@ -62,7 +62,7 @@ func GetLastRan() time.Time {
 
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Seconds().Do(func() {
-		logs.InfoLogger.Println(GetLastRan())
+		log.Println(GetLastRan())
 		LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 	})
 }
