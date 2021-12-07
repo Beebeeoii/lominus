@@ -23,20 +23,9 @@ type IndexMapEntry struct {
 	LastUpdated int64
 }
 
-type Index struct {
-	Id          string
-	FileName    string
-	IsDir       bool
-	FileSize    int64
-	Directory   string
-	LastUpdated int64
-}
-
 const INDEX_MAP_FILE_NAME = "index_map.csv"
-const INDEX_FILE_NAME = "index.csv"
 
 func Build(dir string) (map[string]api.File, error) {
-	log.Printf("Creating index file: %s", INDEX_FILE_NAME)
 	filesMap := make(map[string]api.File)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -56,12 +45,8 @@ func Build(dir string) (map[string]api.File, error) {
 		}
 		return nil
 	})
-	if err != nil {
-		return filesMap, err
-	}
 
-	log.Printf("Index created: %s", INDEX_FILE_NAME)
-	return filesMap, nil
+	return filesMap, err
 }
 
 func CreateIndexMap(indexMap IndexMap) error {
