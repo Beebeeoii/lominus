@@ -168,6 +168,13 @@ func createJob(frequency int) (*gocron.Job, error) {
 					}
 				}
 			}
+
+			logs.InfoLogger.Printf("job completed: %s\n", time.Now().Format(time.RFC3339))
+			err := beeep.Notify("Sync", "Your files are up to date.", "assets/app-icon.png")
+			if err != nil {
+				logs.ErrorLogger.Println(err)
+				panic(err)
+			}
 		}
 	})
 }

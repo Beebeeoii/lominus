@@ -4,13 +4,13 @@ go 1.17
 
 require (
 	fyne.io/fyne/v2 v2.1.1
+	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/go-co-op/gocron v1.10.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/sqweek/dialog v0.0.0-20211002065838-9a201b55ab91
 )
 
 require (
-	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7 // indirect
 	github.com/getlantern/golog v0.0.0-20190830074920-4ef2e798c2d7 // indirect
