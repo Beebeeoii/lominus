@@ -16,9 +16,9 @@ var (
 )
 
 func Init() {
-	file, err := os.OpenFile(GetLogPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(getLogPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	log.SetOutput(file)
@@ -26,10 +26,8 @@ func Init() {
 	InfoLogger = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	WarningLogger = log.New(file, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
 	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-
-	InfoLogger.Println("Lominus has started!")
 }
 
-func GetLogPath() string {
+func getLogPath() string {
 	return filepath.Join(appDir.GetBaseDir(), lominus.LOG_FILE_NAME)
 }
