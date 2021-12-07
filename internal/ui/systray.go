@@ -6,6 +6,7 @@ import (
 	"github.com/getlantern/systray"
 
 	"github.com/beebeeoii/lominus/internal/cron"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
@@ -41,5 +42,6 @@ func onReady() {
 }
 
 func onExit() {
+	logs.InfoLogger.Println("lominus quit")
 	mainApp.Quit()
 }

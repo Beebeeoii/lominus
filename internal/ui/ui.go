@@ -258,8 +258,10 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 func getQuitButton() *widget.Button {
 	return widget.NewButton("Quit Lominus", func() {
 		if getOs() == "windows" {
+			logs.InfoLogger.Println("systray quit")
 			systray.Quit()
 		}
+		logs.InfoLogger.Println("lominus quit")
 		mainApp.Quit()
 	})
 }
