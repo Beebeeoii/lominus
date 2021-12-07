@@ -5,11 +5,14 @@ import (
 
 	"github.com/beebeeoii/lominus/internal/app"
 	appLock "github.com/beebeeoii/lominus/internal/app/lock"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/ui"
 	"github.com/juju/fslock"
 )
 
 func main() {
+	logs.Init()
+
 	appInitErr := app.Init()
 	if appInitErr != nil {
 		log.Fatalln(appInitErr)
