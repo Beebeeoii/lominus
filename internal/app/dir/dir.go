@@ -11,7 +11,7 @@ import (
 func GetBaseDir() string {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return filepath.Join(userConfigDir, lominus.APP_NAME)

@@ -1,13 +1,13 @@
 package cron
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/indexing"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/pref"
 
@@ -70,23 +70,25 @@ func GetLastRan() time.Time {
 
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
+		logs.InfoLogger.Printf("job started: %s\n", time.Now().Format(time.RFC3339))
 		LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 
 		preferences, prefErr := pref.LoadPreferences(appPref.GetPreferencesPath())
 		if prefErr != nil {
+			logs.WarningLogger.Println(prefErr)
 			return
 		}
 
 		if preferences.Directory != "" {
 			moduleRequest, modReqErr := api.BuildModuleRequest()
 			if modReqErr != nil {
-				log.Println(modReqErr)
+				logs.WarningLogger.Println(modReqErr)
 				return
 			}
 
 			modules, modErr := moduleRequest.GetModules()
 			if modErr != nil {
-				log.Println(modErr)
+				logs.WarningLogger.Println(modErr)
 				return
 			}
 
@@ -94,13 +96,13 @@ func createJob(frequency int) (*gocron.Job, error) {
 			for _, module := range modules {
 				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
 				if fileReqErr != nil {
-					log.Println(fileReqErr)
+					logs.WarningLogger.Println(fileReqErr)
 					continue
 				}
 
 				files, fileErr := fileRequest.GetAllFiles()
 				if fileErr != nil {
-					log.Println(fileErr)
+					logs.WarningLogger.Println(fileErr)
 					continue
 				}
 
@@ -122,7 +124,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
-				log.Println(currentFilesErr)
+				logs.WarningLogger.Println(currentFilesErr)
 				return
 			}
 
@@ -130,7 +132,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
-						log.Println(downloadErr)
+						logs.ErrorLogger.Println(downloadErr)
 						continue
 					}
 				}
@@ -145,7 +147,6 @@ func downloadFile(baseDir string, file api.File) error {
 
 	downloadReq, dlReqErr := api.BuildDocumentRequest(file, api.DOWNLOAD_FILE)
 	if dlReqErr != nil {
-		log.Println(dlReqErr)
 		return dlReqErr
 	}
 
@@ -153,11 +154,11 @@ func downloadFile(baseDir string, file api.File) error {
 }
 
 func ensureDir(dir string) {
-	log.Println(dir)
 	dirName := filepath.Dir(dir)
 	if _, serr := os.Stat(dirName); serr != nil {
 		merr := os.MkdirAll(dirName, os.ModePerm)
 		if merr != nil {
+			logs.ErrorLogger.Println(merr)
 			panic(merr)
 		}
 	}

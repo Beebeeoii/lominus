@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/beebeeoii/lominus/internal/app"
 	appLock "github.com/beebeeoii/lominus/internal/app/lock"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -11,23 +9,21 @@ import (
 )
 
 func main() {
-	logs.Init()
-
 	appInitErr := app.Init()
 	if appInitErr != nil {
-		log.Fatalln(appInitErr)
+		logs.ErrorLogger.Fatalln(appInitErr)
 	}
 
 	lock := fslock.New(appLock.GetLockPath())
 	lockErr := lock.TryLock()
 
 	if lockErr != nil {
-		log.Fatalln(lockErr)
+		logs.ErrorLogger.Fatalln(lockErr)
 	}
 	defer lock.Unlock()
 
 	uiInitErr := ui.Init()
 	if uiInitErr != nil {
-		log.Fatalln(uiInitErr)
+		logs.ErrorLogger.Fatalln(uiInitErr)
 	}
 }

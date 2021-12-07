@@ -3,13 +3,13 @@ package indexing
 import (
 	"encoding/csv"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/pkg/api"
 )
 
@@ -50,7 +50,7 @@ func Build(dir string) (map[string]api.File, error) {
 }
 
 func CreateIndexMap(indexMap IndexMap) error {
-	log.Printf("Creating index map: %s", INDEX_MAP_FILE_NAME)
+	logs.InfoLogger.Printf("Creating index map: %s\n", INDEX_MAP_FILE_NAME)
 	indexMapFile, _ := os.Create(getIndexMapPath())
 	w := csv.NewWriter(indexMapFile)
 
@@ -62,12 +62,12 @@ func CreateIndexMap(indexMap IndexMap) error {
 	}
 	w.Flush()
 
-	log.Println("Index map created successfully.")
+	logs.InfoLogger.Println("Index map created successfully.")
 	return nil
 }
 
 func LoadIndexMap(file io.Reader) (map[string]IndexMapEntry, error) {
-	log.Printf("Loading index map: %s", INDEX_MAP_FILE_NAME)
+	logs.InfoLogger.Printf("Loading index map: %s\n", INDEX_MAP_FILE_NAME)
 	r := csv.NewReader(file)
 	indexMap := map[string]IndexMapEntry{}
 

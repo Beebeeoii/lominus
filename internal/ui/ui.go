@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"runtime"
 
 	"fyne.io/fyne/v2"
@@ -16,6 +15,7 @@ import (
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/file"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/pref"
@@ -166,7 +166,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		if dirErr != nil {
 			if dirErr.Error() != "Cancelled" {
 				dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-				log.Println(dirErr)
+				logs.ErrorLogger.Println(dirErr)
 			}
 			return
 		}
@@ -177,7 +177,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		savePrefErr := pref.SavePreferences(appPref.GetPreferencesPath(), preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-			log.Println(savePrefErr)
+			logs.ErrorLogger.Println(savePrefErr)
 			return
 		}
 		fileDirLabel.SetText(preferences.Directory)
@@ -209,7 +209,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		savePrefErr := pref.SavePreferences(appPref.GetPreferencesPath(), preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-			log.Println(savePrefErr)
+			logs.ErrorLogger.Println(savePrefErr)
 			return
 		}
 	})
@@ -234,7 +234,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 func getPreferences() appPref.Preferences {
 	preference, err := pref.LoadPreferences(appPref.GetPreferencesPath())
 	if err != nil {
-		log.Fatalln(err)
+		logs.ErrorLogger.Fatalln(err)
 	}
 
 	return preference
@@ -245,6 +245,10 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 		preferences := getPreferences()
 		if preferences.Directory == "" {
 			dialog.NewInformation(lominus.APP_NAME, "Please set the directory to store your Luminus files", parentWindow).Show()
+			return
+		}
+		if preferences.Frequency == -1 {
+			dialog.NewInformation(lominus.APP_NAME, "Sync is currently disabled. Please choose a sync frequency to sync now.", parentWindow).Show()
 			return
 		}
 		cron.Rerun(getPreferences().Frequency)

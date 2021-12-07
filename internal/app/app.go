@@ -8,6 +8,7 @@ import (
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/file"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/pref"
 )
@@ -19,6 +20,11 @@ func Init() error {
 		os.Mkdir(baseDir, os.ModePerm)
 	}
 
+	logInitErr := logs.Init()
+	if logInitErr != nil {
+		return logInitErr
+	}
+
 	prefDir := filepath.Join(baseDir, lominus.PREFERENCES_FILE_NAME)
 	if !file.Exists(prefDir) {
 		preferences := appPref.Preferences{Directory: "", Frequency: -1}
@@ -27,13 +33,14 @@ func Init() error {
 		if savePrefErr != nil {
 			return savePrefErr
 		}
+		logs.InfoLogger.Println("pref.go created")
 	}
 
-	cronErr := cron.Init()
-
-	if cronErr != nil {
-		return cronErr
+	cronInitErr := cron.Init()
+	if cronInitErr != nil {
+		return cronInitErr
 	}
+	logs.InfoLogger.Println("cron initialised")
 
 	return nil
 }

@@ -15,10 +15,10 @@ var (
 	ErrorLogger   *log.Logger
 )
 
-func Init() {
+func Init() error {
 	file, err := os.OpenFile(getLogPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	log.SetOutput(file)
@@ -26,6 +26,8 @@ func Init() {
 	InfoLogger = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	WarningLogger = log.New(file, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
 	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+
+	return nil
 }
 
 func getLogPath() string {
