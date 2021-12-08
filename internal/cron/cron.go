@@ -2,11 +2,11 @@ package cron
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	appApp "github.com/beebeeoii/lominus/internal/app"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -75,8 +75,9 @@ func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Syncing in progress"}
 		logs.InfoLogger.Printf("job started: %s\n", time.Now().Format(time.RFC3339))
-		LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
-		log.Println("test")
+		if appApp.GetOs() == "windows" {
+			LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
+		}
 
 		preferences, prefErr := pref.LoadPreferences(appPref.GetPreferencesPath())
 		if prefErr != nil {
