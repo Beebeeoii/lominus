@@ -8,20 +8,27 @@ import (
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/pref"
-	"github.com/gen2brain/beeep"
 
 	"github.com/go-co-op/gocron"
 )
 
+type JobInfo struct {
+	Message string
+	Error   error
+}
+
 var mainScheduler *gocron.Scheduler
 var mainJob *gocron.Job
 var LastRanChannel chan string
+var JobStatus chan JobInfo
 
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 	LastRanChannel = make(chan string)
+	JobStatus = make(chan JobInfo)
 
 	preferences, loadPrefErr := pref.LoadPreferences(appPref.GetPreferencesPath())
 	if loadPrefErr != nil {
@@ -71,6 +78,7 @@ func GetLastRan() time.Time {
 
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
+		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Syncing in progress"}
 		logs.InfoLogger.Printf("job started: %s\n", time.Now().Format(time.RFC3339))
 		LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 
@@ -83,23 +91,15 @@ func createJob(frequency int) (*gocron.Job, error) {
 		if preferences.Directory != "" {
 			moduleRequest, modReqErr := api.BuildModuleRequest()
 			if modReqErr != nil {
+				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Authentication failed"}
 				logs.WarningLogger.Println(modReqErr)
-				err := beeep.Notify("Sync", "Authentication failed", "assets/app-icon.png")
-				if err != nil {
-					logs.ErrorLogger.Println(err)
-					panic(err)
-				}
 				return
 			}
 
 			modules, modErr := moduleRequest.GetModules()
 			if modErr != nil {
+				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve modules"}
 				logs.WarningLogger.Println(modErr)
-				err := beeep.Notify("Sync", "Unable to retrieve modules.", "assets/app-icon.png")
-				if err != nil {
-					logs.ErrorLogger.Println(err)
-					panic(err)
-				}
 				return
 			}
 
@@ -107,23 +107,15 @@ func createJob(frequency int) (*gocron.Job, error) {
 			for _, module := range modules {
 				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
 				if fileReqErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
 					logs.WarningLogger.Println(fileReqErr)
-					err := beeep.Notify("Sync", "Unable to retrieve files.", "assets/app-icon.png")
-					if err != nil {
-						logs.ErrorLogger.Println(err)
-						panic(err)
-					}
 					continue
 				}
 
 				files, fileErr := fileRequest.GetAllFiles()
 				if fileErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
 					logs.WarningLogger.Println(fileErr)
-					err := beeep.Notify("Sync", "Unable to retrieve files.", "assets/app-icon.png")
-					if err != nil {
-						logs.ErrorLogger.Println(err)
-						panic(err)
-					}
 					continue
 				}
 
@@ -145,12 +137,8 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
+				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to sync files"}
 				logs.WarningLogger.Println(currentFilesErr)
-				err := beeep.Notify("Sync", "Unable to sync files.", "assets/app-icon.png")
-				if err != nil {
-					logs.ErrorLogger.Println(err)
-					panic(err)
-				}
 				return
 			}
 
@@ -158,23 +146,15 @@ func createJob(frequency int) (*gocron.Job, error) {
 				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
+						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to download files"}
 						logs.ErrorLogger.Println(downloadErr)
-						err := beeep.Notify("Sync", "Unable to download files.", "assets/app-icon.png")
-						if err != nil {
-							logs.ErrorLogger.Println(err)
-							panic(err)
-						}
 						continue
 					}
 				}
 			}
 
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Your files are up to date"}
 			logs.InfoLogger.Printf("job completed: %s\n", time.Now().Format(time.RFC3339))
-			err := beeep.Notify("Sync", "Your files are up to date.", "assets/app-icon.png")
-			if err != nil {
-				logs.ErrorLogger.Println(err)
-				panic(err)
-			}
 		}
 	})
 }

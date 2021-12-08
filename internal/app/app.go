@@ -6,7 +6,6 @@ import (
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
@@ -35,12 +34,6 @@ func Init() error {
 		}
 		logs.InfoLogger.Println("pref.go created")
 	}
-
-	cronInitErr := cron.Init()
-	if cronInitErr != nil {
-		return cronInitErr
-	}
-	logs.InfoLogger.Println("cron initialised")
 
 	return nil
 }
