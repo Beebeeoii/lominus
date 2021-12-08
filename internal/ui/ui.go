@@ -17,6 +17,7 @@ import (
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/pref"
 	"github.com/getlantern/systray"
@@ -50,6 +51,13 @@ func Init() error {
 	}
 	mainApp = app.NewWithID(lominus.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
+
+	go func() {
+		for {
+			notification := <-notifications.NotificationChannel
+			mainApp.SendNotification(fyne.NewNotification(notification.Title, notification.Content))
+		}
+	}()
 
 	w = mainApp.NewWindow(lominus.APP_NAME)
 	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
