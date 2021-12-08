@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -142,18 +143,27 @@ func createJob(frequency int) (*gocron.Job, error) {
 				return
 			}
 
+			filesToUpdate := 0
+			filesUpdated := 0
 			for _, file := range updatedFiles {
 				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
+					filesToUpdate += 1
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
-						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to download files"}
+						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
 						logs.ErrorLogger.Println(downloadErr)
 						continue
 					}
+					filesUpdated += 1
 				}
 			}
 
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Your files are up to date"}
+			filesUpdatedNotificationContent := "Your files are up to date"
+			if filesToUpdate > 0 {
+				filesUpdatedNotificationContent = fmt.Sprintf("%d/%d files updated", filesToUpdate, filesToUpdate)
+			}
+
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: filesUpdatedNotificationContent}
 			logs.InfoLogger.Printf("job completed: %s\n", time.Now().Format(time.RFC3339))
 		}
 	})
