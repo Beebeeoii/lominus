@@ -44,9 +44,11 @@ To be implemented:
 
 Standalone programs for Windows, macOS and Linux are available. Download the program from [releases](https://github.com/beebeeoii/lominus/releases).
 
+**Note**: As the executables are unsigned, antivirus softwares may flag it as a malware/virus falsely.
+
 ### Windows <a name="getting-started-installation-windows">
 
-Windows Defender might prompt that `lominus.exe` is a malware/virus (especially if you downloaded it using Microsoft Edge). Please try to use another browser. If the issue persists, please create an [issue](https://github.com/beebeeoii/lominus/issues).
+If you are using Windows Defender, it may prompt that `lominus.exe` is a malware/virus. You may need to make an exception for it.
 
 This occurs because the app is unsigned. Signing it requires a valid certificate which is payable.
 
@@ -66,7 +68,7 @@ Linux is probably the best operating system here... You can probably get it runn
 
 ## Building <a name="getting-started-building">
 
-You may choose to clone and compile the program for your operating system manually.
+You may choose to clone and compile the program manually. **You may still need to create an exception for newly compiled program from your antivirus software unless you sign it with a certificate.**
 
 ### Prerequisites <a name="getting-started-building-prerequisites">
 
