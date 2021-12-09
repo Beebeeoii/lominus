@@ -128,3 +128,7 @@ Lominus is far from perfect. All contributions, regardless large or small, are h
 1. I am unable to verify my Luminus login credentials.
 
     - Please ensure that you have trusted the Certificate used by Luminus, **especially on macOS**.
+
+2. Windows Defender detected `lominus.exe` as a malware/virus.
+
+    - We have only encountered this issue when downloading with Microsoft Edge. We are certain that this is an error on Microsoft's end and have submitted a report. Please try to download with other browsers such as Chrome or Firefox.
