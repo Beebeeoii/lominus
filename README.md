@@ -2,6 +2,8 @@
 
 Lominus is a tool written in Go to automatically sync [Luminus](https://luminus.nus.edu.sg) files onto your local storage for easy access at a fixed interval of your choice. It is designed to run on Windows, macOS and Linux operating systems.
 
+**No credentials, files, or any other form of information is uploaded to any servers. Everything is locally stored on your computer. Credentials are only used to authenticate with [Luminus](https://luminus.nus.edu.sg).**
+
 # Features
 
 Lominus removes the hassle to download (or redownload) whenever files are uploaded (or updated), resulting in necessary manual cleanup and organisation of the files. And many more!
@@ -23,6 +25,22 @@ To be implemented:
 ## Installation
 
 Standalone programs for Windows, macOS and Linux are available. Download the program from [releases](https://github.com/beebeeoii/lominus/releases).
+
+### Windows
+
+Windows Defender might prompt that `lominus.exe` is a malware/virus (especially if you downloaded it using Microsoft Edge). Please try to use another browser. If the issue persists, please create an [issue](https://github.com/beebeeoii/lominus/issues).
+
+This occurs because the app is unsigned. Signing it requires a valid certificate which is payable.
+
+### macOS
+
+You may receive the prompt
+
+> “Lominus” is damaged and can’t be opened. You should eject the disk image.
+
+Execute `xattr -cr [filepath]` where `[filepath]` is the path to the `.dmg` file that you downloaded.
+
+This happens because the app is unsigned. Signing it requires a valid certificate which requires a valid Apple Developer Membership.
 
 ## Building
 
