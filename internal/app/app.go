@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
@@ -36,4 +37,8 @@ func Init() error {
 	}
 
 	return nil
+}
+
+func GetOs() string {
+	return runtime.GOOS
 }

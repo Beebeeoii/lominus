@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	appApp "github.com/beebeeoii/lominus/internal/app"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -16,20 +17,13 @@ import (
 	"github.com/go-co-op/gocron"
 )
 
-type JobInfo struct {
-	Message string
-	Error   error
-}
-
 var mainScheduler *gocron.Scheduler
 var mainJob *gocron.Job
 var LastRanChannel chan string
-var JobStatus chan JobInfo
 
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 	LastRanChannel = make(chan string)
-	JobStatus = make(chan JobInfo)
 
 	preferences, loadPrefErr := pref.LoadPreferences(appPref.GetPreferencesPath())
 	if loadPrefErr != nil {
@@ -81,7 +75,9 @@ func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Syncing in progress"}
 		logs.InfoLogger.Printf("job started: %s\n", time.Now().Format(time.RFC3339))
-		LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
+		if appApp.GetOs() == "windows" {
+			LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
+		}
 
 		preferences, prefErr := pref.LoadPreferences(appPref.GetPreferencesPath())
 		if prefErr != nil {

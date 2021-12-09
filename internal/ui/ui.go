@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
+	appApp "github.com/beebeeoii/lominus/internal/app"
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/cron"
@@ -87,6 +88,7 @@ func Init() error {
 	w.SetMaster()
 	w.SetCloseIntercept(func() {
 		w.Hide()
+		notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Lominus is still running in the background to keep your files synced"}
 	})
 	mainApp.Lifecycle().SetOnEnteredForeground(func() {
 		w.Show()
@@ -265,15 +267,11 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 
 func getQuitButton() *widget.Button {
 	return widget.NewButton("Quit Lominus", func() {
-		if getOs() == "windows" {
+		if appApp.GetOs() == "windows" {
 			logs.InfoLogger.Println("systray quit")
 			systray.Quit()
 		}
 		logs.InfoLogger.Println("lominus quit")
 		mainApp.Quit()
 	})
-}
-
-func getOs() string {
-	return runtime.GOOS
 }
