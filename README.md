@@ -10,7 +10,7 @@ Lominus removes the hassle to download (or redownload) whenever files are upload
 - Automatic download of all files from Luminus Files for all modules
 - Automatic update of files when files are reuploaded on Luminus
 - System notification sync status
-- Dark/Light mode (based on your system's theme)
+- Dark/light mode (based on your system's theme)
 - System tray icon (Windows only)
 
 To be implemented:
@@ -32,7 +32,13 @@ You may choose to clone and compile the program for your operating system manual
 
 1. [Go](https://go.dev/dl/)
 
-2. gcc
+2. `gcc`
+
+3. `gtk3` and `libappindicator3` (Linux)
+
+    - For Debian and Ubuntu, you may install these via `sudo apt-get install gcc libgtk-3-dev libappindicator3-dev`
+
+    - If you are on Linux Mint, you will require `libxapp-dev` as well.
 
 ### Build
 
@@ -53,6 +59,57 @@ You may choose to clone and compile the program for your operating system manual
 ## API
 
 Lominus can also be used as an API. Please visit documentations (coming soon) for more details.
+
+### Retrieving your modules
+
+```go
+package main
+
+import (
+    "log"
+
+    "github.com/beebeeoii/lominus/pkg/api"
+    "github.com/beebeeoii/lominus/pkg/auth"
+)
+
+func main() {
+    credentials := auth.Credentials{
+        Username: "nusstu\\e0123456",
+        Password: "p455w0rd",
+    }
+
+    _, err := auth.RetrieveJwtToken(credentials, true)
+    if err != nil {
+        log.Fatalln(err)
+    }
+
+    moduleRequest, modReqErr := api.BuildModuleRequest()
+    if modReqErr != nil {
+        log.Fatalln(modReqErr)
+    }
+
+    modules, modErr := moduleRequest.GetModules()
+    if modErr != nil {
+        log.Fatalln(modErr)
+    }
+
+    for _, module := range modules {
+        log.Println(module.ModuleCode, module.Name)
+    }
+}
+```
+
+### Sample output
+
+``` terminal
+2021/12/09 12:51:49 CP1002 School of Computing Placement Test: Programming Methodology
+2021/12/09 12:51:49 CS2100 Computer Organisation
+2021/12/09 12:51:49 IDRES2021 Advancing Interdisciplinary Education in Singapore
+2021/12/09 12:51:49 IS1103 Ethics in Computing
+2021/12/09 12:51:49 MA2001 Linear Algebra I
+2021/12/09 12:51:49 MA2002 Calculus
+2021/12/09 12:51:49 SOCT101 SoC Teaching Workshop
+```
 
 # Screenshots
 
