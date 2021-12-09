@@ -2,7 +2,7 @@
 
 Lominus is a tool written in Go to automatically sync [Luminus](https://luminus.nus.edu.sg) files onto your local storage for easy access at a fixed interval of your choice. It is designed to run on Windows, macOS and Linux operating systems.
 
-**No credentials, files, or any other form of information is uploaded to any servers. Everything is locally stored on your computer. Credentials are only used to authenticate with [Luminus](https://luminus.nus.edu.sg).**
+**No credentials, files, or any other form of information is uploaded to any servers. Everything is stored locally on your system. Credentials are only used to authenticate with [Luminus](https://luminus.nus.edu.sg).**
 
 # Features
 
@@ -41,6 +41,10 @@ You may receive the prompt
 Execute `xattr -cr [filepath]` where `[filepath]` is the path to the `.dmg` file that you downloaded.
 
 This happens because the app is unsigned. Signing it requires a valid certificate which requires a valid Apple Developer Membership.
+
+### Linux
+
+Linux is probably the best operating system here... You can probably get it running as a Linux user ;)
 
 ## Building
 
