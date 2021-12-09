@@ -1,6 +1,6 @@
 # About
 
-Lominus is a tool written in Go to automatically sync Luminus files onto your local storage for easy access at a fixed interval of your choice. It is designed to run on Windows, macOS and Linux operating systems.
+Lominus is a tool written in Go to automatically sync [Luminus](https://luminus.nus.edu.sg) files onto your local storage for easy access at a fixed interval of your choice. It is designed to run on Windows, macOS and Linux operating systems.
 
 # Features
 
