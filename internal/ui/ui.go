@@ -129,7 +129,7 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	}
 
 	saveButton := widget.NewButton(saveButtonText, func() {
-		credentials := appAuth.Credentials{Username: usernameEntry.Text, Password: passwordEntry.Text}
+		credentials := auth.Credentials{Username: usernameEntry.Text, Password: passwordEntry.Text}
 
 		status := widget.NewLabel("Please wait while we verify your credentials...")
 		progressBar := widget.NewProgressBarInfinite()

@@ -7,11 +7,6 @@ import (
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
-type Credentials struct {
-	Username string
-	Password string
-}
-
 func GetJwtPath() string {
 	return filepath.Join(appDir.GetBaseDir(), lominus.JWT_DATA_FILE_NAME)
 }

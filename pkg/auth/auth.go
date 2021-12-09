@@ -24,9 +24,12 @@ type JwtData struct {
 	Expiry   int64
 }
 
-const CREDENTIALS_FILE_NAME = lominus.CREDENTIALS_FILE_NAME
+type Credentials struct {
+	Username string
+	Password string
+}
 
-var Creferences = appAuth.Credentials{}
+const CREDENTIALS_FILE_NAME = lominus.CREDENTIALS_FILE_NAME
 
 const CODE_URL = "https://vafs.nus.edu.sg/adfs/oauth2/authorize?response_type=code&client_id=E10493A3B1024F14BDC7D0D8B9F649E9-234390&state=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8&redirect_uri=https://luminus.nus.edu.sg/auth/callback&scope=&resource=sg_edu_nus_oauth&nonce=V6E9kYSq3DDQ72fSZZYFzLNKFT9dz38vpoR93IL8"
 
@@ -43,7 +46,7 @@ const AUTH_METHOD = "FormsAuthentication"
 
 const EXPIRY_HOURS = 1
 
-func RetrieveJwtToken(credentials appAuth.Credentials, save bool) (string, error) {
+func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	var jwtToken string
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -135,12 +138,12 @@ func LoadJwtData(jwtPath string) (JwtData, error) {
 	return jwtData, err
 }
 
-func SaveCredentials(credentialsPath string, credentials appAuth.Credentials) error {
+func SaveCredentials(credentialsPath string, credentials Credentials) error {
 	return file.EncodeStructToFile(credentialsPath, credentials)
 }
 
-func LoadCredentials(credentialsPath string) (appAuth.Credentials, error) {
-	credentials := appAuth.Credentials{}
+func LoadCredentials(credentialsPath string) (Credentials, error) {
+	credentials := Credentials{}
 	if !file.Exists(credentialsPath) {
 		return credentials, &file.FileNotFoundError{FileName: credentialsPath}
 	}
