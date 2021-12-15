@@ -30,9 +30,12 @@ func SendMessage(botApi string, userId string, message string) error {
 		},
 	}
 
+	message = cleanseMessage(message)
+
 	reqBody := url.Values{}
 	reqBody.Set("chat_id", userId)
 	reqBody.Set("text", message)
+	reqBody.Set("parse_mode", "MarkdownV2")
 	sendMsgReq, sendMsgErr := http.NewRequest(POST, fmt.Sprintf(SEND_MSG_URL, botApi), strings.NewReader(reqBody.Encode()))
 
 	if sendMsgErr != nil {
@@ -56,6 +59,33 @@ func SendMessage(botApi string, userId string, message string) error {
 	}
 
 	return nil
+}
+
+func GenerateGradeMessageFormat(moduleName string, testName string, comments string, marks float64, maxMarks float64) string {
+	return fmt.Sprintf("🆕 Grades 🆕\n%s: %s\n\nComments: %s\n\nGrade: %f/%f", moduleName, testName, comments, marks, maxMarks)
+}
+
+func cleanseMessage(message string) string {
+	message = strings.Replace(message, ".", "\\.", -1)
+	message = strings.Replace(message, "-", "\\-", -1)
+	message = strings.Replace(message, "_", "\\_", -1)
+	message = strings.Replace(message, "!", "\\!", -1)
+	message = strings.Replace(message, "(", "\\(", -1)
+	message = strings.Replace(message, ")", "\\)", -1)
+	message = strings.Replace(message, "[", "\\[", -1)
+	message = strings.Replace(message, "]", "\\]", -1)
+	message = strings.Replace(message, "{", "\\{", -1)
+	message = strings.Replace(message, "}", "\\}", -1)
+	message = strings.Replace(message, "=", "\\=", -1)
+	message = strings.Replace(message, "*", "\\*", -1)
+	message = strings.Replace(message, "~", "\\~", -1)
+	message = strings.Replace(message, "`", "\\`", -1)
+	message = strings.Replace(message, ">", "\\>", -1)
+	message = strings.Replace(message, "#", "\\#", -1)
+	message = strings.Replace(message, "+", "\\+", -1)
+	message = strings.Replace(message, "|", "\\|", -1)
+
+	return message
 }
 
 func SaveTelegramData(telegramDataPath string, telegramInfo TelegramInfo) error {
