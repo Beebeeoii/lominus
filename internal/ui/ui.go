@@ -288,7 +288,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
 		mainDialog.Show()
 
-		err := telegram.SendMessage(botApi, userId, "👋 Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!")
+		err := telegram.SendMessage(botApi, userId, "Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!\n\nBy integrating Telegram with Lominus, you will be notified of the following whenever Lominus polls for new update based on the intervals set:\n💥 new grades releases\n💥 new announcements (TBC)")
 		mainDialog.Hide()
 		if err != nil {
 			errMessage := fmt.Sprintf("%s: %s", err.Error()[:13], err.Error()[strings.Index(err.Error(), "description")+14:len(err.Error())-2])
