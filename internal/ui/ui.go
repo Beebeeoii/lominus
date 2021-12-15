@@ -64,7 +64,6 @@ func Init() error {
 	}()
 
 	w = mainApp.NewWindow(lominus.APP_NAME)
-	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(w)
 	if credentialsUiErr != nil {
@@ -83,7 +82,6 @@ func Init() error {
 
 	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab, integrationsTab)
 	content := container.NewVBox(
-		header,
 		tabsContainer,
 		layout.NewSpacer(),
 		getSyncButton(w),
@@ -253,7 +251,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	tab := container.NewTabItem("Integrations", container.NewVBox())
 
 	label := widget.NewLabelWithStyle("Telegram", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
-	subLabel := widget.NewRichTextFromMarkdown("Lominus can be linked to your Telegram Bot to notify you when new grades are released.")
+	subLabel := widget.NewRichTextFromMarkdown("Lominus can be linked to your Telegram bot to notify you when new grades are released.")
 	subLabel.Wrapping = fyne.TextWrapBreak
 
 	botApiEntry := widget.NewEntry()
@@ -290,7 +288,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
 		mainDialog.Show()
 
-		err := telegram.SendMessage(botApi, userId, "Welcome to Lominus!")
+		err := telegram.SendMessage(botApi, userId, "👋 Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!")
 		mainDialog.Hide()
 		if err != nil {
 			errMessage := fmt.Sprintf("%s: %s", err.Error()[:13], err.Error()[strings.Index(err.Error(), "description")+14:len(err.Error())-2])
