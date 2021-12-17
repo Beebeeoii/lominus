@@ -13,6 +13,7 @@
     - [API](#getting-started-api)
         - [Example: Retrieving modules](#getting-started-api-example)
         - [Example: Sample Output](#getting-started-api-example-output)
+4. [Integrations](#integrations)
 5. [Screenshots](#screenshots)
 6. [Contributing](#contributing)
 
@@ -32,11 +33,12 @@ Lominus removes the hassle to download (or redownload) whenever files are upload
 - System notification sync status
 - Dark/light mode (based on your system's theme)
 - System tray icon (Windows only)
+- Telegram integration
 
 To be implemented:
 
-- Notification when new grades are released in gradebooks
-- User-defined webhook for Telegram/Notion/custom integrations
+- Notion integration
+- Custom webhook integration
 
 # Getting Started <a name="getting-started">
 
@@ -152,6 +154,24 @@ func main() {
 2021/12/09 12:51:49 MA2002 Calculus
 2021/12/09 12:51:49 SOCT101 SoC Teaching Workshop
 ```
+
+# Integrations <a name="integrations">
+
+## Telegram
+
+As a major messenging platform, Telegram can be used to receive notifications for things such as new grades releases.
+
+### Setting up
+
+1) You need to create a bot on your own via [BotFather](https://telegram.me/BotFather). Take note of the _bot token_ sent to you by **BotFather**.
+
+2) **_Important_**: Drop the bot you have just created a message to enable it to message you.
+
+3) You will also need to figure out your _Telegram ID_. The simplest way to get your _Telegram ID_ is via [UserInfoBot](https://telegram.me/userinfobot).
+
+4) Copy and paste the _bot token_ and your _Telegram ID_ in Lominus, under the Integrations tab.
+
+5) Click save and you should receive a test message from your bot.
 
 # Screenshots <a name="screenshots">
 

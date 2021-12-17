@@ -7,11 +7,13 @@ import (
 	"time"
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
+	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
+	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 	"github.com/beebeeoii/lominus/pkg/pref"
 
 	"github.com/go-co-op/gocron"
@@ -85,21 +87,21 @@ func createJob(frequency int) (*gocron.Job, error) {
 			return
 		}
 
+		moduleRequest, modReqErr := api.BuildModuleRequest()
+		if modReqErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Authentication failed"}
+			logs.WarningLogger.Println(modReqErr)
+			return
+		}
+
+		modules, modErr := moduleRequest.GetModules()
+		if modErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve modules"}
+			logs.WarningLogger.Println(modErr)
+			return
+		}
+
 		if preferences.Directory != "" {
-			moduleRequest, modReqErr := api.BuildModuleRequest()
-			if modReqErr != nil {
-				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Authentication failed"}
-				logs.WarningLogger.Println(modReqErr)
-				return
-			}
-
-			modules, modErr := moduleRequest.GetModules()
-			if modErr != nil {
-				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve modules"}
-				logs.WarningLogger.Println(modErr)
-				return
-			}
-
 			updatedFiles := make([]api.File, 0)
 			for _, module := range modules {
 				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
@@ -161,6 +163,47 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: filesUpdatedNotificationContent}
 			logs.InfoLogger.Printf("job completed: %s\n", time.Now().Format(time.RFC3339))
+		}
+
+		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(intTelegram.GetTelegramInfoPath())
+		if telegramInfoErr != nil {
+			logs.WarningLogger.Println(telegramInfoErr)
+			return
+		}
+
+		for _, module := range modules {
+			gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
+			if gradeReqErr != nil {
+				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
+				logs.WarningLogger.Println(gradeReqErr)
+				continue
+			}
+
+			grades, gradesErr := gradeRequest.GetGrades()
+			if gradesErr != nil {
+				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
+				logs.WarningLogger.Println(gradesErr)
+				continue
+			}
+
+			for _, grade := range grades {
+				frequencyDuration, freqErr := time.ParseDuration(fmt.Sprintf("%dh", preferences.Frequency))
+				if freqErr != nil {
+					logs.ErrorLogger.Println(freqErr)
+					continue
+				}
+
+				if time.Since(time.Unix(grade.LastUpdated, 0)) > frequencyDuration {
+					continue
+				}
+
+				gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, telegram.GenerateGradeMessageFormat(module.ModuleCode, grade.Name, grade.Comments, grade.Marks, grade.MaxMarks))
+
+				if gradeMsgErr != nil {
+					logs.WarningLogger.Println(gradeMsgErr)
+					continue
+				}
+			}
 		}
 	})
 }

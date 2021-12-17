@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -13,6 +14,7 @@ import (
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/file"
@@ -20,6 +22,7 @@ import (
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/auth"
+	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 	"github.com/beebeeoii/lominus/pkg/pref"
 	"github.com/getlantern/systray"
 	fileDialog "github.com/sqweek/dialog"
@@ -61,7 +64,6 @@ func Init() error {
 	}()
 
 	w = mainApp.NewWindow(lominus.APP_NAME)
-	header := widget.NewLabelWithStyle(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION), fyne.TextAlignCenter, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(w)
 	if credentialsUiErr != nil {
@@ -73,9 +75,13 @@ func Init() error {
 		return preferencesErr
 	}
 
-	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab)
+	integrationsTab, integrationsErr := getIntegrationsTab(w)
+	if integrationsErr != nil {
+		return integrationsErr
+	}
+
+	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab, integrationsTab)
 	content := container.NewVBox(
-		header,
 		tabsContainer,
 		layout.NewSpacer(),
 		getSyncButton(w),
@@ -236,6 +242,69 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		frequencySubHeader1,
 		frequencySubHeader2,
 		frequencySelect,
+	)
+
+	return tab, nil
+}
+
+func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
+	tab := container.NewTabItem("Integrations", container.NewVBox())
+
+	label := widget.NewLabelWithStyle("Telegram", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
+	subLabel := widget.NewRichTextFromMarkdown("Lominus can be linked to your Telegram bot to notify you when new grades are released.")
+	subLabel.Wrapping = fyne.TextWrapBreak
+
+	botApiEntry := widget.NewEntry()
+	botApiEntry.SetPlaceHolder("Your bot's API token")
+	userIdEntry := widget.NewEntry()
+	userIdEntry.SetPlaceHolder("Your account's ID")
+
+	telegramInfoPath := intTelegram.GetTelegramInfoPath()
+
+	if file.Exists(telegramInfoPath) {
+		telegramInfo, err := telegram.LoadTelegramData(telegramInfoPath)
+		if err != nil {
+			return tab, err
+		}
+
+		botApiEntry.SetText(telegramInfo.BotApi)
+		userIdEntry.SetText(telegramInfo.UserId)
+	}
+
+	telegramForm := widget.NewForm(widget.NewFormItem("Bot API Token", botApiEntry), widget.NewFormItem("User ID", userIdEntry))
+
+	saveButtonText := "Save Telegram Info"
+	if botApiEntry.Text != "" && userIdEntry.Text != "" {
+		saveButtonText = "Update Telegram Info"
+	}
+
+	saveButton := widget.NewButton(saveButtonText, func() {
+		botApi := botApiEntry.Text
+		userId := userIdEntry.Text
+
+		status := widget.NewLabel("Please wait while we send you a test message...")
+		progressBar := widget.NewProgressBarInfinite()
+
+		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
+		mainDialog.Show()
+
+		err := telegram.SendMessage(botApi, userId, "Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!\n\nBy integrating Telegram with Lominus, you will be notified of the following whenever Lominus polls for new update based on the intervals set:\n💥 new grades releases\n💥 new announcements (TBC)")
+		mainDialog.Hide()
+		if err != nil {
+			errMessage := fmt.Sprintf("%s: %s", err.Error()[:13], err.Error()[strings.Index(err.Error(), "description")+14:len(err.Error())-2])
+			dialog.NewInformation(lominus.APP_NAME, errMessage, parentWindow).Show()
+		} else {
+			telegram.SaveTelegramData(telegramInfoPath, telegram.TelegramInfo{BotApi: botApi, UserId: userId})
+			dialog.NewInformation(lominus.APP_NAME, "Test message sent!\nTelegram info saved successfully.", parentWindow).Show()
+		}
+	})
+
+	tab.Content = container.NewVBox(
+		label,
+		widget.NewSeparator(),
+		subLabel,
+		telegramForm,
+		saveButton,
 	)
 
 	return tab, nil
