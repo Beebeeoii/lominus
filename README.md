@@ -163,11 +163,11 @@ As a major messenging platform, Telegram can be used to receive notifications fo
 
 ### Setting up
 
-1) You need to create a bot on your own via [BotFather]("https://telegram.me/BotFather"). Take note of the _bot token_ sent to you by **BotFather**.
+1) You need to create a bot on your own via [BotFather](https://telegram.me/BotFather). Take note of the _bot token_ sent to you by **BotFather**.
 
-2) `Important`: Drop the bot you have just created a message to enable it to message you.
+2) **_Important_**: Drop the bot you have just created a message to enable it to message you.
 
-3) You will also need to figure out your _Telegram ID_. The simplest way to get your _Telegram ID_ is via [UserInfoBot]("https://telegram.me/userinfobot").
+3) You will also need to figure out your _Telegram ID_. The simplest way to get your _Telegram ID_ is via [UserInfoBot](https://telegram.me/userinfobot).
 
 4) Copy and paste the _bot token_ and your _Telegram ID_ in Lominus, under the Integrations tab.
 
