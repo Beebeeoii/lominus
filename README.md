@@ -72,7 +72,13 @@ or
 
 This happens because the app is unsigned. Signing it requires a valid certificate which requires a valid Apple Developer Program membership.
 
-To enable exception for this app, execute `xattr -cr [filepath]` where `[filepath]` is the path to the `.dmg` file that you downloaded.
+To enable exception for this app
+
+``` bash
+xattr -cr [filepath]
+```
+
+where `[filepath]` is the path to the `.dmg` file.
 
 ### Linux <a name="getting-started-installation-linux">
 
