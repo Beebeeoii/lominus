@@ -44,33 +44,55 @@ To be implemented:
 
 ## Installation <a name="getting-started-installation">
 
-Standalone programs for Windows, macOS and Linux are available. Download the program from [releases](https://github.com/beebeeoii/lominus/releases).
+Unsigned standalone executables for Windows, macOS and Linux are available from [releases](https://github.com/beebeeoii/lominus/releases).
 
-**Note**: As the executables are unsigned, antivirus softwares may flag it as a malware/virus falsely.
+**Note**: Please read through installation introduction for the respective operating systems below.
 
 ### Windows <a name="getting-started-installation-windows">
 
-If you are using Windows Defender, it may prompt that `lominus.exe` is a malware/virus. You may need to make an exception for it.
+> Tested on Windows 10 Home Version 10.0.19044 Build 19044
 
-This occurs because the app is unsigned. Signing it requires a valid certificate which is payable.
+Your anti-virus software like Windows Defender may prompt that `lominus.exe` as a false positive. You may need to make an exception for it.
+
+This occurs because the app is unsigned amongst other reasons regarding Go executables which you may find out more [here](https://go.dev/doc/faq#virus). Signing it requires a valid certificate which is payable.
+
+If you want to be sure (which is highly recommended), compile and build the source code manually. You may find out more under [Building](#getting-started-building)
 
 ### macOS <a name="getting-started-installation-mac">
+
+> Tested on M1 MacBook Air 2020 macOS Monterey Version 12.1
 
 You may receive the prompt
 
 > “Lominus” is damaged and can’t be opened. You should eject the disk image.
 
-Execute `xattr -cr [filepath]` where `[filepath]` is the path to the `.dmg` file that you downloaded.
+or
 
-This happens because the app is unsigned. Signing it requires a valid certificate which requires a valid Apple Developer Membership.
+> The app is from an unidentified developer.
+
+This happens because the app is unsigned. Signing it requires a valid certificate which requires a valid Apple Developer Program membership.
+
+To enable exception for this app, execute `xattr -cr [filepath]` where `[filepath]` is the path to the `.dmg` file that you downloaded.
 
 ### Linux <a name="getting-started-installation-linux">
 
-Linux is probably the best operating system here... You can probably get it running as a Linux user ;)
+> Tested on Ubuntu Focal 20.04.2 LTS
+
+Download and extract the tarball
+
+``` bash
+tar -xf [filename].tar.xz
+```
+
+Install the application
+
+``` bash
+sudo make install
+```
 
 ## Building <a name="getting-started-building">
 
-You may choose to clone and compile the program manually. **You may still need to create an exception for newly compiled program from your antivirus software unless you sign it with a certificate.**
+You are highly recommended to compile and the program manually.
 
 ### Prerequisites <a name="getting-started-building-prerequisites">
 
@@ -189,8 +211,4 @@ Lominus is far from perfect. All contributions, regardless large or small, are h
 
 1. I am unable to verify my Luminus login credentials.
 
-    - Please ensure that you have trusted the Certificate used by Luminus, **especially on macOS**.
-
-2. Windows Defender detected `lominus.exe` as a malware/virus.
-
-    - We have only encountered this issue when downloading with Microsoft Edge. We are certain that this is an error on Microsoft's end and have submitted a report. Please try to download with other browsers such as Chrome or Firefox.
+    - Please ensure that you have trusted the SSL Certificate used by Luminus, **especially on Unix systems**.
