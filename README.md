@@ -203,6 +203,8 @@ As a major messenging platform, Telegram can be used to receive notifications fo
 
 # Screenshots <a name="screenshots">
 
+Click [here](./screenshots/SCREENSHOTS.md) for more screenshots
+
 Login Info             |  Preferences
 :-------------------------:|:-------------------------:
 ![image](./screenshots/ubuntu-1.png)  |  ![image](./screenshots/ubuntu-2.png)
