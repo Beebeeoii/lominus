@@ -1,45 +1,62 @@
 # Screenshots
 
-## Windows
+1. [Windows](#win)
+2. [macOS](#mac)
+3. [Ubuntu](#ubuntu)
+4. [Telegram](#telegram)
 
-![image](./win-1.png)
-*Login Info*
+## Windows <a name="win">
 
-![image](./win-2.png)
-*Preferences*
+|![win-1.png](./win-1.png)|
+|:--:|
+|*Login Info*|
 
-![image](./win-3.png)
-*Integrations*
+|![win-2.png](./win-2.png)|
+|:--:|
+|*Preferences*|
 
-![image](./win-4.png)
-*System Tray*
+|![win-3.png](./win-3.png)|
+|:--:|
+|*Integrations*|
 
-## macOS
+|![win-4.png](./win-4.png)|
+|:--:|
+|*System Tray*|
 
-![image](./mac-1.png)
-*Login Info*
+## macOS <a name="mac">
 
-![image](./mac-2.png)
-*Preferences*
+|![mac-1.png](./mac-1.png)|
+|:--:|
+|*Login Info*|
 
-![image](./mac-3.png)
-*Integrations*
+|![mac-2.png](./mac-2.png)|
+|:--:|
+|*Preferences*|
 
-## Ubuntu GNOME
+|![mac-3.png](./mac-3.png)|
+|:--:|
+|*Integrations*|
 
-![image](./ubuntu-1.png)
-*Login Info*
+## Ubuntu <a name="ubuntu">
 
-![image](./ubuntu-2.png)
-*Preferences*
+|![ubuntu-1.png](./ubuntu-1.png)|
+|:--:|
+|*Login Info*|
 
-![image](./ubuntu-3.png)
-*Integrations*
+|![ubuntu-2.png](./ubuntu-2.png)|
+|:--:|
+|*Preferences*|
 
-## Telegram
+|![ubuntu-3.png](./ubuntu-3.png)|
+|:--:|
+|*Integrations*|
 
-![image](./telegram-1.png)
-*Integration test message*
+## Telegram <a name="telegram">
 
-![image](./telegram-2.png)
-*Sample grade notification message*
+|![telegram-1.png](./telegram-1.png)|
+|:--:|
+|*Integration test message*|
+
+|![telegram-2.png](./telegram-2.png)|
+|:--:|
+|*Sample grade notification message*|
