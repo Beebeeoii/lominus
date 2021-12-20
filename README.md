@@ -30,10 +30,12 @@ Lominus removes the hassle to download (or redownload) whenever files are upload
 - Keeps your Luminus files organised
 - Automatic download of all files from Luminus Files for all modules
 - Automatic update of files when files are reuploaded on Luminus
+- Grades notification
 - System notification sync status
 - Dark/light mode (based on your system's theme)
 - System tray icon (Windows only)
 - Telegram integration
+- API
 
 To be implemented:
 
