@@ -254,7 +254,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	subLabel := widget.NewRichTextFromMarkdown("Lominus can be linked to your Telegram bot to notify you when new grades are released.")
 	subLabel.Wrapping = fyne.TextWrapBreak
 
-	botApiEntry := widget.NewEntry()
+	botApiEntry := widget.NewPasswordEntry()
 	botApiEntry.SetPlaceHolder("Your bot's API token")
 	userIdEntry := widget.NewEntry()
 	userIdEntry.SetPlaceHolder("Your account's ID")
