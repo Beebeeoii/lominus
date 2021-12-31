@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -56,40 +57,38 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 	return folder, nil
 }
 
+// Deprecated - build DocumentRequest with a Folder instead of a module instead, and call getRootFiles() directly
 func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	files := []File{}
 	if req.Mode != GET_ALL_FILES {
 		return files, errors.New("mode mismatched: ensure DocumentRequest mode is GET_ALL_FILES (1)")
 	}
 
-	req.Mode = 0
-	folders, err := req.GetAllFolders()
+	rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(Folder{
+		Id:           req.Module.Id,
+		Name:         req.Module.ModuleCode,
+		Downloadable: true,
+		Ancestors:    []string{strings.TrimSpace(req.Module.ModuleCode)},
+		HasSubFolder: true,
+	}, GET_FILES)
+	if rootFilesBuildErr != nil {
+		return files, rootFilesBuildErr
+	}
+
+	baseFiles, err := rootFilesReq.getRootFiles()
+	log.Println(baseFiles)
 	if err != nil {
 		return files, err
 	}
+	files = append(files, baseFiles...)
 
-	for _, folder := range folders {
-		folder.Ancestors = append(folder.Ancestors, strings.TrimSpace(folder.Name))
-
-		rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(folder, get_files)
-		if rootFilesBuildErr != nil {
-			return files, rootFilesBuildErr
-		}
-
-		subFiles, err := rootFilesReq.getRootFiles()
-		if err != nil {
-			return files, err
-		}
-
-		files = append(files, subFiles...)
-	}
 	return files, nil
 }
 
 func (req DocumentRequest) getRootFiles() ([]File, error) {
 	files := []File{}
-	if req.Mode != get_files {
-		return files, errors.New("mode mismatched: ensure DocumentRequest mode is get_files (3)")
+	if req.Mode != GET_FILES {
+		return files, errors.New("mode mismatched: ensure DocumentRequest mode is GET_FILES (3)")
 	}
 
 	if !req.Folder.Downloadable {
@@ -110,7 +109,7 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 		for _, subFolder := range subFolders {
 			subFolder.Ancestors = append(subFolder.Ancestors, req.Folder.Ancestors...)
 			subFolder.Ancestors = append(subFolder.Ancestors, strings.TrimSpace(subFolder.Name))
-			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, get_files)
+			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, GET_FILES)
 			if rootFilesBuildErr != nil {
 				return files, rootFilesBuildErr
 			}

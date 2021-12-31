@@ -35,7 +35,7 @@ const (
 	GET_FOLDERS   = 0
 	GET_ALL_FILES = 1
 	DOWNLOAD_FILE = 2
-	get_files     = 3
+	GET_FILES     = 3
 )
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
@@ -99,7 +99,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 			return DocumentRequest{}, errors.New("invalid arguments: DocumentRequest must be built using File to download")
 		}
 		urlEndpoint = DOWNLOAD_URL_ENDPOINT
-	case get_files:
+	case GET_FILES:
 		urlEndpoint = FILE_URL_ENDPOINT
 	default:
 		return DocumentRequest{}, errors.New("invalid arguments: mode provided is not a valid mode")
