@@ -1,3 +1,4 @@
+// Package intTelegram provides path retrievers for Lominus Telegram integration files.
 package intTelegram
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
+// GetTelegramInfoPath returns the file path to user's telegram config file.
 func GetTelegramInfoPath() string {
 	return filepath.Join(appDir.GetBaseDir(), lominus.TELEGRAM_FILE_NAME)
 }

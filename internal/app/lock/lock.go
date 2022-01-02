@@ -1,3 +1,4 @@
+// Package appLock provides path retrievers for Lominus lock file.
 package appLock
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
+// GetLockPath returns the file path to Lominus lock file.
 func GetLockPath() string {
 	return filepath.Join(appDir.GetBaseDir(), lominus.LOCK_FILE_NAME)
 }
