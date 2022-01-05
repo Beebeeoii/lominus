@@ -1,3 +1,4 @@
+// Package file provides primitives to file indexing for sync operations.
 package indexing
 
 import (
@@ -13,10 +14,14 @@ import (
 	"github.com/beebeeoii/lominus/pkg/api"
 )
 
+// IndexMap struct contains an array of IndexMapEntry.
+// It is used to create a .csv IndexMap file for file comparison during syncs.
 type IndexMap struct {
 	Entries []IndexMapEntry
 }
 
+// IndexMapEntry struct contains the file Id, name and last updated (unix).
+// These are the data used for file comparison during syncs.
 type IndexMapEntry struct {
 	Id          string
 	FileName    string
@@ -25,6 +30,9 @@ type IndexMapEntry struct {
 
 const INDEX_MAP_FILE_NAME = "index_map.csv"
 
+// Build is used to create a map of the current files on the local desktop.
+// The built map will be used to compare with the IndexMap to determine whether a file
+// needs to be downloaded or updated.
 func Build(dir string) (map[string]api.File, error) {
 	filesMap := make(map[string]api.File)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -49,6 +57,7 @@ func Build(dir string) (map[string]api.File, error) {
 	return filesMap, err
 }
 
+// CreateIndexMap writes the IndexMap to a csv file for which can be loaded for the next sync.
 func CreateIndexMap(indexMap IndexMap) error {
 	logs.InfoLogger.Printf("Creating index map: %s\n", INDEX_MAP_FILE_NAME)
 	indexMapFile, _ := os.Create(getIndexMapPath())
@@ -66,6 +75,7 @@ func CreateIndexMap(indexMap IndexMap) error {
 	return nil
 }
 
+// LoadIndexMap loads the IndexMap csv file back to a map of IndexMapEntry, with the key being the file Id.
 func LoadIndexMap(file io.Reader) (map[string]IndexMapEntry, error) {
 	logs.InfoLogger.Printf("Loading index map: %s\n", INDEX_MAP_FILE_NAME)
 	r := csv.NewReader(file)
@@ -88,6 +98,7 @@ func LoadIndexMap(file io.Reader) (map[string]IndexMapEntry, error) {
 	return indexMap, nil
 }
 
+// getIndexMapPath returns the file path to the IndexMap csv file.
 func getIndexMapPath() string {
 	return filepath.Join(appDir.GetBaseDir(), INDEX_MAP_FILE_NAME)
 }

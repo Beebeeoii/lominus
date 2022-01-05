@@ -1,3 +1,4 @@
+// Package api provides functions that link up and communicate with Luminus servers.
 package api
 
 // Module struct is the datapack for containing details about every module
@@ -12,6 +13,8 @@ type Module struct {
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
 
+// GetModules retrieves all modules that are taken by the user using a ModuleRequest.
+// Find out more about ModuleRequests under request.go.
 func (req ModuleRequest) GetModules() ([]Module, error) {
 	var modules []Module
 

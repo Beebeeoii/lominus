@@ -1,3 +1,4 @@
+// Package api provides functions that link up and communicate with Luminus servers.
 package api
 
 import (
@@ -8,12 +9,14 @@ import (
 	"github.com/beebeeoii/lominus/pkg/auth"
 )
 
+// Request struct is the datapack for containing details about a HTTP request.
 type Request struct {
 	Url       string
 	JwtToken  string
 	UserAgent string
 }
 
+// DocumentRequest struct is the datapack for containing details about a specific HTTP request used for documents (Luminus Files).
 type DocumentRequest struct {
 	File    File
 	Folder  Folder
@@ -22,11 +25,13 @@ type DocumentRequest struct {
 	Mode    int
 }
 
+// GradeRequest struct is the datapack for containing details about a specific HTTP request used for grades (Luminus Gradebook).
 type GradeRequest struct {
 	Module  Module
 	Request Request
 }
 
+// ModuleRequest struct is the datapack for containing details about a specific HTTP request used for modules being taken.
 type ModuleRequest struct {
 	Request Request
 }
@@ -40,6 +45,8 @@ const (
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
 
+// BuildModuleRequest builds and returns a ModuleRequest that can be used for Module related operations
+// such as retrieving all modules.
 func BuildModuleRequest() (ModuleRequest, error) {
 	jwtToken, jwtTokenErr := retrieveJwtToken()
 	if jwtTokenErr != nil {
@@ -55,6 +62,9 @@ func BuildModuleRequest() (ModuleRequest, error) {
 	}, nil
 }
 
+// BuildGradeRequest builds and returns a GradeRequest that can be used for Grade related operations
+// such as retrieving grades of a module.
+// A Module is required to build a GradeRequest as it is module specific.
 func BuildGradeRequest(module Module) (GradeRequest, error) {
 	jwtToken, jwtTokenErr := retrieveJwtToken()
 	if jwtTokenErr != nil {
@@ -71,7 +81,9 @@ func BuildGradeRequest(module Module) (GradeRequest, error) {
 	}, nil
 }
 
-// DocumentRequests must be built using Module or Folder only.
+// BuildDocumentRequest builds and returns a DocumentRequest that can be used for File/Folder related operations
+// such as retrieving files/folders of a module.
+// DocumentRequests must be built using Module/Folder/File only.
 // Building it with Folder enables you to specify the specific folder you are interested in.
 // Building it with Module taks you to the root folder of the module files.
 // Building it with File enables you to download the file.
@@ -141,6 +153,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 	}
 }
 
+// retrieveJwtToken is a util function that loads user's JWT data to be used to communicate with Luminus servers.
 func retrieveJwtToken() (string, error) {
 	jwtData, jwtErr := auth.LoadJwtData(appAuth.GetJwtPath())
 	if jwtErr != nil {

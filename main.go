@@ -1,3 +1,4 @@
+// Package main is where Lominus starts from.
 package main
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/juju/fslock"
 )
 
+// Main is the starting point of where magic begins.
 func main() {
 	appInitErr := app.Init()
 	if appInitErr != nil {

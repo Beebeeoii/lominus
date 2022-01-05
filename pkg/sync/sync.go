@@ -1,3 +1,4 @@
+// Package sync is deprecated (please do not use)
 package sync
 
 import (

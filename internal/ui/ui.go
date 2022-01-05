@@ -1,3 +1,4 @@
+// Package ui provides primitives that initialises the UI.
 package ui
 
 import (
@@ -49,6 +50,7 @@ var frequencyMap = map[int]string{
 var mainApp fyne.App
 var w fyne.Window
 
+// Init builds and initialises the UI.
 func Init() error {
 	if runtime.GOOS == "windows" {
 		systray.Register(onReady, onExit)
@@ -103,6 +105,7 @@ func Init() error {
 	return nil
 }
 
+// getCredentialsTab builds the credentials tab in the main UI.
 func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	tab := container.NewTabItem("Login Info", container.NewVBox())
 
@@ -164,6 +167,7 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	return tab, nil
 }
 
+// getPreferencesTab builds the preferences tab in the main UI.
 func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	tab := container.NewTabItem("Preferences", container.NewVBox())
 
@@ -247,6 +251,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	return tab, nil
 }
 
+// getIntegrationsTab builds the integrations tab in the main UI.
 func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	tab := container.NewTabItem("Integrations", container.NewVBox())
 
@@ -310,6 +315,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	return tab, nil
 }
 
+// getPreferences is a util function that retrieves the user's preferences.
 func getPreferences() appPref.Preferences {
 	preference, err := pref.LoadPreferences(appPref.GetPreferencesPath())
 	if err != nil {
@@ -319,6 +325,7 @@ func getPreferences() appPref.Preferences {
 	return preference
 }
 
+// getSyncButton builds the sync button in the main UI.
 func getSyncButton(parentWindow fyne.Window) *widget.Button {
 	return widget.NewButton("Sync Now", func() {
 		preferences := getPreferences()
@@ -334,6 +341,7 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 	})
 }
 
+// getQuitButton builds the quit button in the main UI.
 func getQuitButton() *widget.Button {
 	return widget.NewButton("Quit Lominus", func() {
 		if appApp.GetOs() == "windows" {

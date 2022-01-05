@@ -1,3 +1,4 @@
+// Package telegram provides functions that facilitates the integration with Telegram.
 package telegram
 
 import (
@@ -10,11 +11,13 @@ import (
 	"github.com/beebeeoii/lominus/internal/file"
 )
 
+// TelegramInfo struct is the datapack that holds the data required for Telegram integration.
 type TelegramInfo struct {
 	BotApi string
 	UserId string
 }
 
+// TelegramError struct contains the TelegramError which will be thrown when an error is returned by Telegram servers.
 type TelegramError struct {
 	Description string
 }
@@ -23,6 +26,7 @@ const SEND_MSG_URL = "https://api.telegram.org/bot%s/sendMessage"
 const CONTENT_TYPE = "application/x-www-form-urlencoded"
 const POST = "POST"
 
+// SendMessage is a wrapper function that sends a message to the user using the Bot (specified by the botApi) created by the user.
 func SendMessage(botApi string, userId string, message string) error {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -61,10 +65,12 @@ func SendMessage(botApi string, userId string, message string) error {
 	return nil
 }
 
+// GenerateGradeMessageFormat creates a message text for grade notifications.
 func GenerateGradeMessageFormat(moduleName string, testName string, comments string, marks float64, maxMarks float64) string {
 	return fmt.Sprintf("🆕 Grades 🆕\n%s: %s\n\nComments: %s\n\nGrade: %f/%f", moduleName, testName, comments, marks, maxMarks)
 }
 
+// cleanseMessage escapes restricted chracters in messages that would cause Telegram servers to return an error.
 func cleanseMessage(message string) string {
 	message = strings.Replace(message, ".", "\\.", -1)
 	message = strings.Replace(message, "-", "\\-", -1)
@@ -88,10 +94,12 @@ func cleanseMessage(message string) string {
 	return message
 }
 
+// SaveTelegramData saves the user's Telegram data onto local storage.
 func SaveTelegramData(telegramDataPath string, telegramInfo TelegramInfo) error {
 	return file.EncodeStructToFile(telegramDataPath, telegramInfo)
 }
 
+// LoadTelegramData loads the user's Telegram data from local storage.
 func LoadTelegramData(telegramDataPath string) (TelegramInfo, error) {
 	telegramInfo := TelegramInfo{}
 	if !file.Exists(telegramDataPath) {
@@ -102,6 +110,7 @@ func LoadTelegramData(telegramDataPath string) (TelegramInfo, error) {
 	return telegramInfo, err
 }
 
+// TelegramError error will be thrown when an error is returned by Telegram servers.
 func (e *TelegramError) Error() string {
 	return fmt.Sprintf("TelegramError: %s", e.Description)
 }
