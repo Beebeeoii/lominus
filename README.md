@@ -1,3 +1,6 @@
+![GitHub Lominus version](https://img.shields.io/badge/Lominus-v1.1.3-blueviolet)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus)
+[![Go Reference](https://pkg.go.dev/badge/github.com/beebeeoii/lominus.svg)](https://pkg.go.dev/github.com/beebeeoii/lominus)
 # Table of Contents
 
 1. [About](#about)
