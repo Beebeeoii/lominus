@@ -1,3 +1,4 @@
+// Package api provides functions that link up and communicate with Luminus servers.
 package api
 
 import (
@@ -6,7 +7,7 @@ import (
 	"net/http"
 )
 
-// raw struct is the datapack for containing api raw data
+// RawResponse struct is the datapack for containing API response raw data.
 type RawResponse struct {
 	Status string                   `json:"status"`
 	Code   int                      `json:"code"`
@@ -15,12 +16,15 @@ type RawResponse struct {
 	Data   []map[string]interface{} `json:"data"`
 }
 
+// DownloadResponse struct is the datapack for containing API download response raw data.
 type DownloadResponse struct {
 	Code        int    `json:"code"`
 	Status      string `json:"status"`
 	DownloadUrl string `json:"data"`
 }
 
+// GetRawResponse sends the HTTP request and marshals it into the pointer provided.
+// Argument provided must be a pointer.
 func (req Request) GetRawResponse(res interface{}) error {
 
 	request, err := http.NewRequest("GET", req.Url, nil)

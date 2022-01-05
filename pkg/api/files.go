@@ -1,3 +1,4 @@
+// Package api provides functions that link up and communicate with Luminus servers.
 package api
 
 import (
@@ -11,6 +12,9 @@ import (
 	"time"
 )
 
+// Folder struct is the datapack for containing details about a Folder
+// Ancestors the relative folders that precedes the current folder, including itself.
+// Eg. Ancestors for a folder with the path: /folder1/folder2/folder3 is ['folder1', 'folder2', 'folder3']
 type Folder struct {
 	Id           string
 	Name         string
@@ -19,6 +23,9 @@ type Folder struct {
 	Ancestors    []string
 }
 
+// File struct is the datapack for containing details about a File
+// Ancestors the relative folders that precedes the current folder, including itself.
+// Eg. Ancestors for a file with the path: /folder1/folder2/file.pdf is ['folder1', 'folder2', 'file.pdf']
 type File struct {
 	Id          string
 	Name        string
@@ -30,6 +37,9 @@ const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=t
 const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?populate=Creator,lastUpdatedUser,comment"
 const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
 
+// GetAllFolders returns a slice of Folder objects from a DocumentRequest.
+// Ensure DocumentRequest mode is GET_FOLDERS (0).
+// Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 	folder := []Folder{}
 	if req.Mode != GET_FOLDERS {
@@ -57,7 +67,10 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 	return folder, nil
 }
 
-// Deprecated - build DocumentRequest with a Folder instead of a module instead, and call getRootFiles() directly
+// Deprecated - build DocumentRequest with a Folder instead of a module instead, and call getRootFiles() directly.
+// GetAllFiles returns a slice of File objects that are in a Folder using a DocumentRequest.
+// Ensure DocumentRequest mode is GET_ALL_FILES (1).
+// Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	files := []File{}
 	if req.Mode != GET_ALL_FILES {
@@ -85,6 +98,9 @@ func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	return files, nil
 }
 
+// getRootFiles returns a slice of File objects and nested File objects that are in a Folder or nested Folder from a DocumentRequest.
+// Ensure DocumentRequest mode is GET_FILES (3).
+// Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) getRootFiles() ([]File, error) {
 	files := []File{}
 	if req.Mode != GET_FILES {
@@ -147,6 +163,9 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 	return files, nil
 }
 
+// Download downloads the specified file in a DocumentRequest into local storage.
+// Ensure DocumentRequest mode is DOWNLOAD_FILE (2).
+// Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) Download(filePath string) error {
 	if req.Mode != DOWNLOAD_FILE {
 		return errors.New("mode mismatched: ensure DocumentRequest mode is DOWNLOAD_FILE (2)")

@@ -1,10 +1,11 @@
+// Package api provides functions that link up and communicate with Luminus servers.
 package api
 
 import (
 	"time"
 )
 
-// Grade struct is the datapack for containing details about every Grade in a module
+// Grade struct is the datapack for containing details about every Grade in a module.
 type Grade struct {
 	Name        string
 	Marks       float64
@@ -15,7 +16,8 @@ type Grade struct {
 
 const GRADE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/gradebook/?populate=scores&ParentID=%s"
 
-// Retrieves all grades for a particular module represented by moduleCode.
+// GetGrades retrieves all grades for a particular module represented by moduleCode specified in GradeRequest.
+// Find out more about GradeRequests under request.go.
 func (req GradeRequest) GetGrades() ([]Grade, error) {
 	var grades []Grade
 

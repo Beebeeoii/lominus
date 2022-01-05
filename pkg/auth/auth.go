@@ -1,3 +1,4 @@
+// Package auth provides functions that link up and communicate with Luminus authentication server.
 package auth
 
 import (
@@ -13,17 +14,20 @@ import (
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
+// JsonResponse struct is the datapack for containing API authentication response raw data.
 type JsonResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
 }
 
+// JwtData struct is the datapack that describes the user's JWT data.
 type JwtData struct {
 	JwtToken string
 	Expiry   int64
 }
 
+// Credentials struct is the datapack that describes the user's credentials.
 type Credentials struct {
 	Username string
 	Password string
@@ -46,6 +50,7 @@ const AUTH_METHOD = "FormsAuthentication"
 
 const EXPIRY_HOURS = 1
 
+// RetrieveJwtToken takes in the user's Credentials and return a JWT token issued by Luminus authentication server.
 func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	var jwtToken string
 	client := &http.Client{
@@ -123,11 +128,13 @@ func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	return jwtToken, nil
 }
 
+// saveJwtData saves the user's JWT data to local storage for future use.
 func saveJwtData(jwtPath string, jwtToken string) error {
 	jwtData := JwtData{jwtToken, time.Now().Add(time.Hour * 24).Unix()}
 	return file.EncodeStructToFile(jwtPath, jwtData)
 }
 
+// LoadJwtData loads the user's JWT data from local storage.
 func LoadJwtData(jwtPath string) (JwtData, error) {
 	jwtData := JwtData{}
 	if !file.Exists(jwtPath) {
@@ -138,10 +145,12 @@ func LoadJwtData(jwtPath string) (JwtData, error) {
 	return jwtData, err
 }
 
+// SaveCredentials saves the user's Credentials for future authentications or renewals of JWT data.
 func SaveCredentials(credentialsPath string, credentials Credentials) error {
 	return file.EncodeStructToFile(credentialsPath, credentials)
 }
 
+// LoadCredentials loads the user's Credentials data from local storage.
 func LoadCredentials(credentialsPath string) (Credentials, error) {
 	credentials := Credentials{}
 	if !file.Exists(credentialsPath) {
@@ -152,13 +161,16 @@ func LoadCredentials(credentialsPath string) (Credentials, error) {
 	return credentials, err
 }
 
+// IsExpired is a util function that checks if the user's JWT data has expired.
 func (jwtData JwtData) IsExpired() bool {
 	expiry := time.Unix(jwtData.Expiry, 0)
 	return time.Until(expiry).Hours() <= EXPIRY_HOURS
 }
 
+// JwtExpiredError struct contains the JwtExpiredError which will be thrown when the JWT data has expired.
 type JwtExpiredError struct{}
 
+// JwtExpiredError error to be thrown when the JWT data has expired.
 func (e *JwtExpiredError) Error() string {
 	return "JwtExpiredError: JWT token has expired."
 }
