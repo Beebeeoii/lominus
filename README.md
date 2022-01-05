@@ -132,7 +132,7 @@ You are highly recommended to compile and the program manually.
 
 ## API <a name="getting-started-api">
 
-Lominus can also be used as an API. Please visit documentations (coming soon) for more details.
+Lominus can also be used as an API. Please visit [documentations](https://pkg.go.dev/github.com/beebeeoii/lominus) for more details.
 
 ### Example: Retrieving your modules <a name="getting-started-api-example">
 
