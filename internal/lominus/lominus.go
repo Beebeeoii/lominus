@@ -1,3 +1,4 @@
+// Package lominus provides app config constants.
 package lominus
 
 const APP_NAME = "Lominus"

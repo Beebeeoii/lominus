@@ -1,3 +1,4 @@
+// Package ui provides primitives that initialises the UI.
 package ui
 
 import (
@@ -12,6 +13,7 @@ import (
 
 var lastRanItem *systray.MenuItem
 
+// onReady builds and initialises the system tray UI.
 func onReady() {
 	systray.SetIcon(resourceAppIconIco.Content())
 	systray.SetTitle(lominus.APP_NAME)
@@ -41,6 +43,7 @@ func onReady() {
 	}()
 }
 
+// onExit describes the actions taken when user quits the system tray.
 func onExit() {
 	logs.InfoLogger.Println("lominus quit")
 	mainApp.Quit()

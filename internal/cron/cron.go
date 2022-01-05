@@ -1,3 +1,4 @@
+// Package cron provides primitives to initialise and control the main cron scheduler.
 package cron
 
 import (
@@ -23,6 +24,8 @@ var mainScheduler *gocron.Scheduler
 var mainJob *gocron.Job
 var LastRanChannel chan string
 
+// Init initialises the cronjob with the desired frequency set by the user.
+// If frequency is unset, cronjob is not initialised.
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 	LastRanChannel = make(chan string)
@@ -47,6 +50,7 @@ func Init() error {
 	return nil
 }
 
+// Rerun clears the job from the scheduler and reschedules the same job with the new frequency.
 func Rerun(frequency int) error {
 	mainScheduler.Clear()
 
@@ -65,14 +69,19 @@ func Rerun(frequency int) error {
 	return nil
 }
 
+// GetNextRun returns the next time the cronjob would run.
 func GetNextRun() time.Time {
 	return mainJob.NextRun()
 }
 
+// GetLastRan returns the last time the cronjob ran.
 func GetLastRan() time.Time {
 	return mainJob.LastRun()
 }
 
+// createJob creates the cronjob that would run at the given frequency.
+// It returns a Job which can be used in the main scheduler.
+// This is where the bulk of the syncing logic lives.
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Syncing in progress"}
@@ -208,6 +217,8 @@ func createJob(frequency int) (*gocron.Job, error) {
 	})
 }
 
+// downloadFile is a helper function to download the respective files into their corresponding
+// directory based on the File's Ancestors.
 func downloadFile(baseDir string, file api.File) error {
 	fileDirSlice := append([]string{baseDir}, file.Ancestors...)
 	ensureDir(filepath.Join(append(fileDirSlice, file.Name)...))
@@ -220,6 +231,8 @@ func downloadFile(baseDir string, file api.File) error {
 	return downloadReq.Download(filepath.Join(fileDirSlice...))
 }
 
+// ensureDir is a helper function that ensures that the directory exists by creating them
+// if they do not already exist.
 func ensureDir(dir string) {
 	dirName := filepath.Dir(dir)
 	if _, serr := os.Stat(dirName); serr != nil {
