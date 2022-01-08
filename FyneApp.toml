@@ -4,5 +4,5 @@ Website = "https://github.com/beebeeoii/lominus"
   Icon = "./assets/app-icon.png"
   Name = "Lominus"
   ID = "com.beebeeoii.lominus"
-  Version = "1.1.3"
+  Version = "1.1.4"
   Build = 71
