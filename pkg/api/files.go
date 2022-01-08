@@ -4,7 +4,6 @@ package api
 import (
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -89,7 +88,6 @@ func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	}
 
 	baseFiles, err := rootFilesReq.getRootFiles()
-	log.Println(baseFiles)
 	if err != nil {
 		return files, err
 	}
