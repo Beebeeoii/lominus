@@ -120,7 +120,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 					continue
 				}
 
-				files, fileErr := fileRequest.GetAllFiles()
+				files, fileErr := fileRequest.GetRootFiles()
 				if fileErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
 					logs.WarningLogger.Println(fileErr)

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/beebeeoii/lominus/internal/file"
@@ -39,18 +38,20 @@ const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?popul
 const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
 
 // GetAllFolders returns a slice of Folder objects from a DocumentRequest.
-// Ensure DocumentRequest mode is GET_FOLDERS (0).
+// It will only return folders in the current folder.
+// Nested folders will not be returned.
+// Ensure that DocumentRequest mode is GET_ALL_FOLDERS (0).
 // Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
-	folder := []Folder{}
-	if req.Mode != GET_FOLDERS {
-		return folder, errors.New("mode mismatched: ensure DocumentRequest mode is GET_FOLDERS (0)")
+	folders := []Folder{}
+	if req.Mode != GET_ALL_FOLDERS {
+		return folders, errors.New("mode mismatched: ensure DocumentRequest mode is GET_ALL_FOLDERS (0)")
 	}
 
 	rawResponse := RawResponse{}
 	err := req.Request.GetRawResponse(&rawResponse)
 	if err != nil {
-		return folder, err
+		return folders, err
 	}
 
 	for _, content := range rawResponse.Data {
@@ -60,83 +61,23 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 				Name:         file.CleanseFolderFileName(content["name"].(string)),
 				Downloadable: content["isActive"].(bool) && !content["allowUpload"].(bool), // downloadable = active folder + does not allow uploads
 				HasSubFolder: int(content["subFolderCount"].(float64)) > 0,
-				Ancestors:    []string{strings.TrimSpace(req.Module.ModuleCode)},
+				Ancestors:    append(req.Folder.Ancestors, req.Folder.Name),
 			}
-			folder = append(folder, newFolder)
+			folders = append(folders, newFolder)
 		}
 	}
-	return folder, nil
+	return folders, nil
 }
 
-// Deprecated - build DocumentRequest with a Folder instead of a module instead, and call getRootFiles() directly.
-// GetAllFiles returns a slice of File objects that are in a Folder using a DocumentRequest.
-// Ensure DocumentRequest mode is GET_ALL_FILES (1).
+// GetAllFiles returns a slice of File objects that are in a Folder from a DocumentRequest.
+// It will only return files in the current folder.
+// To return nested files, use GetRootFiles() instead.
+// Ensure that DocumentRequest mode is GET_ALL_FILES (1).
 // Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	files := []File{}
 	if req.Mode != GET_ALL_FILES {
 		return files, errors.New("mode mismatched: ensure DocumentRequest mode is GET_ALL_FILES (1)")
-	}
-
-	rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(Folder{
-		Id:           req.Module.Id,
-		Name:         req.Module.ModuleCode,
-		Downloadable: true,
-		Ancestors:    []string{strings.TrimSpace(req.Module.ModuleCode)},
-		HasSubFolder: true,
-	}, GET_FILES)
-	if rootFilesBuildErr != nil {
-		return files, rootFilesBuildErr
-	}
-
-	baseFiles, err := rootFilesReq.getRootFiles()
-	if err != nil {
-		return files, err
-	}
-	files = append(files, baseFiles...)
-
-	return files, nil
-}
-
-// getRootFiles returns a slice of File objects and nested File objects that are in a Folder or nested Folder from a DocumentRequest.
-// Ensure DocumentRequest mode is GET_FILES (3).
-// Find out more about DocumentRequests under request.go.
-func (req DocumentRequest) getRootFiles() ([]File, error) {
-	files := []File{}
-	if req.Mode != GET_FILES {
-		return files, errors.New("mode mismatched: ensure DocumentRequest mode is GET_FILES (3)")
-	}
-
-	if !req.Folder.Downloadable {
-		return files, nil
-	}
-
-	if req.Folder.HasSubFolder {
-		subFolderReq, subFolderReqBuildErr := BuildDocumentRequest(req.Folder, GET_FOLDERS)
-		if subFolderReqBuildErr != nil {
-			return files, subFolderReqBuildErr
-		}
-
-		subFolders, err := subFolderReq.GetAllFolders()
-		if err != nil {
-			return files, err
-		}
-
-		for _, subFolder := range subFolders {
-			subFolder.Ancestors = append(subFolder.Ancestors, req.Folder.Ancestors...)
-			subFolder.Ancestors = append(subFolder.Ancestors, strings.TrimSpace(subFolder.Name))
-			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, GET_FILES)
-			if rootFilesBuildErr != nil {
-				return files, rootFilesBuildErr
-			}
-
-			subFiles, err := rootFilesReq.getRootFiles()
-			if err != nil {
-				return files, err
-			}
-
-			files = append(files, subFiles...)
-		}
 	}
 
 	rawResponse := RawResponse{}
@@ -151,20 +92,71 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 		if timeParseErr != nil {
 			return files, timeParseErr
 		}
-		newFile := File{
+
+		file := File{
 			Id:          content["id"].(string),
 			Name:        file.CleanseFolderFileName(content["name"].(string)),
 			LastUpdated: lastUpdated,
-			Ancestors:   req.Folder.Ancestors,
+			Ancestors:   append(req.Folder.Ancestors, req.Folder.Name),
 		}
-		files = append(files, newFile)
+		files = append(files, file)
 	}
 
 	return files, nil
 }
 
-// Download downloads the specified file in a DocumentRequest into local storage.
-// Ensure DocumentRequest mode is DOWNLOAD_FILE (2).
+// GetRootFiles returns a slice of File objects and nested File objects that are in a Folder from a DocumentRequest.
+// It will traverse all nested folders and return all nested files.
+// Ensure that DocumentRequest mode is GET_ALL_FILES (1).
+// Find out more about DocumentRequests under request.go.
+func (req DocumentRequest) GetRootFiles() ([]File, error) {
+	files := []File{}
+	if req.Mode != GET_ALL_FILES {
+		return files, errors.New("mode mismatched: ensure DocumentRequest mode is GET_ALL_FILES (1)")
+	}
+
+	if !req.Folder.Downloadable {
+		return files, nil
+	}
+
+	if req.Folder.HasSubFolder {
+		subFolderReq, subFolderReqBuildErr := BuildDocumentRequest(req.Folder, GET_ALL_FOLDERS)
+		if subFolderReqBuildErr != nil {
+			return files, subFolderReqBuildErr
+		}
+
+		subFolders, err := subFolderReq.GetAllFolders()
+		if err != nil {
+			return files, err
+		}
+
+		for _, subFolder := range subFolders {
+			rootFilesReq, rootFilesBuildErr := BuildDocumentRequest(subFolder, GET_ALL_FILES)
+			if rootFilesBuildErr != nil {
+				return files, rootFilesBuildErr
+			}
+
+			subFiles, err := rootFilesReq.GetRootFiles()
+			if err != nil {
+				return files, err
+			}
+
+			files = append(files, subFiles...)
+		}
+	}
+
+	subFiles, err := req.GetAllFiles()
+	if err != nil {
+		return files, err
+	}
+
+	files = append(files, subFiles...)
+
+	return files, nil
+}
+
+// Download downloads the specified File in a DocumentRequest into local storage.
+// Ensure that DocumentRequest mode is DOWNLOAD_FILE (2).
 // Find out more about DocumentRequests under request.go.
 func (req DocumentRequest) Download(filePath string) error {
 	if req.Mode != DOWNLOAD_FILE {
