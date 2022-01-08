@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/beebeeoii/lominus/internal/file"
 )
 
 // Folder struct is the datapack for containing details about a Folder
@@ -55,7 +57,7 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 		if _, exists := content["access"]; exists { // only folder that can be accessed will be placed in folders slice
 			newFolder := Folder{
 				Id:           content["id"].(string),
-				Name:         content["name"].(string),
+				Name:         file.CleanseFolderFileName(content["name"].(string)),
 				Downloadable: content["isActive"].(bool) && !content["allowUpload"].(bool), // downloadable = active folder + does not allow uploads
 				HasSubFolder: int(content["subFolderCount"].(float64)) > 0,
 				Ancestors:    []string{strings.TrimSpace(req.Module.ModuleCode)},
@@ -151,7 +153,7 @@ func (req DocumentRequest) getRootFiles() ([]File, error) {
 		}
 		newFile := File{
 			Id:          content["id"].(string),
-			Name:        content["name"].(string),
+			Name:        file.CleanseFolderFileName(content["name"].(string)),
 			LastUpdated: lastUpdated,
 			Ancestors:   req.Folder.Ancestors,
 		}
