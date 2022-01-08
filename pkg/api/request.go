@@ -101,17 +101,27 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 
 	switch mode {
 	case GET_ALL_FOLDERS:
+		_, isModule := builder.(Module)
+		_, isFolder := builder.(Folder)
+		if !isModule && !isFolder {
+			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FOLDERS")
+		}
 		urlEndpoint = FOLDER_URL_ENDPOINT
 	case GET_ALL_FILES:
+		_, isModule := builder.(Module)
+		_, isFolder := builder.(Folder)
+		if !isModule && !isFolder {
+			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FILES")
+		}
 		urlEndpoint = FILE_URL_ENDPOINT
 	case DOWNLOAD_FILE:
 		_, isFile := builder.(File)
 		if !isFile {
-			return DocumentRequest{}, errors.New("invalid arguments: DocumentRequest must be built using File to download")
+			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using File to download")
 		}
 		urlEndpoint = DOWNLOAD_URL_ENDPOINT
 	default:
-		return DocumentRequest{}, errors.New("invalid arguments: mode provided is not a valid mode")
+		return DocumentRequest{}, errors.New("invalid mode: mode provided is invalid. Valid modes are GET_ALL_FOLDERS (0), GET_ALL_FILES (1), DOWNLOAD_FILE (2)")
 	}
 
 	switch builder := builder.(type) {
@@ -152,7 +162,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 			Mode: mode,
 		}, nil
 	default:
-		return DocumentRequest{}, errors.New("invalid arguments: DocumentRequest must be built using Module or Folder only")
+		return DocumentRequest{}, errors.New("invalid builder: DocumentRequest must be built using Module, Folder or File only")
 	}
 }
 
