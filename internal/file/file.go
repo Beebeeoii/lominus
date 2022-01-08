@@ -80,7 +80,6 @@ func CleanseFolderFileName(name string) string {
 	name = strings.Replace(name, "|", " ", -1)
 	name = strings.Replace(name, "?", " ", -1)
 	name = strings.Replace(name, "*", " ", -1)
-	name = strings.Replace(name, "_", " ", -1)
 	name = strings.TrimSpace(name)
 
 	return name
