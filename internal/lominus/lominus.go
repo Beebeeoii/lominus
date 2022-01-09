@@ -3,7 +3,7 @@ package lominus
 
 const APP_NAME = "Lominus"
 const APP_ID = "com.lominus.beebeeoii"
-const APP_VERSION = "1.1.3"
+const APP_VERSION = "1.1.4"
 
 const LOCK_FILE_NAME = "lominus.lock"
 

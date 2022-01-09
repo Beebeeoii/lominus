@@ -3,13 +3,13 @@ package cron
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	files "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
@@ -120,7 +120,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 					continue
 				}
 
-				files, fileErr := fileRequest.GetAllFiles()
+				files, fileErr := fileRequest.GetRootFiles()
 				if fileErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
 					logs.WarningLogger.Println(fileErr)
@@ -221,7 +221,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 // directory based on the File's Ancestors.
 func downloadFile(baseDir string, file api.File) error {
 	fileDirSlice := append([]string{baseDir}, file.Ancestors...)
-	ensureDir(filepath.Join(append(fileDirSlice, file.Name)...))
+	files.EnsureDir(filepath.Join(append(fileDirSlice, file.Name)...))
 
 	downloadReq, dlReqErr := api.BuildDocumentRequest(file, api.DOWNLOAD_FILE)
 	if dlReqErr != nil {
@@ -229,17 +229,4 @@ func downloadFile(baseDir string, file api.File) error {
 	}
 
 	return downloadReq.Download(filepath.Join(fileDirSlice...))
-}
-
-// ensureDir is a helper function that ensures that the directory exists by creating them
-// if they do not already exist.
-func ensureDir(dir string) {
-	dirName := filepath.Dir(dir)
-	if _, serr := os.Stat(dirName); serr != nil {
-		merr := os.MkdirAll(dirName, os.ModePerm)
-		if merr != nil {
-			logs.ErrorLogger.Println(merr)
-			panic(merr)
-		}
-	}
 }
