@@ -55,7 +55,7 @@ func Init() error {
 	if runtime.GOOS == "windows" {
 		systray.Register(onReady, onExit)
 	}
-	mainApp = app.NewWithID(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
+	mainApp = app.NewWithID(lominus.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
 	go func() {
@@ -65,7 +65,7 @@ func Init() error {
 		}
 	}()
 
-	w = mainApp.NewWindow(lominus.APP_NAME)
+	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(w)
 	if credentialsUiErr != nil {
