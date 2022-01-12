@@ -9,6 +9,7 @@ import (
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
+	"github.com/beebeeoii/lominus/internal/notifications"
 )
 
 var lastRanItem *systray.MenuItem
@@ -20,6 +21,7 @@ func onReady() {
 	systray.SetTooltip(lominus.APP_NAME)
 	lastRanItem = systray.AddMenuItem("Last sync: Nil", "Shows when Lominus last checked for updates")
 	lastRanItem.Disable()
+	syncButton := systray.AddMenuItem("Sync now", "Sync now")
 	openButton := systray.AddMenuItem("Open", "Open Lominus")
 	systray.AddSeparator()
 	quitButton := systray.AddMenuItem("Quit", "Quit Lominus")
@@ -27,6 +29,17 @@ func onReady() {
 	go func() {
 		for {
 			select {
+			case <-syncButton.ClickedCh:
+				preferences := getPreferences()
+				if preferences.Directory == "" {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Unable to sync: please set the directory to store your Luminus files"}
+					return
+				}
+				if preferences.Frequency == -1 {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Unable to sync: please choose a sync frequency to sync now."}
+					return
+				}
+				cron.Rerun(getPreferences().Frequency)
 			case <-openButton.ClickedCh:
 				w.Show()
 			case <-quitButton.ClickedCh:
