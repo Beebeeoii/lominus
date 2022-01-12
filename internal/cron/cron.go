@@ -4,6 +4,7 @@ package cron
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
@@ -150,27 +151,43 @@ func createJob(frequency int) (*gocron.Job, error) {
 				return
 			}
 
-			filesToUpdate := 0
-			filesUpdated := 0
+			nFilesToUpdate := 0
+			filesUpdated := []string{}
+
 			for _, file := range updatedFiles {
 				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
-					filesToUpdate += 1
+					nFilesToUpdate += 1
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
 						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
 						logs.ErrorLogger.Println(downloadErr)
 						continue
 					}
-					filesUpdated += 1
+					filesUpdated = append(filesUpdated, file.Name)
 				}
 			}
 
-			filesUpdatedNotificationContent := "Your files are up to date"
-			if filesToUpdate > 0 {
-				filesUpdatedNotificationContent = fmt.Sprintf("%d/%d files updated", filesToUpdate, filesToUpdate)
+			if nFilesToUpdate > 0 {
+				nFilesUpdated := len(filesUpdated)
+				var updatedFileNamesString string
+
+				if nFilesUpdated > 4 {
+					updatedFileNamesString = strings.Join(append(filesUpdated[:3], "..."), "\n")
+				} else {
+					updatedFileNamesString = strings.Join(filesUpdated, "\n")
+				}
+
+				notifications.NotificationChannel <- notifications.Notification{
+					Title:   fmt.Sprintf("Sync: %d/%d updated", nFilesUpdated, nFilesToUpdate),
+					Content: updatedFileNamesString,
+				}
+			} else {
+				notifications.NotificationChannel <- notifications.Notification{
+					Title:   "Sync",
+					Content: "Your files are up to date",
+				}
 			}
 
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: filesUpdatedNotificationContent}
 			logs.InfoLogger.Printf("job completed: %s\n", time.Now().Format(time.RFC3339))
 		}
 
