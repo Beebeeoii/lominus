@@ -1,6 +1,8 @@
 // Package api provides functions that link up and communicate with Luminus servers.
 package api
 
+import "strings"
+
 // Module struct is the datapack for containing details about every module
 type Module struct {
 	Id           string
@@ -31,7 +33,7 @@ func (req ModuleRequest) GetModules() ([]Module, error) {
 			module := Module{
 				Id:           content["id"].(string),
 				Name:         content["courseName"].(string),
-				ModuleCode:   content["name"].(string),
+				ModuleCode:   strings.Replace(content["name"].(string), "/", "-", -1), // for multi-coded modules that uses '/' as a separator
 				CreatorName:  content["creatorName"].(string),
 				CreatorEmail: content["creatorEmail"].(string),
 				Period:       termDetail["description"].(string),
