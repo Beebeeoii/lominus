@@ -32,11 +32,11 @@ func onReady() {
 			case <-syncButton.ClickedCh:
 				preferences := getPreferences()
 				if preferences.Directory == "" {
-					notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Unable to sync: please set the directory to store your Luminus files"}
+					notifications.NotificationChannel <- notifications.Notification{Title: "Unable to sync", Content: "Please set the directory to store your Luminus files"}
 					return
 				}
 				if preferences.Frequency == -1 {
-					notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Unable to sync: please choose a sync frequency to sync now."}
+					notifications.NotificationChannel <- notifications.Notification{Title: "Unable to sync", Content: "Please choose a sync frequency to sync now."}
 					return
 				}
 				cron.Rerun(getPreferences().Frequency)
