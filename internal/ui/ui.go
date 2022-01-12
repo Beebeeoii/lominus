@@ -55,7 +55,7 @@ func Init() error {
 	if runtime.GOOS == "windows" {
 		systray.Register(onReady, onExit)
 	}
-	mainApp = app.NewWithID(lominus.APP_NAME)
+	mainApp = app.NewWithID(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
 	mainApp.SetIcon(resourceAppIconPng)
 
 	go func() {
