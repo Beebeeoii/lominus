@@ -24,11 +24,6 @@ func Init() error {
 		os.Mkdir(baseDir, os.ModePerm)
 	}
 
-	logInitErr := logs.Init()
-	if logInitErr != nil {
-		return logInitErr
-	}
-
 	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 	if getPreferencesPathErr != nil {
 		return getPreferencesPathErr
@@ -45,6 +40,25 @@ func Init() error {
 		if savePrefErr != nil {
 			return savePrefErr
 		}
+	} else {
+		preferences, getPreferencesErr := appPref.LoadPreferences(preferencesPath)
+		if getPreferencesErr != nil {
+			return getPreferencesErr
+		}
+
+		if preferences.LogLevel != "info" && preferences.LogLevel != "debug" {
+			preferences.LogLevel = "info"
+		}
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			return savePrefErr
+		}
+	}
+
+	logInitErr := logs.Init()
+	if logInitErr != nil {
+		return logInitErr
 	}
 
 	return nil
