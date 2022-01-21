@@ -58,6 +58,6 @@ func onReady() {
 
 // onExit describes the actions taken when user quits the system tray.
 func onExit() {
-	logs.InfoLogger.Println("lominus quit")
+	logs.Logger.Infoln("lominus quit")
 	mainApp.Quit()
 }

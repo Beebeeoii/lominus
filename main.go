@@ -15,29 +15,29 @@ import (
 func main() {
 	appInitErr := app.Init()
 	if appInitErr != nil {
-		logs.ErrorLogger.Fatalln(appInitErr)
+		logs.Logger.Fatalln(appInitErr)
 	}
-	logs.InfoLogger.Println("app initialised")
+	logs.Logger.Infoln("app initialised")
 
 	lock := fslock.New(appLock.GetLockPath())
 	lockErr := lock.TryLock()
 
 	if lockErr != nil {
-		logs.ErrorLogger.Fatalln(lockErr)
+		logs.Logger.Fatalln(lockErr)
 	}
 	defer lock.Unlock()
 
 	notifications.Init()
-	logs.InfoLogger.Println("notifications initialised")
+	logs.Logger.Infoln("notifications initialised")
 
 	cronInitErr := cron.Init()
 	if cronInitErr != nil {
-		logs.ErrorLogger.Fatalln(cronInitErr)
+		logs.Logger.Fatalln(cronInitErr)
 	}
-	logs.InfoLogger.Println("cron initialised")
+	logs.Logger.Infoln("cron initialised")
 
 	uiInitErr := ui.Init()
 	if uiInitErr != nil {
-		logs.ErrorLogger.Fatalln(uiInitErr)
+		logs.Logger.Fatalln(uiInitErr)
 	}
 }

@@ -2,18 +2,17 @@
 package logs
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
+	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/lominus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	WarningLogger *log.Logger
-	InfoLogger    *log.Logger
-	ErrorLogger   *log.Logger
+	Logger *log.Logger
 )
 
 // Init initialises the log file and the different loggers: WarningLogger, InfoLogger and ErrorLogger.
@@ -23,11 +22,21 @@ func Init() error {
 		return err
 	}
 
-	log.SetOutput(file)
+	var logLevel string
+	preferences, loadPrefErr := appPref.LoadPreferences(appPref.GetPreferencesPath())
+	if loadPrefErr != nil {
+		logLevel = "info"
+	} else {
+		logLevel = preferences.LogLevel
+	}
 
-	InfoLogger = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	WarningLogger = log.New(file, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
-	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	Logger = log.New()
+	Logger.SetOutput(file)
+	Logger.SetReportCaller(true)
+	Logger.SetFormatter(&log.JSONFormatter{
+		PrettyPrint: true,
+	})
+	Logger.SetLevel(getLogLevel()(logLevel))
 
 	return nil
 }
@@ -35,4 +44,21 @@ func Init() error {
 // getLogPath returns the file path to the log file.
 func getLogPath() string {
 	return filepath.Join(appDir.GetBaseDir(), lominus.LOG_FILE_NAME)
+}
+
+// getLogLevel returns log.Level corresponding to the string representative of the log level
+func getLogLevel() func(string) log.Level {
+	innerMap := map[string]log.Level{
+		"panic": log.PanicLevel,
+		"fatal": log.FatalLevel,
+		"error": log.ErrorLevel,
+		"warn":  log.WarnLevel,
+		"info":  log.InfoLevel,
+		"debug": log.DebugLevel,
+		"trace": log.TraceLevel,
+	}
+
+	return func(key string) log.Level {
+		return innerMap[key]
+	}
 }

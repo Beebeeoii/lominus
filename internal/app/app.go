@@ -11,7 +11,6 @@ import (
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
-	"github.com/beebeeoii/lominus/pkg/pref"
 )
 
 // Init initialises and ensures log and preference files that Lominus requires are available.
@@ -31,13 +30,17 @@ func Init() error {
 
 	prefDir := filepath.Join(baseDir, lominus.PREFERENCES_FILE_NAME)
 	if !file.Exists(prefDir) {
-		preferences := appPref.Preferences{Directory: "", Frequency: -1}
+		preferences := appPref.Preferences{
+			Directory: "",
+			Frequency: -1,
+			LogLevel:  "info",
+		}
 
-		savePrefErr := pref.SavePreferences(prefDir, preferences)
+		savePrefErr := appPref.SavePreferences(prefDir, preferences)
 		if savePrefErr != nil {
 			return savePrefErr
 		}
-		logs.InfoLogger.Println("pref.go created")
+		logs.Logger.Infoln("pref.go created")
 	}
 
 	return nil

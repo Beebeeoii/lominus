@@ -24,7 +24,6 @@ import (
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
-	"github.com/beebeeoii/lominus/pkg/pref"
 	"github.com/getlantern/systray"
 	fileDialog "github.com/sqweek/dialog"
 )
@@ -186,7 +185,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		if dirErr != nil {
 			if dirErr.Error() != "Cancelled" {
 				dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-				logs.ErrorLogger.Println(dirErr)
+				logs.Logger.Errorln(dirErr)
 			}
 			return
 		}
@@ -194,10 +193,10 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		preferences := getPreferences()
 		preferences.Directory = dir
 
-		savePrefErr := pref.SavePreferences(appPref.GetPreferencesPath(), preferences)
+		savePrefErr := appPref.SavePreferences(appPref.GetPreferencesPath(), preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-			logs.ErrorLogger.Println(savePrefErr)
+			logs.Logger.Errorln(savePrefErr)
 			return
 		}
 		fileDirLabel.SetText(preferences.Directory)
@@ -226,10 +225,10 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			preferences.Frequency = 1
 		}
 
-		savePrefErr := pref.SavePreferences(appPref.GetPreferencesPath(), preferences)
+		savePrefErr := appPref.SavePreferences(appPref.GetPreferencesPath(), preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
-			logs.ErrorLogger.Println(savePrefErr)
+			logs.Logger.Errorln(savePrefErr)
 			return
 		}
 	})
@@ -317,9 +316,9 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 // getPreferences is a util function that retrieves the user's preferences.
 func getPreferences() appPref.Preferences {
-	preference, err := pref.LoadPreferences(appPref.GetPreferencesPath())
+	preference, err := appPref.LoadPreferences(appPref.GetPreferencesPath())
 	if err != nil {
-		logs.ErrorLogger.Fatalln(err)
+		logs.Logger.Fatalln(err)
 	}
 
 	return preference
@@ -345,10 +344,10 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 func getQuitButton() *widget.Button {
 	return widget.NewButton("Quit Lominus", func() {
 		if appApp.GetOs() == "windows" {
-			logs.InfoLogger.Println("systray quit")
+			logs.Logger.Infoln("systray quit")
 			systray.Quit()
 		}
-		logs.InfoLogger.Println("lominus quit")
+		logs.Logger.Infoln("lominus quit")
 		mainApp.Quit()
 	})
 }

@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	logs "github.com/beebeeoii/lominus/internal/log"
 )
 
 // EncodeStructToFile takes in any struct and encodes it into a file specified by fileName.
@@ -52,15 +50,17 @@ func Exists(name string) bool {
 
 // EnsureDir is a helper function that ensures that the directory exists by creating them
 // if they do not already exist.
-func EnsureDir(dir string) {
+func EnsureDir(dir string) error {
 	dirName := filepath.Dir(dir)
+
 	if _, serr := os.Stat(dirName); serr != nil {
 		merr := os.MkdirAll(dirName, os.ModePerm)
 		if merr != nil {
-			logs.ErrorLogger.Println(merr)
-			panic(merr)
+			return merr
 		}
 	}
+
+	return nil
 }
 
 // CleanseFolderFileName is a helper function that ensures folders' and files' names are valid,
