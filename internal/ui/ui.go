@@ -251,6 +251,34 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	})
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
+	debugCheckbox := widget.NewCheck("Debug Mode", func(onDebug bool) {
+		preferences := getPreferences()
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		if onDebug {
+			preferences.LogLevel = "debug"
+
+		} else {
+			preferences.LogLevel = "info"
+		}
+
+		logs.SetLogLevel(preferences.LogLevel)
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
+			logs.Logger.Errorln(savePrefErr)
+			return
+		}
+	})
+
+	debugCheckbox.SetChecked(getPreferences().LogLevel == "debug")
+
 	tab.Content = container.NewVBox(
 		fileDirHeader,
 		widget.NewSeparator(),
@@ -262,6 +290,8 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		frequencySubHeader1,
 		frequencySubHeader2,
 		frequencySelect,
+		widget.NewSeparator(),
+		debugCheckbox,
 	)
 
 	return tab, nil

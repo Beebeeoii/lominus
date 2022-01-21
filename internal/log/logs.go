@@ -65,6 +65,10 @@ func Init() error {
 	return nil
 }
 
+func SetLogLevel(logLevel string) {
+	Logger.SetLevel(getLogLevel()(logLevel))
+}
+
 // getLogPath returns the file path to the log file.
 func getLogPath() (string, error) {
 	var logPath string
