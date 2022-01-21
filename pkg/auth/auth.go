@@ -122,7 +122,12 @@ func RetrieveJwtToken(credentials Credentials, save bool) (string, error) {
 	}
 
 	if save {
-		return jwtToken, saveJwtData(appAuth.GetJwtPath(), jwtToken)
+		jwtPath, getJwtPathErr := appAuth.GetJwtPath()
+		if getJwtPathErr != nil {
+			return jwtToken, getJwtPathErr
+		}
+
+		return jwtToken, saveJwtData(jwtPath, jwtToken)
 	}
 
 	return jwtToken, nil

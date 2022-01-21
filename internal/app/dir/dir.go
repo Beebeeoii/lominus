@@ -2,7 +2,6 @@
 package appDir
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -16,11 +15,15 @@ import (
 // On Darwin, it returns $HOME/Library/Application Support.
 // On Windows, it returns %AppData%. On Plan 9, it returns $home/lib.
 // If the location cannot be determined (for example, $HOME is not defined), then it will return an error.
-func GetBaseDir() string {
+func GetBaseDir() (string, error) {
+	var baseDir string
+
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		log.Fatalln(err)
+		return baseDir, err
 	}
 
-	return filepath.Join(userConfigDir, lominus.APP_NAME)
+	baseDir = filepath.Join(userConfigDir, lominus.APP_NAME)
+
+	return baseDir, nil
 }

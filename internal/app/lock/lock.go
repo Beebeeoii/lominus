@@ -9,6 +9,15 @@ import (
 )
 
 // GetLockPath returns the file path to Lominus lock file.
-func GetLockPath() string {
-	return filepath.Join(appDir.GetBaseDir(), lominus.LOCK_FILE_NAME)
+func GetLockPath() (string, error) {
+	var lockPath string
+
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		return lockPath, retrieveBaseDirErr
+	}
+
+	lockPath = filepath.Join(baseDir, lominus.LOCK_FILE_NAME)
+
+	return lockPath, nil
 }

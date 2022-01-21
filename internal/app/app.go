@@ -17,7 +17,10 @@ import (
 // Directory in Preferences defaults to empty string ("").
 // Frequency in Preferences defaults to -1.
 func Init() error {
-	baseDir := appDir.GetBaseDir()
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		return retrieveBaseDirErr
+	}
 
 	if !file.Exists(baseDir) {
 		os.Mkdir(baseDir, os.ModePerm)

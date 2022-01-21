@@ -9,6 +9,15 @@ import (
 )
 
 // GetTelegramInfoPath returns the file path to user's telegram config file.
-func GetTelegramInfoPath() string {
-	return filepath.Join(appDir.GetBaseDir(), lominus.TELEGRAM_FILE_NAME)
+func GetTelegramInfoPath() (string, error) {
+	var telegramInfoPath string
+
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		return telegramInfoPath, retrieveBaseDirErr
+	}
+
+	telegramInfoPath = filepath.Join(baseDir, lominus.TELEGRAM_FILE_NAME)
+
+	return telegramInfoPath, nil
 }

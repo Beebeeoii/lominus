@@ -19,8 +19,17 @@ type Preferences struct {
 }
 
 // GetJwtPath returns the file path to user's preferences.
-func GetPreferencesPath() string {
-	return filepath.Join(appDir.GetBaseDir(), lominus.PREFERENCES_FILE_NAME)
+func GetPreferencesPath() (string, error) {
+	var preferencesPath string
+
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		return preferencesPath, retrieveBaseDirErr
+	}
+
+	preferencesPath = filepath.Join(baseDir, lominus.PREFERENCES_FILE_NAME)
+
+	return preferencesPath, nil
 }
 
 // SavePreferences saves the user's preferences data onto local storage.

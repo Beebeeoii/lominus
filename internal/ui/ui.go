@@ -117,7 +117,10 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetPlaceHolder("Password")
 
-	credentialsPath := appAuth.GetCredentialsPath()
+	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
+	if getCredentialsPathErr != nil {
+		return tab, getCredentialsPathErr
+	}
 
 	if file.Exists(credentialsPath) {
 		credentials, err := auth.LoadCredentials(credentialsPath)
@@ -184,7 +187,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		dir, dirErr := fileDialog.Directory().Title("Choose directory").Browse()
 		if dirErr != nil {
 			if dirErr.Error() != "Cancelled" {
-				dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
+				dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
 				logs.Logger.Errorln(dirErr)
 			}
 			return
@@ -193,9 +196,16 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		preferences := getPreferences()
 		preferences.Directory = dir
 
-		savePrefErr := appPref.SavePreferences(appPref.GetPreferencesPath(), preferences)
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
-			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
 			logs.Logger.Errorln(savePrefErr)
 			return
 		}
@@ -225,9 +235,16 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			preferences.Frequency = 1
 		}
 
-		savePrefErr := appPref.SavePreferences(appPref.GetPreferencesPath(), preferences)
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
-			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again or contact us.", parentWindow).Show()
+			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
 			logs.Logger.Errorln(savePrefErr)
 			return
 		}
@@ -263,7 +280,10 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	userIdEntry := widget.NewEntry()
 	userIdEntry.SetPlaceHolder("Your account's ID")
 
-	telegramInfoPath := intTelegram.GetTelegramInfoPath()
+	telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
+	if getTelegramInfoPathErr != nil {
+		return tab, getTelegramInfoPathErr
+	}
 
 	if file.Exists(telegramInfoPath) {
 		telegramInfo, err := telegram.LoadTelegramData(telegramInfoPath)
@@ -316,7 +336,12 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 // getPreferences is a util function that retrieves the user's preferences.
 func getPreferences() appPref.Preferences {
-	preference, err := appPref.LoadPreferences(appPref.GetPreferencesPath())
+	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+	if getPreferencesPathErr != nil {
+		logs.Logger.Fatalln(getPreferencesPathErr)
+	}
+
+	preference, err := appPref.LoadPreferences(preferencesPath)
 	if err != nil {
 		logs.Logger.Fatalln(err)
 	}

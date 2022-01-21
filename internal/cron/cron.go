@@ -30,7 +30,12 @@ func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 	LastRanChannel = make(chan string)
 
-	preferences, loadPrefErr := appPref.LoadPreferences(appPref.GetPreferencesPath())
+	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+	if getPreferencesPathErr != nil {
+		return getPreferencesPathErr
+	}
+
+	preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
 	if loadPrefErr != nil {
 		return loadPrefErr
 	}
@@ -90,9 +95,15 @@ func createJob(frequency int) (*gocron.Job, error) {
 			LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 		}
 
-		preferences, prefErr := appPref.LoadPreferences(appPref.GetPreferencesPath())
-		if prefErr != nil {
-			logs.Logger.Errorln(prefErr)
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
+		if loadPrefErr != nil {
+			logs.Logger.Errorln(loadPrefErr)
 			return
 		}
 
@@ -190,7 +201,13 @@ func createJob(frequency int) (*gocron.Job, error) {
 			logs.Logger.Infoln("job completed: %s\n", time.Now().Format(time.RFC3339))
 		}
 
-		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(intTelegram.GetTelegramInfoPath())
+		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
+		if getTelegramInfoPathErr != nil {
+			logs.Logger.Errorln(getTelegramInfoPathErr)
+			return
+		}
+
+		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
 		if telegramInfoErr != nil {
 			logs.Logger.Errorln(telegramInfoErr)
 			return

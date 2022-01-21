@@ -19,7 +19,12 @@ func main() {
 	}
 	logs.Logger.Infoln("app initialised")
 
-	lock := fslock.New(appLock.GetLockPath())
+	lockPath, getLockPathErr := appLock.GetLockPath()
+	if getLockPathErr != nil {
+		logs.Logger.Fatalln(getLockPathErr)
+	}
+
+	lock := fslock.New(lockPath)
 	lockErr := lock.TryLock()
 
 	if lockErr != nil {
