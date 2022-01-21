@@ -95,18 +95,21 @@ func createJob(frequency int) (*gocron.Job, error) {
 			LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 		}
 
+		logs.Logger.Debugln("retrieving - preferences path")
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			logs.Logger.Errorln(getPreferencesPathErr)
 			return
 		}
 
+		logs.Logger.Debugln("loading - preferences")
 		preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
 		if loadPrefErr != nil {
 			logs.Logger.Errorln(loadPrefErr)
 			return
 		}
 
+		logs.Logger.Debugln("building - module request")
 		moduleRequest, modReqErr := api.BuildModuleRequest()
 		if modReqErr != nil {
 			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Authentication failed"}
@@ -114,6 +117,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 			return
 		}
 
+		logs.Logger.Debugln("retrieving - modules")
 		modules, modErr := moduleRequest.GetModules()
 		if modErr != nil {
 			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve modules"}
@@ -124,6 +128,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 		if preferences.Directory != "" {
 			updatedFiles := make([]api.File, 0)
 			for _, module := range modules {
+				logs.Logger.Debugln("building - document request")
 				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
 				if fileReqErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
@@ -131,6 +136,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 					continue
 				}
 
+				logs.Logger.Debugln("retrieving - root files")
 				files, fileErr := fileRequest.GetRootFiles()
 				if fileErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
@@ -154,6 +160,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 				Entries: indexMapEntries,
 			})
 
+			logs.Logger.Debugln("building - index map")
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
 				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to sync files"}
@@ -167,6 +174,8 @@ func createJob(frequency int) (*gocron.Job, error) {
 			for _, file := range updatedFiles {
 				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
 					nFilesToUpdate += 1
+
+					logs.Logger.Debugf("downloading - %s into (%s)", file.Name, strings.Join(file.Ancestors, "/"))
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
 						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
@@ -207,12 +216,14 @@ func createJob(frequency int) (*gocron.Job, error) {
 			logs.Logger.Infof("job completed: %s", time.Now().Format(time.RFC3339))
 		}
 
+		logs.Logger.Debugln("retrieving - telegram path")
 		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
 		if getTelegramInfoPathErr != nil {
 			logs.Logger.Errorln(getTelegramInfoPathErr)
 			return
 		}
 
+		logs.Logger.Debugln("loading - telegram")
 		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
 		if telegramInfoErr != nil {
 			logs.Logger.Errorln(telegramInfoErr)
@@ -220,6 +231,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 		}
 
 		for _, module := range modules {
+			logs.Logger.Debugln("building - grade request")
 			gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
 			if gradeReqErr != nil {
 				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
@@ -227,6 +239,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 				continue
 			}
 
+			logs.Logger.Debugln("retrieving - grade")
 			grades, gradesErr := gradeRequest.GetGrades()
 			if gradesErr != nil {
 				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
@@ -245,7 +258,9 @@ func createJob(frequency int) (*gocron.Job, error) {
 					continue
 				}
 
-				gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, telegram.GenerateGradeMessageFormat(module.ModuleCode, grade.Name, grade.Comments, grade.Marks, grade.MaxMarks))
+				message := telegram.GenerateGradeMessageFormat(module.ModuleCode, grade.Name, grade.Comments, grade.Marks, grade.MaxMarks)
+				logs.Logger.Debugln("sending telegram message - %s", message)
+				gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
 
 				if gradeMsgErr != nil {
 					logs.Logger.Errorln(gradeMsgErr)
