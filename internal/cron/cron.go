@@ -162,7 +162,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 			}
 
 			nFilesToUpdate := 0
-			filesUpdated := []string{}
+			filesUpdated := []api.File{}
 
 			for _, file := range updatedFiles {
 				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
@@ -173,18 +173,24 @@ func createJob(frequency int) (*gocron.Job, error) {
 						logs.Logger.Errorln(downloadErr)
 						continue
 					}
-					filesUpdated = append(filesUpdated, file.Name)
+					filesUpdated = append(filesUpdated, file)
 				}
 			}
 
 			if nFilesToUpdate > 0 {
 				nFilesUpdated := len(filesUpdated)
+				updatedFilesModulesNames := []string{}
+
+				for _, file := range filesUpdated {
+					updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
+				}
+
 				var updatedFileNamesString string
 
 				if nFilesUpdated > 4 {
-					updatedFileNamesString = strings.Join(append(filesUpdated[:3], "..."), "\n")
+					updatedFileNamesString = strings.Join(append(updatedFilesModulesNames[:3], "..."), "\n")
 				} else {
-					updatedFileNamesString = strings.Join(filesUpdated, "\n")
+					updatedFileNamesString = strings.Join(updatedFilesModulesNames, "\n")
 				}
 
 				notifications.NotificationChannel <- notifications.Notification{
