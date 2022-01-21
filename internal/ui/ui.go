@@ -106,6 +106,7 @@ func Init() error {
 
 // getCredentialsTab builds the credentials tab in the main UI.
 func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
+	logs.Logger.Debugln("credentials tab loaded")
 	tab := container.NewTabItem("Login Info", container.NewVBox())
 
 	label := widget.NewLabelWithStyle("Your Credentials", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
@@ -123,6 +124,7 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	}
 
 	if file.Exists(credentialsPath) {
+		logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
 		credentials, err := auth.LoadCredentials(credentialsPath)
 		if err != nil {
 			return tab, err
@@ -148,11 +150,14 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
 		mainDialog.Show()
 
+		logs.Logger.Debugln("verifying credentials")
 		_, err := auth.RetrieveJwtToken(credentials, true)
 		mainDialog.Hide()
 		if err != nil {
+			logs.Logger.Debugln("verfication failed")
 			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
 		} else {
+			logs.Logger.Debugln("verfication succesful - saving credentials")
 			auth.SaveCredentials(credentialsPath, credentials)
 			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
 		}
@@ -171,6 +176,7 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 // getPreferencesTab builds the preferences tab in the main UI.
 func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
+	logs.Logger.Debugln("preferences tab loaded")
 	tab := container.NewTabItem("Preferences", container.NewVBox())
 
 	fileDirHeader := widget.NewLabelWithStyle("File Directory", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
@@ -187,11 +193,13 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		dir, dirErr := fileDialog.Directory().Title("Choose directory").Browse()
 		if dirErr != nil {
 			if dirErr.Error() != "Cancelled" {
+				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
 				logs.Logger.Errorln(dirErr)
 			}
 			return
 		}
+		logs.Logger.Debugf("directory chosen - %s", dir)
 
 		preferences := getPreferences()
 		preferences.Directory = dir
@@ -209,6 +217,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			logs.Logger.Errorln(savePrefErr)
 			return
 		}
+		logs.Logger.Debugln("directory saved")
 		fileDirLabel.SetText(preferences.Directory)
 	})
 
@@ -235,6 +244,8 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			preferences.Frequency = 1
 		}
 
+		logs.Logger.Debugf("frequency selected - %d", preferences.Frequency)
+
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
@@ -248,6 +259,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			logs.Logger.Errorln(savePrefErr)
 			return
 		}
+		logs.Logger.Debugln("frequency saved")
 	})
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
@@ -262,12 +274,12 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 		if onDebug {
 			preferences.LogLevel = "debug"
-
 		} else {
 			preferences.LogLevel = "info"
 		}
 
 		logs.SetLogLevel(preferences.LogLevel)
+		logs.Logger.Debugf("debug mode changed to - %v", onDebug)
 
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
@@ -275,9 +287,11 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			logs.Logger.Errorln(savePrefErr)
 			return
 		}
+
+		dialog.NewInformation(lominus.APP_NAME, "Please restart Lominus for changes to take place.", parentWindow).Show()
 	})
 
-	debugCheckbox.SetChecked(getPreferences().LogLevel == "debug")
+	debugCheckbox.Checked = getPreferences().LogLevel == "debug"
 
 	tab.Content = container.NewVBox(
 		fileDirHeader,
@@ -299,6 +313,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 // getIntegrationsTab builds the integrations tab in the main UI.
 func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
+	logs.Logger.Debugln("integrations tab loaded")
 	tab := container.NewTabItem("Integrations", container.NewVBox())
 
 	label := widget.NewLabelWithStyle("Telegram", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
@@ -342,13 +357,16 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
 		mainDialog.Show()
 
+		logs.Logger.Debugln("sending telegram test message")
 		err := telegram.SendMessage(botApi, userId, "Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!\n\nBy integrating Telegram with Lominus, you will be notified of the following whenever Lominus polls for new update based on the intervals set:\n💥 new grades releases\n💥 new announcements (TBC)")
 		mainDialog.Hide()
 		if err != nil {
 			errMessage := fmt.Sprintf("%s: %s", err.Error()[:13], err.Error()[strings.Index(err.Error(), "description")+14:len(err.Error())-2])
+			logs.Logger.Debugln("telegram test message failed to send")
 			dialog.NewInformation(lominus.APP_NAME, errMessage, parentWindow).Show()
 		} else {
 			telegram.SaveTelegramData(telegramInfoPath, telegram.TelegramInfo{BotApi: botApi, UserId: userId})
+			logs.Logger.Debugln("telegram test message sent successfully")
 			dialog.NewInformation(lominus.APP_NAME, "Test message sent!\nTelegram info saved successfully.", parentWindow).Show()
 		}
 	})

@@ -31,6 +31,7 @@ func main() {
 		logs.Logger.Fatalln(lockErr)
 	}
 	defer lock.Unlock()
+	logs.Logger.Infoln("lock initialised")
 
 	notifications.Init()
 	logs.Logger.Infoln("notifications initialised")
