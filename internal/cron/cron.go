@@ -90,7 +90,7 @@ func GetLastRan() time.Time {
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Syncing in progress"}
-		logs.Logger.Infof("job started: %s\n", time.Now().Format(time.RFC3339))
+		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
 		if appApp.GetOs() == "windows" {
 			LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
 		}
@@ -198,7 +198,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 				}
 			}
 
-			logs.Logger.Infoln("job completed: %s\n", time.Now().Format(time.RFC3339))
+			logs.Logger.Infof("job completed: %s", time.Now().Format(time.RFC3339))
 		}
 
 		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
