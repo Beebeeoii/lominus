@@ -65,8 +65,21 @@ func Init() error {
 	return nil
 }
 
-func SetLogLevel(logLevel string) {
-	Logger.SetLevel(getLogLevel()(logLevel))
+// SetLogLevel sets the log level for global Logger by taking in the string representation of a log.Level
+func SetLogLevel(logLevel string) error {
+	switch logLevel {
+	case "panic":
+	case "fatal":
+	case "error":
+	case "warn":
+	case "info":
+	case "debug":
+	case "trace":
+		Logger.SetLevel(getLogLevel()(logLevel))
+		return nil
+	}
+
+	return fmt.Errorf("invalid logLevel provided - must be panic, fatal, error, warn, info, debug, trace")
 }
 
 // getLogPath returns the file path to the log file.
