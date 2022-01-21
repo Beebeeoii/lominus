@@ -59,7 +59,7 @@ func Build(dir string) (map[string]api.File, error) {
 
 // CreateIndexMap writes the IndexMap to a csv file for which can be loaded for the next sync.
 func CreateIndexMap(indexMap IndexMap) error {
-	logs.Logger.Infof("Creating index map: %s\n", INDEX_MAP_FILE_NAME)
+	logs.Logger.Infof("Creating index map: %s", INDEX_MAP_FILE_NAME)
 
 	indexMapPath, getIndexMapPathErr := getIndexMapPath()
 	if getIndexMapPathErr != nil {
@@ -83,7 +83,7 @@ func CreateIndexMap(indexMap IndexMap) error {
 
 // LoadIndexMap loads the IndexMap csv file back to a map of IndexMapEntry, with the key being the file Id.
 func LoadIndexMap(file io.Reader) (map[string]IndexMapEntry, error) {
-	logs.Logger.Infof("Loading index map: %s\n", INDEX_MAP_FILE_NAME)
+	logs.Logger.Infof("Loading index map: %s", INDEX_MAP_FILE_NAME)
 	r := csv.NewReader(file)
 	indexMap := map[string]IndexMapEntry{}
 
