@@ -16,6 +16,18 @@ type Grade struct {
 
 const GRADE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/gradebook/?populate=scores&ParentID=%s"
 
+// getGradeFieldsRequired is a helper function that returns a constant array with fields that a Grade response
+// returned by Luminus needs.
+func getGradeFieldsRequired() []string {
+	return []string{"access", "scores", "name", "maxMark"}
+}
+
+// getScoreDetailFieldsRequired is a helper function that returns a constant array with fields that a Grade["scores"] element
+// returned by Luminus needs.
+func getScoreDetailFieldsRequired() []string {
+	return []string{"finalMark", "remark", "lastUpdatedDate", "maxMark"}
+}
+
 // GetGrades retrieves all grades for a particular module represented by moduleCode specified in GradeRequest.
 // Find out more about GradeRequests under request.go.
 func (req GradeRequest) GetGrades() ([]Grade, error) {
@@ -28,10 +40,17 @@ func (req GradeRequest) GetGrades() ([]Grade, error) {
 	}
 
 	for _, content := range rawResponse.Data {
+		if !IsResponseValid(getGradeFieldsRequired(), content) {
+			continue
+		}
+
 		if _, exists := content["access"]; exists { // only grades that can be accessed will be placed in grades slice
 			scoreDetail := make(map[string]interface{})
 			if len(content["scores"].([]interface{})) > 0 {
 				scoreDetail = (content["scores"].([]interface{})[0]).(map[string]interface{})
+				if !IsResponseValid(getScoreDetailFieldsRequired(), scoreDetail) {
+					continue
+				}
 			}
 			testName := content["name"].(string)
 			mark := -1.0

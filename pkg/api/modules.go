@@ -15,6 +15,18 @@ type Module struct {
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
 
+// getModuleFieldsRequired is a helper function that returns a constant array with fields that a Module response
+// returned by Luminus needs.
+func getModuleFieldsRequired() []string {
+	return []string{"access", "termDetail", "courseName", "name", "creatorName", "creatorEmail"}
+}
+
+// getTermDetailFieldsRequired is a helper function that returns a constant array with fields that a Module["termDetail"]
+// returned by Luminus needs.
+func getTermDetailFieldsRequired() []string {
+	return []string{"description"}
+}
+
 // GetModules retrieves all modules that are taken by the user using a ModuleRequest.
 // Find out more about ModuleRequests under request.go.
 func (req ModuleRequest) GetModules() ([]Module, error) {
@@ -27,9 +39,17 @@ func (req ModuleRequest) GetModules() ([]Module, error) {
 	}
 
 	for _, content := range rawResponse.Data {
+		if !IsResponseValid(getModuleFieldsRequired(), content) {
+			continue
+		}
+
 		_, accessible := content["access"]
 		if accessible {
 			termDetail := content["termDetail"].(map[string]interface{})
+			if !IsResponseValid(getTermDetailFieldsRequired(), termDetail) {
+				continue
+			}
+
 			module := Module{
 				Id:           content["id"].(string),
 				Name:         content["courseName"].(string),
