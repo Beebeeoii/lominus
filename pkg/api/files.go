@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/beebeeoii/lominus/internal/file"
-	logs "github.com/beebeeoii/lominus/internal/log"
 )
 
 // Folder struct is the datapack for containing details about a Folder
@@ -39,13 +38,13 @@ const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?popul
 const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
 
 // getFolderFieldsRequired is a helper function that returns a constant array with fields that a Folder response
-// returned by Luminus needs
+// returned by Luminus needs.
 func getFolderFieldsRequired() []string {
 	return []string{"access", "id", "name", "isActive", "allowUpload", "subFolderCount"}
 }
 
 // getFileFieldsRequired is a helper function that returns a constant array with fields that a File response
-// returned by Luminus needs
+// returned by Luminus needs.
 func getFileFieldsRequired() []string {
 	return []string{"id", "name", "lastUpdatedDate"}
 }
@@ -68,7 +67,7 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 	}
 
 	for _, content := range rawResponse.Data {
-		if !isResponseValid(getFolderFieldsRequired(), content) {
+		if !IsResponseValid(getFolderFieldsRequired(), content) {
 			continue
 		}
 
@@ -104,7 +103,7 @@ func (req DocumentRequest) GetAllFiles() ([]File, error) {
 	}
 
 	for _, content := range rawResponse.Data {
-		if !isResponseValid(getFileFieldsRequired(), content) {
+		if !IsResponseValid(getFileFieldsRequired(), content) {
 			continue
 		}
 
@@ -214,22 +213,4 @@ func (req DocumentRequest) Download(filePath string) error {
 	}
 
 	return nil
-}
-
-// isResponseValid is a helper function that checks if a Folder/File response is valid.
-// It checks if the response contains the required fields required.
-func isResponseValid(fieldsRequired []string, response map[string]interface{}) bool {
-	isValid := true
-	for _, field := range fieldsRequired {
-		_, exists := response[field]
-
-		if !exists {
-			isValid = false
-			break
-		}
-	}
-
-	logs.Logger.Debugln(isValid, fieldsRequired)
-
-	return isValid
 }

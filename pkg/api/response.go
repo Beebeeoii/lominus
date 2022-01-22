@@ -50,3 +50,19 @@ func (req Request) GetRawResponse(res interface{}) error {
 
 	return err
 }
+
+// isResponseValid is a helper function that checks if a Folder/File response is valid.
+// It checks if the response contains the required fields required.
+func IsResponseValid(fieldsRequired []string, response map[string]interface{}) bool {
+	isValid := true
+	for _, field := range fieldsRequired {
+		_, exists := response[field]
+
+		if !exists {
+			isValid = false
+			break
+		}
+	}
+
+	return isValid
+}
