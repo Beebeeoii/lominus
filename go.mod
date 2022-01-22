@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.1.1
 	github.com/go-co-op/gocron v1.10.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
+	github.com/sirupsen/logrus v1.8.1
 	github.com/sqweek/dialog v0.0.0-20211002065838-9a201b55ab91
 )
 
@@ -19,7 +20,6 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

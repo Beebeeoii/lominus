@@ -23,6 +23,13 @@ type DownloadResponse struct {
 	DownloadUrl string `json:"data"`
 }
 
+// LTIDataResponse struct is the datapack for containing API response Panapto LTI data.
+type LTIDataResponse struct {
+	DataItems []map[string]interface{} `json:"dataItems"`
+	Html      string                   `json:"html"`
+	LaunchURL string                   `json:"launchURL"`
+}
+
 // GetRawResponse sends the HTTP request and marshals it into the pointer provided.
 // Argument provided must be a pointer.
 func (req Request) GetRawResponse(res interface{}) error {

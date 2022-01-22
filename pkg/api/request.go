@@ -36,6 +36,18 @@ type ModuleRequest struct {
 	Request Request
 }
 
+// MultimediaChannelRequest struct is the datapack for containing details about a specific HTTP request used for multimedia channels (Luminus Multimedia).
+type MultimediaChannelRequest struct {
+	Module  Module
+	Request Request
+}
+
+// MultimediaVideoRequest struct is the datapack for containing details about a specific HTTP request used for multimedia video (Luminus Multimedia).
+type MultimediaVideoRequest struct {
+	MultimediaChannel MultimediaChannel
+	Request           Request
+}
+
 const (
 	GET_ALL_FOLDERS = 0
 	GET_ALL_FILES   = 1
@@ -43,6 +55,9 @@ const (
 )
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
+const POST = "POST"
+const CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
+const CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
 
 // BuildModuleRequest builds and returns a ModuleRequest that can be used for Module related operations
 // such as retrieving all modules.
@@ -74,6 +89,44 @@ func BuildGradeRequest(module Module) (GradeRequest, error) {
 		Module: module,
 		Request: Request{
 			Url:       fmt.Sprintf(GRADE_URL_ENDPOINT, module.Id),
+			JwtToken:  jwtToken,
+			UserAgent: USER_AGENT,
+		},
+	}, nil
+}
+
+// BuildMultimediaChannelRequest builds and returns a MultimediaChannelRequuest that can be used for Multimedia
+// channel related operations such as retrieving all channels of a module.
+// A Module is required to build a BuildMultimediaChannelRequest as it is module specific.
+func BuildMultimediaChannelRequest(module Module) (MultimediaChannelRequest, error) {
+	jwtToken, jwtTokenErr := retrieveJwtToken()
+	if jwtTokenErr != nil {
+		return MultimediaChannelRequest{}, jwtTokenErr
+	}
+
+	return MultimediaChannelRequest{
+		Module: module,
+		Request: Request{
+			Url:       fmt.Sprintf(MULTIMEMDIA_CHANNEL_URL_ENDPOINT, module.Id),
+			JwtToken:  jwtToken,
+			UserAgent: USER_AGENT,
+		},
+	}, nil
+}
+
+// BuildMultimediaChannelRequest builds and returns a MultimediaChannelRequuest that can be used for Multimedia
+// channel related operations such as retrieving all channels of a module.
+// A Module is required to build a BuildMultimediaChannelRequest as it is module specific.
+func BuildMultimediaVideoRequest(multimediaChannel MultimediaChannel) (MultimediaVideoRequest, error) {
+	jwtToken, jwtTokenErr := retrieveJwtToken()
+	if jwtTokenErr != nil {
+		return MultimediaVideoRequest{}, jwtTokenErr
+	}
+
+	return MultimediaVideoRequest{
+		MultimediaChannel: multimediaChannel,
+		Request: Request{
+			Url:       fmt.Sprintf(LTI_DATA_URL_ENDPOINT, multimediaChannel.Id),
 			JwtToken:  jwtToken,
 			UserAgent: USER_AGENT,
 		},
