@@ -33,6 +33,7 @@ const INDEX_MAP_FILE_NAME = "index_map.csv"
 // Build is used to create a map of the current files on the local desktop.
 // The built map will be used to compare with the IndexMap to determine whether a file
 // needs to be downloaded or updated.
+// The map's key format is as follows: the/ancestors/of/the/file/fileName.pdf
 func Build(dir string) (map[string]api.File, error) {
 	filesMap := make(map[string]api.File)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -45,9 +46,11 @@ func Build(dir string) (map[string]api.File, error) {
 		}
 
 		if !info.IsDir() {
-			filesMap[info.Name()] = api.File{
+			ancestors := strings.Split(path[len(dir)+1:], string(os.PathSeparator))
+			key := strings.Join(ancestors, "/")
+			filesMap[key] = api.File{
 				Name:        info.Name(),
-				Ancestors:   strings.Split(path[len(dir)+1:], string(os.PathSeparator)),
+				Ancestors:   ancestors,
 				LastUpdated: info.ModTime(),
 			}
 		}

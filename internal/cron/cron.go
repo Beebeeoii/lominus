@@ -147,18 +147,18 @@ func createJob(frequency int) (*gocron.Job, error) {
 				updatedFiles = append(updatedFiles, files...)
 			}
 
-			indexMapEntries := make([]indexing.IndexMapEntry, 0)
-			for _, file := range updatedFiles {
-				indexMapEntries = append(indexMapEntries, indexing.IndexMapEntry{
-					Id:          file.Id,
-					FileName:    file.Name,
-					LastUpdated: file.LastUpdated.Unix(),
-				})
-			}
+			// indexMapEntries := make([]indexing.IndexMapEntry, 0)
+			// for _, file := range updatedFiles {
+			// 	indexMapEntries = append(indexMapEntries, indexing.IndexMapEntry{
+			// 		Id:          file.Id,
+			// 		FileName:    file.Name,
+			// 		LastUpdated: file.LastUpdated.Unix(),
+			// 	})
+			// }
 
-			indexing.CreateIndexMap(indexing.IndexMap{
-				Entries: indexMapEntries,
-			})
+			// indexing.CreateIndexMap(indexing.IndexMap{
+			// 	Entries: indexMapEntries,
+			// })
 
 			logs.Logger.Debugln("building - index map")
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
@@ -172,10 +172,15 @@ func createJob(frequency int) (*gocron.Job, error) {
 			filesUpdated := []api.File{}
 
 			for _, file := range updatedFiles {
-				if _, exists := currentFiles[file.Name]; !exists || currentFiles[file.Name].LastUpdated.Before(file.LastUpdated) {
+				key := fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name)
+
+				localLastUpdated := currentFiles[key].LastUpdated
+				luminusLastUpdated := file.LastUpdated
+
+				if _, exists := currentFiles[key]; !exists || localLastUpdated.Before(luminusLastUpdated) {
 					nFilesToUpdate += 1
 
-					logs.Logger.Debugf("downloading - %s into (%s)", file.Name, strings.Join(file.Ancestors, "/"))
+					logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), luminusLastUpdated.String())
 					downloadErr := downloadFile(preferences.Directory, file)
 					if downloadErr != nil {
 						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
