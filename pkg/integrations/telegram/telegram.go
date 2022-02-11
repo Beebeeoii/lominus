@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/beebeeoii/lominus/internal/file"
+	"github.com/beebeeoii/lominus/pkg/api"
 )
 
 // TelegramInfo struct is the datapack that holds the data required for Telegram integration.
@@ -34,12 +35,10 @@ func SendMessage(botApi string, userId string, message string) error {
 		},
 	}
 
-	message = cleanseMessage(message)
-
 	reqBody := url.Values{}
 	reqBody.Set("chat_id", userId)
 	reqBody.Set("text", message)
-	reqBody.Set("parse_mode", "MarkdownV2")
+	reqBody.Set("parse_mode", "HTML")
 	sendMsgReq, sendMsgErr := http.NewRequest(POST, fmt.Sprintf(SEND_MSG_URL, botApi), strings.NewReader(reqBody.Encode()))
 
 	if sendMsgErr != nil {
@@ -66,32 +65,36 @@ func SendMessage(botApi string, userId string, message string) error {
 }
 
 // GenerateGradeMessageFormat creates a message text for grade notifications.
-func GenerateGradeMessageFormat(moduleName string, testName string, comments string, marks float64, maxMarks float64) string {
-	return fmt.Sprintf("🆕 Grades 🆕\n%s: %s\n\nComments: %s\n\nGrade: %f/%f", moduleName, testName, comments, marks, maxMarks)
+func GenerateGradeMessageFormat(grade api.Grade) string {
+	var gradeMessage string
+
+	if grade.Comments == "" {
+		gradeMessage = fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>\n\n<b>Comments</b>: %s", grade.Module.ModuleCode, grade.Name, grade.Marks, grade.MaxMarks, grade.Comments)
+	} else {
+		gradeMessage = fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>", grade.Module.ModuleCode, grade.Name, grade.Marks, grade.MaxMarks)
+	}
+
+	return gradeMessage
 }
 
-// cleanseMessage escapes restricted chracters in messages that would cause Telegram servers to return an error.
-func cleanseMessage(message string) string {
-	message = strings.Replace(message, ".", "\\.", -1)
-	message = strings.Replace(message, "-", "\\-", -1)
-	message = strings.Replace(message, "_", "\\_", -1)
-	message = strings.Replace(message, "!", "\\!", -1)
-	message = strings.Replace(message, "(", "\\(", -1)
-	message = strings.Replace(message, ")", "\\)", -1)
-	message = strings.Replace(message, "[", "\\[", -1)
-	message = strings.Replace(message, "]", "\\]", -1)
-	message = strings.Replace(message, "{", "\\{", -1)
-	message = strings.Replace(message, "}", "\\}", -1)
-	message = strings.Replace(message, "=", "\\=", -1)
-	message = strings.Replace(message, "*", "\\*", -1)
-	message = strings.Replace(message, "~", "\\~", -1)
-	message = strings.Replace(message, "`", "\\`", -1)
-	message = strings.Replace(message, ">", "\\>", -1)
-	message = strings.Replace(message, "#", "\\#", -1)
-	message = strings.Replace(message, "+", "\\+", -1)
-	message = strings.Replace(message, "|", "\\|", -1)
+// GenerateFileUpdatedMessageFormat creates a message text for file update notifications.
+func GenerateFileUpdatedMessageFormat(files []api.File) string {
+	nFilesUpdated := len(files)
+	updatedFilesModulesNames := []string{}
 
-	return message
+	for _, file := range files {
+		updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
+	}
+
+	var updatedFileNamesString string
+
+	if nFilesUpdated > 4 {
+		updatedFileNamesString = strings.Join(append(updatedFilesModulesNames[:3], "..."), "\n")
+	} else {
+		updatedFileNamesString = strings.Join(updatedFilesModulesNames, "\n")
+	}
+
+	return fmt.Sprintf("🆕 Files\n%s", updatedFileNamesString)
 }
 
 // SaveTelegramData saves the user's Telegram data onto local storage.
