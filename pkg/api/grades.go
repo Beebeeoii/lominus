@@ -7,6 +7,7 @@ import (
 
 // Grade struct is the datapack for containing details about every Grade in a module.
 type Grade struct {
+	Module      Module
 	Name        string
 	Marks       float64
 	MaxMarks    float64
@@ -25,7 +26,7 @@ func getGradeFieldsRequired() []string {
 // getScoreDetailFieldsRequired is a helper function that returns a constant array with fields that a Grade["scores"] element
 // returned by Luminus needs.
 func getScoreDetailFieldsRequired() []string {
-	return []string{"finalMark", "remark", "lastUpdatedDate", "maxMark"}
+	return []string{"finalMark", "lastUpdatedDate"}
 }
 
 // GetGrades retrieves all grades for a particular module represented by moduleCode specified in GradeRequest.
@@ -44,14 +45,17 @@ func (req GradeRequest) GetGrades() ([]Grade, error) {
 			continue
 		}
 
-		if _, exists := content["access"]; exists { // only grades that can be accessed will be placed in grades slice
-			scoreDetail := make(map[string]interface{})
-			if len(content["scores"].([]interface{})) > 0 {
-				scoreDetail = (content["scores"].([]interface{})[0]).(map[string]interface{})
-				if !IsResponseValid(getScoreDetailFieldsRequired(), scoreDetail) {
-					continue
-				}
+		if _, exists := content["access"]; exists {
+			scoreField := content["scores"].([]interface{})
+			if len(scoreField) == 0 {
+				continue
 			}
+
+			scoreDetail := (scoreField[0]).(map[string]interface{})
+			if !IsResponseValid(getScoreDetailFieldsRequired(), scoreDetail) {
+				continue
+			}
+
 			testName := content["name"].(string)
 			mark := -1.0
 			if _, exists := scoreDetail["finalMark"]; exists {
@@ -72,6 +76,7 @@ func (req GradeRequest) GetGrades() ([]Grade, error) {
 			}
 
 			grade := Grade{
+				req.Module,
 				testName,
 				mark,
 				maxMark,
