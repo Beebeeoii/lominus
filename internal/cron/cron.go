@@ -8,11 +8,14 @@ import (
 	"time"
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
+	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	"github.com/beebeeoii/lominus/internal/file"
 	files "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
@@ -147,19 +150,6 @@ func createJob(frequency int) (*gocron.Job, error) {
 				updatedFiles = append(updatedFiles, files...)
 			}
 
-			// indexMapEntries := make([]indexing.IndexMapEntry, 0)
-			// for _, file := range updatedFiles {
-			// 	indexMapEntries = append(indexMapEntries, indexing.IndexMapEntry{
-			// 		Id:          file.Id,
-			// 		FileName:    file.Name,
-			// 		LastUpdated: file.LastUpdated.Unix(),
-			// 	})
-			// }
-
-			// indexing.CreateIndexMap(indexing.IndexMap{
-			// 	Entries: indexMapEntries,
-			// })
-
 			logs.Logger.Debugln("building - index map")
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
@@ -235,6 +225,14 @@ func createJob(frequency int) (*gocron.Job, error) {
 			return
 		}
 
+		var lastSync time.Time
+		baseDir, _ := appDir.GetBaseDir()
+
+		existingGradeErr := file.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
+		if existingGradeErr != nil {
+			logs.Logger.Debugln(existingGradeErr)
+		}
+
 		for _, module := range modules {
 			logs.Logger.Debugln("building - grade request")
 			gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
@@ -245,26 +243,19 @@ func createJob(frequency int) (*gocron.Job, error) {
 			}
 
 			logs.Logger.Debugln("retrieving - grade")
-			grades, gradesErr := gradeRequest.GetGrades()
+			allGrades, gradesErr := gradeRequest.GetGrades()
 			if gradesErr != nil {
 				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
 				logs.Logger.Errorln(gradesErr)
 				continue
 			}
 
-			for _, grade := range grades {
-				frequencyDuration, freqErr := time.ParseDuration(fmt.Sprintf("%dh", preferences.Frequency))
-				if freqErr != nil {
-					logs.Logger.Errorln(freqErr)
+			for _, grade := range allGrades {
+				if time.Unix(grade.LastUpdated, 0).Before(lastSync) {
 					continue
 				}
 
-				if time.Since(time.Unix(grade.LastUpdated, 0)) > frequencyDuration {
-					continue
-				}
-
-				message := telegram.GenerateGradeMessageFormat(module.ModuleCode, grade.Name, grade.Comments, grade.Marks, grade.MaxMarks)
-				logs.Logger.Debugln("sending telegram message - %s", message)
+				message := telegram.GenerateGradeMessageFormat(grade)
 				gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
 
 				if gradeMsgErr != nil {
@@ -272,6 +263,11 @@ func createJob(frequency int) (*gocron.Job, error) {
 					continue
 				}
 			}
+		}
+
+		err := file.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
+		if err != nil {
+			logs.Logger.Debugln(err)
 		}
 	})
 }
