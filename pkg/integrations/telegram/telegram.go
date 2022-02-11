@@ -68,7 +68,7 @@ func SendMessage(botApi string, userId string, message string) error {
 func GenerateGradeMessageFormat(grade api.Grade) string {
 	var gradeMessage string
 
-	if grade.Comments == "" {
+	if grade.Comments != "" {
 		gradeMessage = fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>\n\n<b>Comments</b>: %s", grade.Module.ModuleCode, grade.Name, grade.Marks, grade.MaxMarks, grade.Comments)
 	} else {
 		gradeMessage = fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>", grade.Module.ModuleCode, grade.Name, grade.Marks, grade.MaxMarks)
