@@ -9,10 +9,11 @@ import (
 	"strings"
 )
 
-// EncodeStructToFile takes in any struct and encodes it into a file specified by fileName.
+// EncodeToFile takes in any type and encodes it into a file specified by fileName.
 // If the file already exists, it is truncated.
 // If the file does not exist, it is created with mode 0666 (before umask).
 // Provide absolute path else file will be written to the current working directory.
+// TODO CHANGE name to EncodeToFile
 func EncodeStructToFile(fileName string, data interface{}) error {
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -22,23 +23,33 @@ func EncodeStructToFile(fileName string, data interface{}) error {
 	defer file.Close()
 
 	encoder := gob.NewEncoder(file)
-	encoder.Encode(data)
+	encodeErr := encoder.Encode(data)
+	if encodeErr != nil {
+		return encodeErr
+	}
 
 	return nil
 }
 
-// DecodeStructFromFile takes a file that has been encoded by a struct and decodes it back to the struct.
+// DecodeFromFile decodes any type that has been encoded back into its original type.
+// Works with structs, primitives and objects like time.Time.
+// Provide a pointer of the type to write to.
 // Provide absolute path else file may not be found.
+// TODO CHANGE name to DecodeToFile
 func DecodeStructFromFile(fileName string, data interface{}) error {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	decoder := gob.NewDecoder(file)
-	err = decoder.Decode(data)
 
-	return err
+	decoder := gob.NewDecoder(file)
+	decodeErr := decoder.Decode(data)
+	if decodeErr != nil {
+		return decodeErr
+	}
+
+	return nil
 }
 
 // Exists checks if the given file exists.
