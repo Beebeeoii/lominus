@@ -112,6 +112,20 @@ func createJob(frequency int) (*gocron.Job, error) {
 			return
 		}
 
+		logs.Logger.Debugln("retrieving - telegram path")
+		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
+		if getTelegramInfoPathErr != nil {
+			logs.Logger.Errorln(getTelegramInfoPathErr)
+			return
+		}
+
+		logs.Logger.Debugln("loading - telegram")
+		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
+		if telegramInfoErr != nil {
+			logs.Logger.Errorln(telegramInfoErr)
+			return
+		}
+
 		logs.Logger.Debugln("building - module request")
 		moduleRequest, modReqErr := api.BuildModuleRequest()
 		if modReqErr != nil {
@@ -186,6 +200,13 @@ func createJob(frequency int) (*gocron.Job, error) {
 				updatedFilesModulesNames := []string{}
 
 				for _, file := range filesUpdated {
+					message := telegram.GenerateFileUpdatedMessageFormat(file)
+					gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
+
+					if gradeMsgErr != nil {
+						logs.Logger.Errorln(gradeMsgErr)
+						continue
+					}
 					updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
 				}
 
@@ -209,20 +230,6 @@ func createJob(frequency int) (*gocron.Job, error) {
 			}
 
 			logs.Logger.Infof("job completed: %s", time.Now().Format(time.RFC3339))
-		}
-
-		logs.Logger.Debugln("retrieving - telegram path")
-		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
-		if getTelegramInfoPathErr != nil {
-			logs.Logger.Errorln(getTelegramInfoPathErr)
-			return
-		}
-
-		logs.Logger.Debugln("loading - telegram")
-		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
-		if telegramInfoErr != nil {
-			logs.Logger.Errorln(telegramInfoErr)
-			return
 		}
 
 		var lastSync time.Time

@@ -66,35 +66,32 @@ func SendMessage(botApi string, userId string, message string) error {
 
 // GenerateGradeMessageFormat creates a message text for grade notifications.
 func GenerateGradeMessageFormat(grade api.Grade) string {
-	var gradeMessage string
+	gradeMessage := fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>",
+		grade.Module.ModuleCode,
+		grade.Name,
+		grade.Marks,
+		grade.MaxMarks,
+	)
 
 	if grade.Comments != "" {
-		gradeMessage = fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>\n\n<b>Comments</b>: %s", grade.Module.ModuleCode, grade.Name, grade.Marks, grade.MaxMarks, grade.Comments)
-	} else {
-		gradeMessage = fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>", grade.Module.ModuleCode, grade.Name, grade.Marks, grade.MaxMarks)
+		gradeMessage = fmt.Sprintf("%s\n\n<b>Comments</b>: %s",
+			gradeMessage,
+			grade.Comments,
+		)
 	}
 
 	return gradeMessage
 }
 
 // GenerateFileUpdatedMessageFormat creates a message text for file update notifications.
-func GenerateFileUpdatedMessageFormat(files []api.File) string {
-	nFilesUpdated := len(files)
-	updatedFilesModulesNames := []string{}
+func GenerateFileUpdatedMessageFormat(file api.File) string {
+	updatedFileMessage := fmt.Sprintf("<b><u>Files</u></b>\n<b>%s</b>: <i>%s</i>\n\nUpdated: %s",
+		file.Ancestors[0],
+		file.Name,
+		file.LastUpdated.Format("Monday, 01 January 2006 - 15:04:05"),
+	)
 
-	for _, file := range files {
-		updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
-	}
-
-	var updatedFileNamesString string
-
-	if nFilesUpdated > 4 {
-		updatedFileNamesString = strings.Join(append(updatedFilesModulesNames[:3], "..."), "\n")
-	} else {
-		updatedFileNamesString = strings.Join(updatedFilesModulesNames, "\n")
-	}
-
-	return fmt.Sprintf("🆕 Files\n%s", updatedFileNamesString)
+	return updatedFileMessage
 }
 
 // SaveTelegramData saves the user's Telegram data onto local storage.
