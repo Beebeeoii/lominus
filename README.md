@@ -1,4 +1,4 @@
-![GitHub Lominus version](https://img.shields.io/badge/Lominus-v1.2.0--alpha-blueviolet)
+![GitHub Lominus version](https://img.shields.io/badge/Lominus-v1.2.0-blueviolet)
 ![GitHub all releases](https://img.shields.io/github/downloads/beebeeoii/lominus/total)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus)
 [![Go Reference](https://pkg.go.dev/badge/github.com/beebeeoii/lominus.svg)](https://pkg.go.dev/github.com/beebeeoii/lominus)
@@ -33,17 +33,19 @@ Lominus is a tool written in Go to automatically sync [Luminus](https://luminus.
 Lominus removes the hassle to download (or redownload) whenever files are uploaded (or updated), resulting in necessary manual cleanup and organisation of the files. And many more!
 
 - Keeps your Luminus files organised
-- Automatic download of all files from Luminus Files for all modules
+- Automatic download of all files from Luminus Files
 - Automatic update of files when files are reuploaded on Luminus
-- Grades notification
-- System notification sync status
-- Dark/light mode (based on your system's theme)
+- System notifications
+- System-based dark/light mode
 - System tray icon (Windows only)
 - Telegram integration
+    - Grades notification
+    - Files notification
 - API
 
 To be implemented:
 
+- Multimedia download
 - Notion integration
 - Custom webhook integration
 
