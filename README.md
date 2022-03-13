@@ -115,9 +115,9 @@ You are highly recommended to compile and the program manually.
 
 2. `gcc`
 
-3. `gtk3` and `libappindicator3` (Linux)
+3. `gtk3` and `libayatana-appindicator3-dev` (Linux)
 
-    - For Debian and Ubuntu, you may install these via `sudo apt-get install gcc libgtk-3-dev libappindicator3-dev`
+    - For Debian and Ubuntu, you may install these via `sudo apt-get install gcc libgtk-3-dev libayatana-appindicator3-dev`
 
     - If you are on Linux Mint, you will require `libxapp-dev` as well.
 
