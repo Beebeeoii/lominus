@@ -91,6 +91,7 @@ func Init() error {
 
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(600, 600))
+	w.SetPadded(true)
 	w.SetFixedSize(true)
 	w.SetMaster()
 	w.SetCloseIntercept(func() {
@@ -110,8 +111,8 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	tab := container.NewTabItem("Login Info", container.NewVBox())
 
 	label := widget.NewLabelWithStyle("Your Credentials", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
-	subLabel := widget.NewRichTextFromMarkdown("Credentials are saved **locally**. It is **only** used to login to your [Luminus](https://luminus.nus.edu.sg) account.")
-	subLabel.Wrapping = fyne.TextWrapBreak
+	subLabel := widget.NewRichTextFromMarkdown("Credentials are saved **locally**. It is used to login to [Luminus](https://luminus.nus.edu.sg) **only**.")
+	subLabel.Wrapping = fyne.TextWrapWord
 
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetPlaceHolder("Eg: nusstu\\e0123456")
@@ -188,7 +189,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	}
 
 	fileDirLabel := widget.NewLabel(dir)
-	fileDirLabel.Wrapping = fyne.TextWrapBreak
+	fileDirLabel.Wrapping = fyne.TextWrapWord
 	chooseDirButton := widget.NewButton("Choose directory", func() {
 		dir, dirErr := fileDialog.Directory().Title("Choose directory").Browse()
 		if dirErr != nil {
@@ -318,7 +319,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 	label := widget.NewLabelWithStyle("Telegram", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
 	subLabel := widget.NewRichTextFromMarkdown("Lominus can be linked to your Telegram bot to notify you when new grades are released.")
-	subLabel.Wrapping = fyne.TextWrapBreak
+	subLabel.Wrapping = fyne.TextWrapWord
 
 	botApiEntry := widget.NewPasswordEntry()
 	botApiEntry.SetPlaceHolder("Your bot's API token")
