@@ -11,7 +11,6 @@ import (
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	"github.com/beebeeoii/lominus/internal/file"
 	files "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -234,7 +233,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 		var lastSync time.Time
 		baseDir, _ := appDir.GetBaseDir()
 
-		existingGradeErr := file.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
+		existingGradeErr := files.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
 		if existingGradeErr != nil {
 			logs.Logger.Debugln(existingGradeErr)
 		}
@@ -271,7 +270,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 			}
 		}
 
-		err := file.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
+		err := files.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
 		if err != nil {
 			logs.Logger.Debugln(err)
 		}
@@ -282,11 +281,20 @@ func createJob(frequency int) (*gocron.Job, error) {
 // directory based on the File's Ancestors.
 func downloadFile(baseDir string, file api.File) error {
 	fileDirSlice := append([]string{baseDir}, file.Ancestors...)
-	files.EnsureDir(filepath.Join(append(fileDirSlice, file.Name)...))
+	filePath := filepath.Join(append(fileDirSlice, file.Name)...)
+	files.EnsureDir(filePath)
 
 	downloadReq, dlReqErr := api.BuildDocumentRequest(file, api.DOWNLOAD_FILE)
 	if dlReqErr != nil {
 		return dlReqErr
+	}
+
+	if files.Exists(filePath) {
+		renameErr := files.AutoRename(filePath)
+
+		if renameErr != nil {
+			return renameErr
+		}
 	}
 
 	return downloadReq.Download(filepath.Join(fileDirSlice...))

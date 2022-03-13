@@ -59,6 +59,26 @@ func Exists(name string) bool {
 	return err == nil
 }
 
+// AutoRename renames a file by prepending "[EditX]" to its fileName
+// where X is a positive integer.
+// X increments itself starting from 1 until the there exists a
+// the new fileName does not exist in the directory.
+func AutoRename(filePath string) error {
+	FORMAT := "[Edit%d]%s"
+	directory, fileName := filepath.Split(filePath)
+	newFileName := fileName
+
+	for x := 1; ; x++ {
+		newFileName = fmt.Sprintf(FORMAT, x, fileName)
+
+		if !Exists(filepath.Join(directory, newFileName)) {
+			break
+		}
+	}
+
+	return os.Rename(filePath, filepath.Join(directory, newFileName))
+}
+
 // EnsureDir is a helper function that ensures that the directory exists by creating them
 // if they do not already exist.
 func EnsureDir(dir string) error {
