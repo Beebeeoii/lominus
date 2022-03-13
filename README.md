@@ -117,25 +117,35 @@ You are highly recommended to compile and the program manually.
 
 3. `gtk3` and `libayatana-appindicator3-dev` (Linux)
 
-    - For Debian and Ubuntu, you may install these via `sudo apt-get install gcc libgtk-3-dev libayatana-appindicator3-dev`
+    - For Debian and Ubuntu, you may install these via
+
+        ``` bash
+        sudo apt-get install gcc libgtk-3-dev libayatana-appindicator3-dev
+        ```
 
     - If you are on Linux Mint, you will require `libxapp-dev` as well.
 
 ### Build <a name="getting-started-building-build">
 
-1. Ensure Go is set in you system env var.
+1. Ensure Go is set in you system env var
 
-2. Navigate to the directory where you cloned and execute `go install`.
+2. Install dependencies in the directory where you cloned
 
-3. Install [fyne](https://developer.fyne.io/index.html) via `go get fyne.io/fyne/v2/cmd/fyne`
+    ``` bash
+    go install
+    ```
 
-4. Finally, build and compile. Depending on your system os:
+3. Install [fyne](https://developer.fyne.io/index.html)
 
-    - For windows: `fyne package -os windows`.
+    ``` bash
+    go get fyne.io/fyne/v2/cmd/fyne
+    ```
 
-    - For macOS: `fyne package -os darwin`.
+4. Finally, build and compile
 
-    - For Linux: `fyne package -os linux`.
+    ``` bash
+    fyne package
+    ```
 
 ## API <a name="getting-started-api">
 
