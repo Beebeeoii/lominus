@@ -88,7 +88,7 @@ func GenerateFileUpdatedMessageFormat(file api.File) string {
 	updatedFileMessage := fmt.Sprintf("<b><u>Files</u></b>\n<b>%s</b>: <i>%s</i>\n\nUpdated: %s",
 		file.Ancestors[0],
 		file.Name,
-		file.LastUpdated.Format("Monday, 01 January 2006 - 15:04:05"),
+		file.LastUpdated.Format("Monday, 02 January 2006 - 15:04:05"),
 	)
 
 	return updatedFileMessage
