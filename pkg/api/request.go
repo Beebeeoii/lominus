@@ -7,6 +7,7 @@ import (
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	"github.com/beebeeoii/lominus/pkg/auth"
+	"github.com/beebeeoii/lominus/pkg/constants"
 )
 
 // Request struct is the datapack for containing details about a HTTP request.
@@ -71,6 +72,16 @@ func BuildModuleRequest() (ModuleRequest, error) {
 		Request: Request{
 			Url:       MODULE_URL_ENDPOINT,
 			JwtToken:  jwtToken,
+			UserAgent: USER_AGENT,
+		},
+	}, nil
+}
+
+func BuildCanvasModuleRequest() (ModuleRequest, error) {
+	return ModuleRequest{
+		Request: Request{
+			Url:       constants.CANVAS_MODULES_ENDPOINT,
+			JwtToken:  "",
 			UserAgent: USER_AGENT,
 		},
 	}, nil

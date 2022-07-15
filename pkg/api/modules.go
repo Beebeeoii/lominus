@@ -1,16 +1,18 @@
 // Package api provides functions that link up and communicate with Luminus servers.
 package api
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+
+	"github.com/beebeeoii/lominus/pkg/interfaces"
+)
 
 // Module struct is the datapack for containing details about every module
 type Module struct {
-	Id           string
-	Name         string
-	ModuleCode   string
-	CreatorName  string
-	CreatorEmail string
-	Period       string
+	Id         string
+	Name       string
+	ModuleCode string
 }
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
@@ -51,12 +53,35 @@ func (req ModuleRequest) GetModules() ([]Module, error) {
 			}
 
 			module := Module{
-				Id:           content["id"].(string),
-				Name:         content["courseName"].(string),
-				ModuleCode:   strings.Replace(content["name"].(string), "/", "-", -1), // for multi-coded modules that uses '/' as a separator
-				CreatorName:  content["creatorName"].(string),
-				CreatorEmail: content["creatorEmail"].(string),
-				Period:       termDetail["description"].(string),
+				Id:         content["id"].(string),
+				Name:       content["courseName"].(string),
+				ModuleCode: strings.Replace(content["name"].(string), "/", "-", -1), // for multi-coded modules that uses '/' as a separator
+				// CreatorName:  content["creatorName"].(string),
+				// CreatorEmail: content["creatorEmail"].(string),
+				// Period:       termDetail["description"].(string),
+			}
+			modules = append(modules, module)
+		}
+	}
+
+	return modules, nil
+}
+
+func (req ModuleRequest) GetCanvasModules() ([]Module, error) {
+	var modules []Module
+
+	var rawResponse []interfaces.CanvasModuleObject
+	err := req.Request.GetRawResponse(&rawResponse)
+	if err != nil {
+		return modules, err
+	}
+
+	for _, moduleResponse := range rawResponse {
+		if !moduleResponse.AccessRestrictedByDate {
+			module := Module{
+				Id:         strconv.Itoa(moduleResponse.Id),
+				Name:       moduleResponse.Name,
+				ModuleCode: strings.Replace(moduleResponse.ModuleCode, "/", "-", -1), // for multi-coded modules that uses '/' as a separator
 			}
 			modules = append(modules, module)
 		}
