@@ -5,7 +5,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
+
+type CanvasModuleResponse struct {
+	Data []interfaces.CanvasModuleObject
+}
 
 // RawResponse struct is the datapack for containing API response raw data.
 type RawResponse struct {

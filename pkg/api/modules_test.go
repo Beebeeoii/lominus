@@ -2,29 +2,57 @@ package api
 
 import (
 	"testing"
+
+	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
 
 func TestGetCanvasModules(t *testing.T) {
-	moduleRequest, modReqErr := BuildCanvasModuleRequest()
-	if modReqErr != nil {
-		t.Fatal(modReqErr)
+	mockModuleResponse := CanvasModuleResponse{
+		Data: []interfaces.CanvasModuleObject{
+			{
+				Id:                     12345,
+				UUID:                   "",
+				Name:                   "",
+				ModuleCode:             "",
+				AccessRestrictedByDate: true,
+			},
+			{
+				Id:                     45678,
+				UUID:                   "F9SdBDH1NTUJKB0lH2aKsABzlbAbLWtpLIfkAe93",
+				Name:                   "CP3107 Computing for Voluntary Welfare Organisations [2130]",
+				ModuleCode:             "CP3107",
+				AccessRestrictedByDate: false,
+			},
+		},
 	}
-	modules, err := moduleRequest.GetCanvasModules()
+
+	modules, err := mockModuleResponse.GetCanvasModules()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, module := range modules {
-		if module.Id == "" {
-			t.Fatal("Module Id is empty.")
-		}
+	if modules[0].Id != "12345" {
+		t.Fatalf("Result: %s | Expected: %s", modules[0].Id, "12345")
+	}
 
-		if module.Name == "" {
-			t.Fatal("Module Name is empty.")
-		}
+	if modules[0].Name != "" {
+		t.Fatalf("Result: %s | Expected: %s", modules[0].Name, "")
+	}
 
-		if module.ModuleCode == "" {
-			t.Fatal("Module ModuleCode is empty.")
-		}
+	if modules[0].ModuleCode != "" {
+		t.Fatalf("Result: %s | Expected: %s", modules[0].ModuleCode, "")
+	}
+
+	if modules[1].Id != "45678" {
+		t.Fatalf("Result: %s | Expected: %s", modules[1].Id, "45678")
+	}
+
+	if modules[1].Name != "CP3107 Computing for Voluntary Welfare Organisations [2130]" {
+		t.Fatalf("Result: %s | Expected: %s", modules[1].Name,
+			"CP3107 Computing for Voluntary Welfare Organisations [2130]")
+	}
+
+	if modules[1].ModuleCode != "CP3107" {
+		t.Fatalf("Result: %s | Expected: %s", modules[1].ModuleCode, "CP3107")
 	}
 }

@@ -4,8 +4,6 @@ package api
 import (
 	"strconv"
 	"strings"
-
-	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
 
 // Module struct is the datapack for containing details about every module
@@ -56,9 +54,6 @@ func (req ModuleRequest) GetModules() ([]Module, error) {
 				Id:         content["id"].(string),
 				Name:       content["courseName"].(string),
 				ModuleCode: strings.Replace(content["name"].(string), "/", "-", -1), // for multi-coded modules that uses '/' as a separator
-				// CreatorName:  content["creatorName"].(string),
-				// CreatorEmail: content["creatorEmail"].(string),
-				// Period:       termDetail["description"].(string),
 			}
 			modules = append(modules, module)
 		}
@@ -67,24 +62,16 @@ func (req ModuleRequest) GetModules() ([]Module, error) {
 	return modules, nil
 }
 
-func (req ModuleRequest) GetCanvasModules() ([]Module, error) {
+func (moduleResponse CanvasModuleResponse) GetCanvasModules() ([]Module, error) {
 	var modules []Module
 
-	var rawResponse []interfaces.CanvasModuleObject
-	err := req.Request.GetRawResponse(&rawResponse)
-	if err != nil {
-		return modules, err
-	}
-
-	for _, moduleResponse := range rawResponse {
-		if !moduleResponse.AccessRestrictedByDate {
-			module := Module{
-				Id:         strconv.Itoa(moduleResponse.Id),
-				Name:       moduleResponse.Name,
-				ModuleCode: strings.Replace(moduleResponse.ModuleCode, "/", "-", -1), // for multi-coded modules that uses '/' as a separator
-			}
-			modules = append(modules, module)
+	for _, module := range moduleResponse.Data {
+		module := Module{
+			Id:         strconv.Itoa(module.Id),
+			Name:       module.Name,
+			ModuleCode: strings.Replace(module.ModuleCode, "/", "-", -1), // for multi-coded modules that uses '/' as a separator
 		}
+		modules = append(modules, module)
 	}
 
 	return modules, nil
