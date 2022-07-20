@@ -9,7 +9,7 @@ import (
 	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
 
-type CanvasModuleResponse struct {
+type CanvasModulesResponse struct {
 	Data []interfaces.CanvasModuleObject
 }
 

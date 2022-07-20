@@ -62,7 +62,7 @@ func (req ModuleRequest) GetModules() ([]Module, error) {
 	return modules, nil
 }
 
-func (moduleResponse CanvasModuleResponse) GetCanvasModules() ([]Module, error) {
+func (moduleResponse CanvasModulesResponse) GetCanvasModules() ([]Module, error) {
 	var modules []Module
 
 	for _, module := range moduleResponse.Data {

@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetCanvasModules(t *testing.T) {
-	mockModuleResponse := CanvasModuleResponse{
+	mockModuleResponse := CanvasModulesResponse{
 		Data: []interfaces.CanvasModuleObject{
 			{
 				Id:                     12345,
