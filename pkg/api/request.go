@@ -2,8 +2,11 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	"github.com/beebeeoii/lominus/pkg/auth"
@@ -12,8 +15,9 @@ import (
 
 // Request struct is the datapack for containing details about a HTTP request.
 type Request struct {
+	Method    string
+	Token     string
 	Url       string
-	JwtToken  string
 	UserAgent string
 }
 
@@ -57,6 +61,7 @@ const (
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
 const POST = "POST"
+const GET_METHOD = "GET"
 const CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
 const CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
 
@@ -71,20 +76,21 @@ func BuildModuleRequest() (ModuleRequest, error) {
 	return ModuleRequest{
 		Request: Request{
 			Url:       MODULE_URL_ENDPOINT,
-			JwtToken:  jwtToken,
+			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
 	}, nil
 }
 
-func BuildCanvasModuleRequest() (ModuleRequest, error) {
+func BuildCanvasModuleRequest(token string) ModuleRequest {
 	return ModuleRequest{
 		Request: Request{
+			Method:    GET_METHOD,
+			Token:     token,
 			Url:       constants.CANVAS_MODULES_ENDPOINT,
-			JwtToken:  "",
 			UserAgent: USER_AGENT,
 		},
-	}, nil
+	}
 }
 
 // BuildGradeRequest builds and returns a GradeRequest that can be used for Grade related operations
@@ -100,7 +106,7 @@ func BuildGradeRequest(module Module) (GradeRequest, error) {
 		Module: module,
 		Request: Request{
 			Url:       fmt.Sprintf(GRADE_URL_ENDPOINT, module.Id),
-			JwtToken:  jwtToken,
+			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
 	}, nil
@@ -119,7 +125,7 @@ func BuildMultimediaChannelRequest(module Module) (MultimediaChannelRequest, err
 		Module: module,
 		Request: Request{
 			Url:       fmt.Sprintf(MULTIMEMDIA_CHANNEL_URL_ENDPOINT, module.Id),
-			JwtToken:  jwtToken,
+			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
 	}, nil
@@ -138,7 +144,7 @@ func BuildMultimediaVideoRequest(multimediaChannel MultimediaChannel) (Multimedi
 		MultimediaChannel: multimediaChannel,
 		Request: Request{
 			Url:       fmt.Sprintf(LTI_DATA_URL_ENDPOINT, multimediaChannel.Id),
-			JwtToken:  jwtToken,
+			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
 	}, nil
@@ -200,7 +206,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 			},
 			Request: Request{
 				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
-				JwtToken:  jwtToken,
+				Token:     jwtToken,
 				UserAgent: USER_AGENT,
 			},
 			Mode: mode,
@@ -210,7 +216,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 			Folder: builder,
 			Request: Request{
 				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
-				JwtToken:  jwtToken,
+				Token:     jwtToken,
 				UserAgent: USER_AGENT,
 			},
 			Mode: mode,
@@ -220,7 +226,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 			File: builder,
 			Request: Request{
 				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
-				JwtToken:  jwtToken,
+				Token:     jwtToken,
 				UserAgent: USER_AGENT,
 			},
 			Mode: mode,
@@ -257,4 +263,32 @@ func retrieveJwtToken() (string, error) {
 	}
 
 	return auth.RetrieveJwtToken(credentials, true)
+}
+
+func (req Request) Send(res interface{}) error {
+	request, err := http.NewRequest(req.Method, req.Url, nil)
+	if err != nil {
+		return err
+	}
+
+	request.Header.Add("Authorization", "Bearer "+req.Token)
+
+	client := &http.Client{}
+
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(body, res)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

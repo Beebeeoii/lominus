@@ -45,7 +45,7 @@ func (req Request) GetRawResponse(res interface{}) error {
 		return err
 	}
 
-	request.Header.Add("Authorization", "Bearer "+req.JwtToken)
+	request.Header.Add("Authorization", "Bearer "+req.Token)
 
 	cl := &http.Client{}
 
