@@ -29,7 +29,7 @@ func TestGetCanvasModules(t *testing.T) {
 
 	modules, err := mockModuleResponse.GetCanvasModules()
 
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, modules[0].Id, "12345")
 	assert.Equal(t, modules[0].Name, "")
 	assert.Equal(t, modules[0].ModuleCode, "")
