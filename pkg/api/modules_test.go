@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/beebeeoii/lominus/pkg/interfaces"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetCanvasModules(t *testing.T) {
@@ -27,32 +28,12 @@ func TestGetCanvasModules(t *testing.T) {
 	}
 
 	modules, err := mockModuleResponse.GetCanvasModules()
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	if modules[0].Id != "12345" {
-		t.Fatalf("Result: %s | Expected: %s", modules[0].Id, "12345")
-	}
-
-	if modules[0].Name != "" {
-		t.Fatalf("Result: %s | Expected: %s", modules[0].Name, "")
-	}
-
-	if modules[0].ModuleCode != "" {
-		t.Fatalf("Result: %s | Expected: %s", modules[0].ModuleCode, "")
-	}
-
-	if modules[1].Id != "45678" {
-		t.Fatalf("Result: %s | Expected: %s", modules[1].Id, "45678")
-	}
-
-	if modules[1].Name != "CP3107 Computing for Voluntary Welfare Organisations [2130]" {
-		t.Fatalf("Result: %s | Expected: %s", modules[1].Name,
-			"CP3107 Computing for Voluntary Welfare Organisations [2130]")
-	}
-
-	if modules[1].ModuleCode != "CP3107" {
-		t.Fatalf("Result: %s | Expected: %s", modules[1].ModuleCode, "CP3107")
-	}
+	assert.NotNil(t, err)
+	assert.Equal(t, modules[0].Id, "12345")
+	assert.Equal(t, modules[0].Name, "")
+	assert.Equal(t, modules[0].ModuleCode, "")
+	assert.Equal(t, modules[1].Id, "45678")
+	assert.Equal(t, modules[1].Name, "CP3107 Computing for Voluntary Welfare Organisations [2130]")
+	assert.Equal(t, modules[1].ModuleCode, "CP3107")
 }
