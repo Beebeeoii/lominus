@@ -13,6 +13,14 @@ type CanvasModuleResponse struct {
 	Data []interfaces.CanvasModuleObject
 }
 
+type CanvasFoldersResponse struct {
+	Data []interfaces.CanvasFolderObject
+}
+
+type CanvasFilesResponse struct {
+	Data []interfaces.CanvasFileObject
+}
+
 // RawResponse struct is the datapack for containing API response raw data.
 type RawResponse struct {
 	Status string                   `json:"status"`

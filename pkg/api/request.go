@@ -93,6 +93,76 @@ func BuildCanvasModuleRequest(token string) ModuleRequest {
 	}
 }
 
+func BuildCanvasDocumentRequest(token string, builder interface{}, mode int) (DocumentRequest, error) {
+	var urlEndpoint string
+
+	switch mode {
+	case GET_ALL_FOLDERS:
+		_, isModule := builder.(Module)
+		_, isFolder := builder.(Folder)
+		if !isModule && !isFolder {
+			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FOLDERS")
+		}
+		urlEndpoint = constants.CANVAS_FOLDERS_ENDPOINT
+	case GET_ALL_FILES:
+		_, isModule := builder.(Module)
+		_, isFolder := builder.(Folder)
+		if !isModule && !isFolder {
+			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FILES")
+		}
+		urlEndpoint = constants.CANVAS_FILES_ENDPOINT
+	case DOWNLOAD_FILE:
+		_, isFile := builder.(File)
+		if !isFile {
+			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using File to download")
+		}
+		urlEndpoint = constants.CANVAS_FILE_ENDPOINT
+	default:
+		return DocumentRequest{}, errors.New("invalid mode: mode provided is invalid. Valid modes are GET_ALL_FOLDERS (0), GET_ALL_FILES (1), DOWNLOAD_FILE (2)")
+	}
+
+	switch builder := builder.(type) {
+	case Module:
+		return DocumentRequest{
+			Folder: Folder{
+				Id:           builder.Id,
+				Name:         builder.ModuleCode,
+				Downloadable: true,
+				Ancestors:    []string{},
+				HasSubFolder: true,
+			},
+			Request: Request{
+				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
+				Token:     token,
+				UserAgent: USER_AGENT,
+			},
+			Mode: mode,
+		}, nil
+	case Folder:
+		return DocumentRequest{
+			Folder: builder,
+			Request: Request{
+				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
+				Token:     token,
+				UserAgent: USER_AGENT,
+			},
+			Mode: mode,
+		}, nil
+	case File:
+		return DocumentRequest{
+			File: builder,
+			Request: Request{
+				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
+				Token:     token,
+				UserAgent: USER_AGENT,
+			},
+			Mode: mode,
+		}, nil
+	default:
+		return DocumentRequest{}, errors.New("invalid builder: DocumentRequest must be built using Module, Folder or File only")
+	}
+}
+
 // BuildGradeRequest builds and returns a GradeRequest that can be used for Grade related operations
 // such as retrieving grades of a module.
 // A Module is required to build a GradeRequest as it is module specific.

@@ -30,6 +30,7 @@ type File struct {
 	Id          string
 	Name        string
 	Ancestors   []string
+	Url         string
 	LastUpdated time.Time
 }
 
@@ -208,6 +209,33 @@ func (req DocumentRequest) Download(filePath string) error {
 	defer file.Close()
 
 	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (file File) Download(filePath string) error {
+	response, err := http.Get(file.Url)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return errors.New("received non 200 response code")
+	}
+
+	f, err := os.Create(filepath.Join(filePath, file.Name))
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	_, err = io.Copy(f, response.Body)
 	if err != nil {
 		return err
 	}
