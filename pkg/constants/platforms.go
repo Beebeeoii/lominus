@@ -1,10 +1,7 @@
+// TODO Documentations
 package constants
 
 type Platform int
-
-type HasPlatform interface {
-	GetPlatform()
-}
 
 const (
 	Canvas Platform = iota
