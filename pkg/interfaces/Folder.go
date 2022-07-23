@@ -23,11 +23,3 @@ type LuminusFolderObject struct {
 	FoldersCount int         `json:"subFolderCount" mapstructure:"subFolderCount"`
 	AccessObject interface{} `json:"access" mapstructure:"access"`
 }
-
-func (i CanvasFolderObject) GetId() int {
-	return i.Id
-}
-
-func (i LuminusFolderObject) GetId() string {
-	return i.Id
-}
