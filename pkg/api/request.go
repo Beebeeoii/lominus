@@ -11,6 +11,7 @@ import (
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
+	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
 
 // Request struct is the datapack for containing details about a HTTP request.
@@ -38,6 +39,15 @@ type GradeRequest struct {
 
 // ModuleRequest struct is the datapack for containing details about a specific HTTP request used for modules being taken.
 type ModuleRequest struct {
+	Request Request
+}
+
+type FoldersRequest struct {
+	Request  Request
+	Response interfaces.FolderObject
+}
+
+type FilesRequest struct {
 	Request Request
 }
 
@@ -88,6 +98,69 @@ func BuildCanvasModuleRequest(token string) ModuleRequest {
 			Method:    GET_METHOD,
 			Token:     token,
 			Url:       constants.CANVAS_MODULES_ENDPOINT,
+			UserAgent: USER_AGENT,
+		},
+	}
+}
+
+func BuildFoldersRequest(token string, url string, builder interface{}) (FoldersRequest, error) {
+	switch builder := builder.(type) {
+	case Module:
+		response, err := getResponseType(builder)
+		if err != nil {
+			return FoldersRequest{}, err
+		}
+		
+		return FoldersRequest{
+			Request: Request{
+				Method:    GET_METHOD,
+				Token:     token,
+				Url:       fmt.Sprintf(url, builder.Id),
+				UserAgent: USER_AGENT,
+			},
+			Response: response,
+		}, nil
+	case Folder:
+		return FoldersRequest{
+			Request: Request{
+				Method:    GET_METHOD,
+				Token:     token,
+				Url:       fmt.Sprintf(url, builder.Id),
+				UserAgent: USER_AGENT,
+			},
+			Response: response,
+		}, nil
+	default:
+		return FoldersRequest{}, errors.New(
+			"invalid mode: FoldersRequest must be built using Module or Folder",
+		)
+	}
+}
+
+func getResponseType(builder constants.HasPlatform) (interface{}, error) {
+	var response interfaces.FolderObject
+	switch test := builder.GetPlatform() {
+	case constants.Canvas:
+		response = interfaces.CanvasFolderObject{}
+		break
+	case constants.Luminus:
+		response = interfaces.LuminusFolderObject{}
+		break
+	default:
+		return response, errors.New(
+			"invalid builder.Platform. No enum matches provided Platform.",
+		)
+	}
+
+	return response, nil
+}
+
+func BuildFilesRequest(token string, url string, folder Folder) FilesRequest {
+	return FilesRequest{
+		Request: Request{
+			Method:    GET_METHOD,
+			Token:     token,
+			Url:       fmt.Sprintf(url, folder.Id),
 			UserAgent: USER_AGENT,
 		},
 	}

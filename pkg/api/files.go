@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/beebeeoii/lominus/internal/file"
+	"github.com/beebeeoii/lominus/pkg/constants"
 )
 
 // Folder struct is the datapack for containing details about a Folder
@@ -21,6 +22,7 @@ type Folder struct {
 	Downloadable bool
 	HasSubFolder bool
 	Ancestors    []string
+	Platform     constants.Platform
 }
 
 // File struct is the datapack for containing details about a File
@@ -84,6 +86,63 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 		}
 	}
 	return folders, nil
+}
+
+// type FolderObject interface {
+// 	interfaces.CanvasFolderObject | interfaces.LuminusFolderObject
+// }
+
+// type retrieveFolderObjects[T interfaces.CanvasFolderObject | interfaces.LuminusFolderObject] func(T) []T
+
+// type FolderInterface interface {
+// 	GetId() int
+// 	Name() string
+// 	HiddenForUser() bool
+// 	FoldersCount() int
+// 	Ancesters() []string
+// 	interfaces.CanvasFolderObject | interfaces.LuminusFolderObject
+// }
+
+// func (folder Folder) GetAllFolders(token string, data interface{}) error {
+// 	folders := []Folder{}
+
+// 	var folderObjects interface{}
+
+// 	switch folderObject := data.(type) {
+// 	case []interfaces.CanvasFolderObject:
+// 		foldersReq, _ := BuildCanvasDocumentRequest(token, folder, GET_ALL_FOLDERS)
+// 		foldersReq.Request.Send(&folderObject)
+// 	case []interfaces.LuminusFolderObject:
+// 		folderObjects = []interfaces.LuminusFolderObject(folderObjects.([]interfaces.LuminusFolderObject))
+// 	default:
+// 		return errors.New(
+// 			"invalid builder: DocumentRequest must be built using CanvasFolderObject or LuminusFolderObject only",
+// 		)
+// 	}
+
+// 	for _, folderObject := range folderObjects.([]interfaces.CanvasFolderObject) {
+// 		folders = append(folders, Folder{
+// 			Id:           strconv.Itoa(folderObject.GetId()),
+// 			Name:         folderObject.Name(),
+// 			Downloadable: !folderObject.HiddenForUser(),
+// 			HasSubFolder: folderObject.FoldersCount() > 0,
+// 			Ancestors:    append(folder.Ancesters(), folderObject.Name()),
+// 		})
+// 	}
+
+// 	return folders, nil
+// }
+
+func (foldersRequest FoldersRequest) GetAllFolders() ([]Folder, error) {
+	folders := []Folder{}
+
+	foldersRequest.Request.Send(&foldersRequest.Response)
+
+	return folders, nil
+}
+
+func (folder Folder) GetPlatform() constants.Platform {
+	return folder.Platform
 }
 
 // GetAllFiles returns a slice of File objects that are in a Folder from a DocumentRequest.

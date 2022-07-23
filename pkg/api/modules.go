@@ -4,6 +4,8 @@ package api
 import (
 	"strconv"
 	"strings"
+
+	"github.com/beebeeoii/lominus/pkg/constants"
 )
 
 // Module struct is the datapack for containing details about every module
@@ -11,6 +13,7 @@ type Module struct {
 	Id         string
 	Name       string
 	ModuleCode string
+	Platform   constants.Platform
 }
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
@@ -75,4 +78,8 @@ func (moduleResponse CanvasModulesResponse) GetCanvasModules() ([]Module, error)
 	}
 
 	return modules, nil
+}
+
+func (module Module) GetPlatform() constants.Platform {
+	return module.Platform
 }
