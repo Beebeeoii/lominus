@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.2.3
 	github.com/go-co-op/gocron v1.15.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/sqweek/dialog v0.0.0-20220504154117-be45b268883a
 )
@@ -17,7 +18,6 @@ require (
 	github.com/fyne-io/image v0.0.0-20220602074514-4956b0afb3d2 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
