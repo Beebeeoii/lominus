@@ -53,6 +53,7 @@ type FoldersRequest struct {
 
 type FilesRequest struct {
 	Request Request
+	Folder  Folder
 }
 
 // MultimediaChannelRequest struct is the datapack for containing details about a specific HTTP request used for multimedia channels (Luminus Multimedia).
@@ -101,34 +102,28 @@ func BuildModuleRequest() (ModuleRequest, error) {
 
 // TODO Documentations
 func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequest, error) {
+	var url string
+
 	switch p := platform; p {
 	case constants.Canvas:
-		return ModulesRequest{
-			Request: Request{
-				Method: GET_METHOD,
-				Token:  token,
-				Url: interfaces.Url{
-					Url:      constants.CANVAS_MODULES_ENDPOINT,
-					Platform: platform,
-				},
-				UserAgent: USER_AGENT,
-			},
-		}, nil
+		url = constants.CANVAS_MODULES_ENDPOINT
 	case constants.Luminus:
-		return ModulesRequest{
-			Request: Request{
-				Method: GET_METHOD,
-				Token:  token,
-				Url: interfaces.Url{
-					Url:      MODULE_URL_ENDPOINT,
-					Platform: platform,
-				},
-				UserAgent: USER_AGENT,
-			},
-		}, nil
+		url = MODULE_URL_ENDPOINT
 	default:
 		return ModulesRequest{}, errors.New("invalid platform provided")
 	}
+
+	return ModulesRequest{
+		Request: Request{
+			Method: GET_METHOD,
+			Token:  token,
+			Url: interfaces.Url{
+				Url:      url,
+				Platform: platform,
+			},
+			UserAgent: USER_AGENT,
+		},
+	}, nil
 }
 
 // TODO Documentations
@@ -174,16 +169,31 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 	}, nil
 }
 
-// func BuildFilesRequest(token string, url string, folder Folder) FilesRequest {
-// 	return FilesRequest{
-// 		Request: Request{
-// 			Method:    GET_METHOD,
-// 			Token:     token,
-// 			Url:       fmt.Sprintf(url, folder.Id),
-// 			UserAgent: USER_AGENT,
-// 		},
-// 	}
-// }
+func BuildFilesRequest(token string, platform constants.Platform, folder Folder) (FilesRequest, error) {
+	var url string
+
+	switch p := platform; p {
+	case constants.Canvas:
+		url = fmt.Sprintf(constants.CANVAS_FILES_ENDPOINT, folder.Id)
+	case constants.Luminus:
+		url = fmt.Sprintf(FILE_URL_ENDPOINT, folder.Id)
+	default:
+		return FilesRequest{}, errors.New("invalid platform provided")
+	}
+
+	return FilesRequest{
+		Request: Request{
+			Method: GET_METHOD,
+			Token:  token,
+			Url: interfaces.Url{
+				Url:      url,
+				Platform: platform,
+			},
+			UserAgent: USER_AGENT,
+		},
+		Folder: folder,
+	}, nil
+}
 
 // func BuildCanvasDocumentRequest(token string, builder interface{}, mode int) (DocumentRequest, error) {
 // 	var urlEndpoint string

@@ -35,8 +35,8 @@ type File struct {
 	Id          string
 	Name        string
 	Ancestors   []string
-	Url         string
 	LastUpdated time.Time
+	DownloadUrl string
 }
 
 const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=totalFileCount,subFolderCount,TotalSize&ParentID=%s"
@@ -153,6 +153,15 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 		foldersRequest.Request.Send(&response)
 
 		for _, folderObject := range response {
+			// All the folders and files of a module are stored under the "course files" folder.
+			// We do not want to get that folder as we just want the folders and files in that
+			// folder.
+			//
+			// The "course files" folder resembles the 'home directory' of a module.
+			if folderObject.FullName == "course files" {
+				continue
+			}
+
 			folders = append(folders, Folder{
 				Id:           strconv.Itoa(folderObject.Id),
 				Name:         folderObject.Name,
@@ -195,6 +204,65 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	}
 
 	return folders, nil
+}
+
+func (filesRequest FilesRequest) GetFiles() ([]File, error) {
+	files := []File{}
+	ancestors := []string{}
+
+	ancestors = append(filesRequest.Folder.Ancestors, filesRequest.Folder.Name)
+
+	switch folderDataType := filesRequest.Request.Url.Platform; folderDataType {
+	case constants.Canvas:
+		response := []interfaces.CanvasFileObject{}
+		filesRequest.Request.Send(&response)
+
+		for _, fileObject := range response {
+			lastUpdated, err := time.Parse(time.RFC3339, fileObject.LastUpdated)
+			if err != nil {
+				return files, err
+			}
+
+			files = append(files, File{
+				Id:          strconv.Itoa(fileObject.Id),
+				Name:        fileObject.Name,
+				LastUpdated: lastUpdated,
+				Ancestors:   ancestors,
+			})
+		}
+	case constants.Luminus:
+		filesData := []interfaces.LuminusFileObject{}
+
+		response := interfaces.LuminusRawResponse{}
+		filesRequest.Request.Send(&response)
+
+		data := reflect.ValueOf(response.Data)
+		if data.Kind() == reflect.Slice {
+			for i := 0; i < data.Len(); i++ {
+				fileData := interfaces.LuminusFileObject{}
+				mapstructure.Decode(data.Index(i).Interface(), &fileData)
+				filesData = append(filesData, fileData)
+			}
+		}
+
+		for _, fileObject := range filesData {
+			lastUpdated, err := time.Parse(time.RFC3339, fileObject.LastUpdated)
+			if err != nil {
+				return files, err
+			}
+
+			files = append(files, File{
+				Id:          fileObject.Id,
+				Name:        fileObject.Name,
+				LastUpdated: lastUpdated,
+				Ancestors:   ancestors,
+			})
+		}
+	default:
+		return files, errors.New("filesRequest.Request.Url.Platform is not available")
+	}
+
+	return files, nil
 }
 
 // GetAllFiles returns a slice of File objects that are in a Folder from a DocumentRequest.
@@ -328,7 +396,7 @@ func (req DocumentRequest) Download(filePath string) error {
 }
 
 func (file File) Download(filePath string) error {
-	response, err := http.Get(file.Url)
+	response, err := http.Get(file.DownloadUrl)
 	if err != nil {
 		return err
 	}
