@@ -73,10 +73,10 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 
 	switch moduleDataType := modulesRequest.Request.Url.Platform; moduleDataType {
 	case constants.Canvas:
-		response := CanvasModulesResponse{}
-		modulesRequest.Request.Send(&response.Data)
+		response := []interfaces.CanvasModuleObject{}
+		modulesRequest.Request.Send(&response)
 
-		for _, moduleObject := range response.Data {
+		for _, moduleObject := range response {
 			modules = append(modules, Module{
 				Id:         strconv.Itoa(moduleObject.Id),
 				Name:       moduleObject.Name,

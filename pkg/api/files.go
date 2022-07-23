@@ -149,10 +149,10 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 	switch folderDataType := foldersRequest.Request.Url.Platform; folderDataType {
 	case constants.Canvas:
-		response := CanvasFoldersResponse{}
-		foldersRequest.Request.Send(&response.Data)
+		response := []interfaces.CanvasFolderObject{}
+		foldersRequest.Request.Send(&response)
 
-		for _, folderObject := range response.Data {
+		for _, folderObject := range response {
 			folders = append(folders, Folder{
 				Id:           strconv.Itoa(folderObject.Id),
 				Name:         folderObject.Name,
