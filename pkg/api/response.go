@@ -5,21 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
-
-type CanvasModulesResponse struct {
-	Data []interfaces.CanvasModuleObject
-}
-
-type CanvasFoldersResponse struct {
-	Data []interfaces.CanvasFolderObject
-}
-
-type CanvasFilesResponse struct {
-	Data []interfaces.CanvasFileObject
-}
 
 // RawResponse struct is the datapack for containing API response raw data.
 type RawResponse struct {
@@ -48,7 +34,7 @@ type LTIDataResponse struct {
 // Argument provided must be a pointer.
 func (req Request) GetRawResponse(res interface{}) error {
 
-	request, err := http.NewRequest("GET", req.Url, nil)
+	request, err := http.NewRequest("GET", req.Url.Url, nil)
 	if err != nil {
 		return err
 	}
