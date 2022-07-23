@@ -18,7 +18,7 @@ import (
 type Request struct {
 	Method    string
 	Token     string
-	Url       string
+	Url       interfaces.Url
 	UserAgent string
 }
 
@@ -42,9 +42,13 @@ type ModuleRequest struct {
 	Request Request
 }
 
+type ModulesRequest struct {
+	Request Request
+}
+
 type FoldersRequest struct {
-	Request  Request
-	Response interfaces.FolderObject
+	Request Request
+	Builder interface{}
 }
 
 type FilesRequest struct {
@@ -85,156 +89,180 @@ func BuildModuleRequest() (ModuleRequest, error) {
 
 	return ModuleRequest{
 		Request: Request{
-			Url:       MODULE_URL_ENDPOINT,
+			Url: interfaces.Url{
+				Url:      MODULE_URL_ENDPOINT,
+				Platform: constants.Luminus,
+			},
 			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
 	}, nil
 }
 
-func BuildCanvasModuleRequest(token string) ModuleRequest {
-	return ModuleRequest{
-		Request: Request{
-			Method:    GET_METHOD,
-			Token:     token,
-			Url:       constants.CANVAS_MODULES_ENDPOINT,
-			UserAgent: USER_AGENT,
-		},
+// TODO Documentations
+func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequest, error) {
+	switch p := platform; p {
+	case constants.Canvas:
+		return ModulesRequest{
+			Request: Request{
+				Method: GET_METHOD,
+				Token:  token,
+				Url: interfaces.Url{
+					Url:      constants.CANVAS_MODULES_ENDPOINT,
+					Platform: platform,
+				},
+				UserAgent: USER_AGENT,
+			},
+		}, nil
+	case constants.Luminus:
+		return ModulesRequest{
+			Request: Request{
+				Method: GET_METHOD,
+				Token:  token,
+				Url: interfaces.Url{
+					Url:      MODULE_URL_ENDPOINT,
+					Platform: platform,
+				},
+				UserAgent: USER_AGENT,
+			},
+		}, nil
+	default:
+		return ModulesRequest{}, errors.New("invalid platform provided")
 	}
 }
 
-func BuildFoldersRequest(token string, url string, builder interface{}) (FoldersRequest, error) {
+// TODO Documentations
+func BuildFoldersRequest(token string, platform constants.Platform, builder interface{}) (FoldersRequest, error) {
+	var url string
+
 	switch builder := builder.(type) {
 	case Module:
-		response, err := getResponseType(builder)
-		if err != nil {
-			return FoldersRequest{}, err
+		switch p := platform; p {
+		case constants.Canvas:
+			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, builder.Id)
+		case constants.Luminus:
+			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, builder.Id)
+		default:
+			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
-		
-		return FoldersRequest{
-			Request: Request{
-				Method:    GET_METHOD,
-				Token:     token,
-				Url:       fmt.Sprintf(url, builder.Id),
-				UserAgent: USER_AGENT,
-			},
-			Response: response,
-		}, nil
 	case Folder:
-		return FoldersRequest{
-			Request: Request{
-				Method:    GET_METHOD,
-				Token:     token,
-				Url:       fmt.Sprintf(url, builder.Id),
-				UserAgent: USER_AGENT,
-			},
-			Response: response,
-		}, nil
+		switch p := platform; p {
+		case constants.Canvas:
+			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, builder.Id)
+		case constants.Luminus:
+			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, builder.Id)
+		default:
+			return FoldersRequest{}, errors.New("invalid platform provided")
+		}
 	default:
 		return FoldersRequest{}, errors.New(
 			"invalid mode: FoldersRequest must be built using Module or Folder",
 		)
 	}
-}
 
-func getResponseType(builder constants.HasPlatform) (interface{}, error) {
-	var response interfaces.FolderObject
-	switch test := builder.GetPlatform() {
-	case constants.Canvas:
-		response = interfaces.CanvasFolderObject{}
-		break
-	case constants.Luminus:
-		response = interfaces.LuminusFolderObject{}
-		break
-	default:
-		return response, errors.New(
-			"invalid builder.Platform. No enum matches provided Platform.",
-		)
-	}
-
-	return response, nil
-}
-
-func BuildFilesRequest(token string, url string, folder Folder) FilesRequest {
-	return FilesRequest{
+	return FoldersRequest{
 		Request: Request{
-			Method:    GET_METHOD,
-			Token:     token,
-			Url:       fmt.Sprintf(url, folder.Id),
+			Method: GET_METHOD,
+			Token:  token,
+			Url: interfaces.Url{
+				Url:      url,
+				Platform: platform,
+			},
 			UserAgent: USER_AGENT,
 		},
-	}
+		Builder: builder,
+	}, nil
 }
 
-func BuildCanvasDocumentRequest(token string, builder interface{}, mode int) (DocumentRequest, error) {
-	var urlEndpoint string
+// func BuildFilesRequest(token string, url string, folder Folder) FilesRequest {
+// 	return FilesRequest{
+// 		Request: Request{
+// 			Method:    GET_METHOD,
+// 			Token:     token,
+// 			Url:       fmt.Sprintf(url, folder.Id),
+// 			UserAgent: USER_AGENT,
+// 		},
+// 	}
+// }
 
-	switch mode {
-	case GET_ALL_FOLDERS:
-		_, isModule := builder.(Module)
-		_, isFolder := builder.(Folder)
-		if !isModule && !isFolder {
-			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FOLDERS")
-		}
-		urlEndpoint = constants.CANVAS_FOLDERS_ENDPOINT
-	case GET_ALL_FILES:
-		_, isModule := builder.(Module)
-		_, isFolder := builder.(Folder)
-		if !isModule && !isFolder {
-			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FILES")
-		}
-		urlEndpoint = constants.CANVAS_FILES_ENDPOINT
-	case DOWNLOAD_FILE:
-		_, isFile := builder.(File)
-		if !isFile {
-			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using File to download")
-		}
-		urlEndpoint = constants.CANVAS_FILE_ENDPOINT
-	default:
-		return DocumentRequest{}, errors.New("invalid mode: mode provided is invalid. Valid modes are GET_ALL_FOLDERS (0), GET_ALL_FILES (1), DOWNLOAD_FILE (2)")
-	}
+// func BuildCanvasDocumentRequest(token string, builder interface{}, mode int) (DocumentRequest, error) {
+// 	var urlEndpoint string
 
-	switch builder := builder.(type) {
-	case Module:
-		return DocumentRequest{
-			Folder: Folder{
-				Id:           builder.Id,
-				Name:         builder.ModuleCode,
-				Downloadable: true,
-				Ancestors:    []string{},
-				HasSubFolder: true,
-			},
-			Request: Request{
-				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
-				Token:     token,
-				UserAgent: USER_AGENT,
-			},
-			Mode: mode,
-		}, nil
-	case Folder:
-		return DocumentRequest{
-			Folder: builder,
-			Request: Request{
-				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
-				Token:     token,
-				UserAgent: USER_AGENT,
-			},
-			Mode: mode,
-		}, nil
-	case File:
-		return DocumentRequest{
-			File: builder,
-			Request: Request{
-				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
-				Token:     token,
-				UserAgent: USER_AGENT,
-			},
-			Mode: mode,
-		}, nil
-	default:
-		return DocumentRequest{}, errors.New("invalid builder: DocumentRequest must be built using Module, Folder or File only")
-	}
-}
+// 	switch mode {
+// 	case GET_ALL_FOLDERS:
+// 		_, isModule := builder.(Module)
+// 		_, isFolder := builder.(Folder)
+// 		if !isModule && !isFolder {
+// 			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FOLDERS")
+// 		}
+// 		urlEndpoint = constants.CANVAS_FOLDERS_ENDPOINT
+// 	case GET_ALL_FILES:
+// 		_, isModule := builder.(Module)
+// 		_, isFolder := builder.(Folder)
+// 		if !isModule && !isFolder {
+// 			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using Module or Folder to have mode=GET_ALL_FILES")
+// 		}
+// 		urlEndpoint = constants.CANVAS_FILES_ENDPOINT
+// 	case DOWNLOAD_FILE:
+// 		_, isFile := builder.(File)
+// 		if !isFile {
+// 			return DocumentRequest{}, errors.New("invalid mode: DocumentRequest must be built using File to download")
+// 		}
+// 		urlEndpoint = constants.CANVAS_FILE_ENDPOINT
+// 	default:
+// 		return DocumentRequest{}, errors.New("invalid mode: mode provided is invalid. Valid modes are GET_ALL_FOLDERS (0), GET_ALL_FILES (1), DOWNLOAD_FILE (2)")
+// 	}
+
+// 	switch builder := builder.(type) {
+// 	case Module:
+// 		return DocumentRequest{
+// 			Folder: Folder{
+// 				Id:           builder.Id,
+// 				Name:         builder.ModuleCode,
+// 				Downloadable: true,
+// 				Ancestors:    []string{},
+// 				HasSubFolder: true,
+// 			},
+// 			Request: Request{
+// 				Url: interfaces.Url{
+// 					Url:      fmt.Sprintf(urlEndpoint, builder.Id),
+// 					Platform: constants.Canvas,
+// 				},
+// 				Token:     token,
+// 				UserAgent: USER_AGENT,
+// 			},
+// 			Mode: mode,
+// 		}, nil
+// 	case Folder:
+// 		return DocumentRequest{
+// 			Folder: builder,
+// 			Request: Request{
+// 				Url: interfaces.Url{
+// 					Url:      fmt.Sprintf(urlEndpoint, builder.Id),
+// 					Platform: constants.Canvas,
+// 				},
+// 				Token:     token,
+// 				UserAgent: USER_AGENT,
+// 			},
+// 			Mode: mode,
+// 		}, nil
+// 	case File:
+// 		return DocumentRequest{
+// 			File: builder,
+// 			Request: Request{
+// 				Url: interfaces.Url{
+// 					Url:      fmt.Sprintf(urlEndpoint, builder.Id),
+// 					Platform: constants.Canvas,
+// 				},
+// 				Token:     token,
+// 				UserAgent: USER_AGENT,
+// 			},
+// 			Mode: mode,
+// 		}, nil
+// 	default:
+// 		return DocumentRequest{}, errors.New("invalid builder: DocumentRequest must be built using Module, Folder or File only")
+// 	}
+// }
 
 // BuildGradeRequest builds and returns a GradeRequest that can be used for Grade related operations
 // such as retrieving grades of a module.
@@ -248,7 +276,10 @@ func BuildGradeRequest(module Module) (GradeRequest, error) {
 	return GradeRequest{
 		Module: module,
 		Request: Request{
-			Url:       fmt.Sprintf(GRADE_URL_ENDPOINT, module.Id),
+			Url: interfaces.Url{
+				Url:      fmt.Sprintf(GRADE_URL_ENDPOINT, module.Id),
+				Platform: constants.Luminus,
+			},
 			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
@@ -267,7 +298,10 @@ func BuildMultimediaChannelRequest(module Module) (MultimediaChannelRequest, err
 	return MultimediaChannelRequest{
 		Module: module,
 		Request: Request{
-			Url:       fmt.Sprintf(MULTIMEMDIA_CHANNEL_URL_ENDPOINT, module.Id),
+			Url: interfaces.Url{
+				Url:      fmt.Sprintf(MULTIMEMDIA_CHANNEL_URL_ENDPOINT, module.Id),
+				Platform: constants.Luminus,
+			},
 			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
@@ -286,7 +320,10 @@ func BuildMultimediaVideoRequest(multimediaChannel MultimediaChannel) (Multimedi
 	return MultimediaVideoRequest{
 		MultimediaChannel: multimediaChannel,
 		Request: Request{
-			Url:       fmt.Sprintf(LTI_DATA_URL_ENDPOINT, multimediaChannel.Id),
+			Url: interfaces.Url{
+				Url:      fmt.Sprintf(LTI_DATA_URL_ENDPOINT, multimediaChannel.Id),
+				Platform: constants.Luminus,
+			},
 			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
@@ -348,7 +385,10 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 				HasSubFolder: true,
 			},
 			Request: Request{
-				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
+				Url: interfaces.Url{
+					Url:      fmt.Sprintf(urlEndpoint, builder.Id),
+					Platform: constants.Luminus,
+				},
 				Token:     jwtToken,
 				UserAgent: USER_AGENT,
 			},
@@ -358,7 +398,10 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 		return DocumentRequest{
 			Folder: builder,
 			Request: Request{
-				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
+				Url: interfaces.Url{
+					Url:      fmt.Sprintf(urlEndpoint, builder.Id),
+					Platform: constants.Luminus,
+				},
 				Token:     jwtToken,
 				UserAgent: USER_AGENT,
 			},
@@ -368,7 +411,10 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 		return DocumentRequest{
 			File: builder,
 			Request: Request{
-				Url:       fmt.Sprintf(urlEndpoint, builder.Id),
+				Url: interfaces.Url{
+					Url:      fmt.Sprintf(urlEndpoint, builder.Id),
+					Platform: constants.Luminus,
+				},
 				Token:     jwtToken,
 				UserAgent: USER_AGENT,
 			},
@@ -409,7 +455,7 @@ func retrieveJwtToken() (string, error) {
 }
 
 func (req Request) Send(res interface{}) error {
-	request, err := http.NewRequest(req.Method, req.Url, nil)
+	request, err := http.NewRequest(req.Method, req.Url.Url, nil)
 	if err != nil {
 		return err
 	}
