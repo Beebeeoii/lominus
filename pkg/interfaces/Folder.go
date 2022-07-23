@@ -15,12 +15,13 @@ type CanvasFolderObject struct {
 }
 
 type LuminusFolderObject struct {
-	Id           string `json:"id"`
-	Name         string `json:"name"`
-	IsActive     bool   `json:"isActive"`
-	AllowUpload  bool   `json:"alowUpload"`
-	FilesCount   int    `json:"totalFilesCount"`
-	FoldersCount int    `json:"subFolderCount"`
+	Id           string      `json:"id" `
+	Name         string      `json:"name"`
+	IsActive     bool        `json:"isActive"`
+	AllowUpload  bool        `json:"alowUpload"`
+	FilesCount   int         `json:"totalFilesCount" mapstructure:"totalFilesCount"`
+	FoldersCount int         `json:"subFolderCount" mapstructure:"subFolderCount"`
+	AccessObject interface{} `json:"access" mapstructure:"access"`
 }
 
 func (i CanvasFolderObject) GetId() int {
