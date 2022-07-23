@@ -7,10 +7,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/pkg/constants"
+	"github.com/beebeeoii/lominus/pkg/interfaces"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Folder struct is the datapack for containing details about a Folder
@@ -22,7 +26,6 @@ type Folder struct {
 	Downloadable bool
 	HasSubFolder bool
 	Ancestors    []string
-	Platform     constants.Platform
 }
 
 // File struct is the datapack for containing details about a File
@@ -133,16 +136,65 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 // 	return folders, nil
 // }
 
-func (foldersRequest FoldersRequest) GetAllFolders() ([]Folder, error) {
+func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	folders := []Folder{}
+	ancestors := []string{}
 
-	foldersRequest.Request.Send(&foldersRequest.Response)
+	switch builder := foldersRequest.Builder.(type) {
+	case Module:
+		ancestors = append(ancestors, builder.ModuleCode)
+	case Folder:
+		ancestors = append(builder.Ancestors, builder.Name)
+	}
+
+	switch folderDataType := foldersRequest.Request.Url.Platform; folderDataType {
+	case constants.Canvas:
+		response := CanvasFoldersResponse{}
+		foldersRequest.Request.Send(&response.Data)
+
+		for _, folderObject := range response.Data {
+			folders = append(folders, Folder{
+				Id:           strconv.Itoa(folderObject.Id),
+				Name:         folderObject.Name,
+				Downloadable: !folderObject.HiddenForUser,
+				HasSubFolder: folderObject.FoldersCount > 0,
+				Ancestors:    ancestors,
+			})
+		}
+	case constants.Luminus:
+		foldersData := []interfaces.LuminusFolderObject{}
+
+		response := interfaces.LuminusRawResponse{}
+		foldersRequest.Request.Send(&response)
+
+		data := reflect.ValueOf(response.Data)
+		if data.Kind() == reflect.Slice {
+			for i := 0; i < data.Len(); i++ {
+				folderData := interfaces.LuminusFolderObject{}
+				mapstructure.Decode(data.Index(i).Interface(), &folderData)
+				foldersData = append(foldersData, folderData)
+			}
+		}
+
+		for _, folderObject := range foldersData {
+			// Folder is not available.
+			if reflect.ValueOf(folderObject.AccessObject).IsNil() {
+				continue
+			}
+
+			folders = append(folders, Folder{
+				Id:           folderObject.Id,
+				Name:         folderObject.Name,
+				Downloadable: folderObject.IsActive && !folderObject.AllowUpload,
+				HasSubFolder: folderObject.FoldersCount > 0,
+				Ancestors:    ancestors,
+			})
+		}
+	default:
+		return folders, errors.New("foldersRequest.Request.Url.Platform is not available")
+	}
 
 	return folders, nil
-}
-
-func (folder Folder) GetPlatform() constants.Platform {
-	return folder.Platform
 }
 
 // GetAllFiles returns a slice of File objects that are in a Folder from a DocumentRequest.
