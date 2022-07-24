@@ -17,7 +17,7 @@ type RawResponse struct {
 }
 
 // DownloadResponse struct is the datapack for containing API download response raw data.
-type DownloadResponse struct {
+type LuminusDownloadResponse struct {
 	Code        int    `json:"code"`
 	Status      string `json:"status"`
 	DownloadUrl string `json:"data"`

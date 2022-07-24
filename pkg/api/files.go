@@ -3,6 +3,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -228,6 +229,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 				Name:        fileObject.Name,
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
+				DownloadUrl: fileObject.Url,
 			})
 		}
 	case constants.Luminus:
@@ -251,11 +253,27 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 				return files, err
 			}
 
+			downloadUrlResponse := LuminusDownloadResponse{}
+			downloadRequest := Request{
+				Method:    GET_METHOD,
+				Token:     filesRequest.Request.Token,
+				UserAgent: filesRequest.Request.UserAgent,
+				Url: interfaces.Url{
+					Url:      fmt.Sprintf(DOWNLOAD_URL_ENDPOINT, fileObject.Id),
+					Platform: filesRequest.Request.Url.Platform,
+				},
+			}
+			downloadUrlResponseErr := downloadRequest.GetRawResponse(&downloadUrlResponse)
+			if downloadUrlResponseErr != nil {
+				return files, downloadUrlResponseErr
+			}
+
 			files = append(files, File{
 				Id:          fileObject.Id,
 				Name:        fileObject.Name,
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
+				DownloadUrl: downloadUrlResponse.DownloadUrl,
 			})
 		}
 	default:
@@ -363,7 +381,7 @@ func (req DocumentRequest) Download(filePath string) error {
 		return errors.New("mode mismatched: ensure DocumentRequest mode is DOWNLOAD_FILE (2)")
 	}
 
-	downloadResponse := DownloadResponse{}
+	downloadResponse := LuminusDownloadResponse{}
 	err := req.Request.GetRawResponse(&downloadResponse)
 	if err != nil {
 		return err
@@ -396,6 +414,10 @@ func (req DocumentRequest) Download(filePath string) error {
 }
 
 func (file File) Download(filePath string) error {
+	if file.DownloadUrl == "" {
+		return errors.New("file.DownloadUrl is empty")
+	}
+
 	response, err := http.Get(file.DownloadUrl)
 	if err != nil {
 		return err
