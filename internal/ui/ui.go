@@ -143,7 +143,10 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	}
 
 	saveButton := widget.NewButton(saveButtonText, func() {
-		credentials := auth.Credentials{Username: usernameEntry.Text, Password: passwordEntry.Text}
+		credentials := auth.LuminusCredentials{
+			Username: usernameEntry.Text,
+			Password: passwordEntry.Text,
+		}
 
 		status := widget.NewLabel("Please wait while we verify your credentials...")
 		progressBar := widget.NewProgressBarInfinite()
@@ -159,7 +162,7 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
 		} else {
 			logs.Logger.Debugln("verfication succesful - saving credentials")
-			auth.SaveCredentials(credentialsPath, credentials)
+			credentials.Save(credentialsPath)
 			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
 		}
 	})

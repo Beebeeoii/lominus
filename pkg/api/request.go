@@ -442,23 +442,23 @@ func retrieveJwtToken() (string, error) {
 		return jwtPath, getJwtPathErr
 	}
 
-	jwtData, jwtErr := auth.LoadJwtData(jwtPath)
-	if jwtErr != nil {
-		return jwtData.JwtToken, jwtErr
+	tokensData, tokensErr := auth.LoadTokensData(jwtPath)
+	if tokensErr != nil {
+		return tokensData.LuminusToken.JwtToken, tokensErr
 	}
 
-	if !jwtData.IsExpired() {
-		return jwtData.JwtToken, nil
+	if !tokensData.LuminusToken.IsExpired() {
+		return tokensData.LuminusToken.JwtToken, nil
 	}
 
 	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
 	if getCredentialsPathErr != nil {
-		return jwtData.JwtToken, getCredentialsPathErr
+		return tokensData.LuminusToken.JwtToken, getCredentialsPathErr
 	}
 
 	credentials, credentialsErr := auth.LoadCredentials(credentialsPath)
 	if credentialsErr != nil {
-		return jwtData.JwtToken, credentialsErr
+		return tokensData.LuminusToken.JwtToken, credentialsErr
 	}
 
 	return auth.RetrieveJwtToken(credentials, true)
