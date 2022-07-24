@@ -9,7 +9,6 @@ import (
 	"time"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
-	file "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/pkg/constants"
 )
 
@@ -114,7 +113,7 @@ func RetrieveJwtToken(credentials LuminusCredentials, save bool) (string, error)
 	}
 
 	if save {
-		jwtPath, getJwtPathErr := appAuth.GetJwtPath()
+		jwtPath, getJwtPathErr := appAuth.GetTokensPath()
 		if getJwtPathErr != nil {
 			return jwtToken, getJwtPathErr
 		}
@@ -130,20 +129,18 @@ func RetrieveJwtToken(credentials LuminusCredentials, save bool) (string, error)
 	return jwtToken, nil
 }
 
-// SaveCredentials saves the user's Credentials for future authentications or renewals of JWT data.
-func (credentials LuminusCredentials) Save(credentialsPath string) error {
-	return file.EncodeStructToFile(credentialsPath, credentials)
+// TODO Documentation
+func (luminusTokenData LuminusTokenData) Save(tokensPath string) error {
+	return saveTokenData(tokensPath, TokensData{
+		LuminusToken: luminusTokenData,
+	})
 }
 
-// LoadCredentials loads the user's Credentials data from local storage.
-func LoadCredentials(credentialsPath string) (LuminusCredentials, error) {
-	credentials := LuminusCredentials{}
-	if !file.Exists(credentialsPath) {
-		return credentials, &file.FileNotFoundError{FileName: credentialsPath}
-	}
-	err := file.DecodeStructFromFile(credentialsPath, &credentials)
-
-	return credentials, err
+// SaveCredentials saves the user's Credentials for future authentications or renewals of JWT data.
+func (credentials LuminusCredentials) Save(credentialsPath string) error {
+	return saveCredentialsData(credentialsPath, CredentialsData{
+		LuminusCredentials: credentials,
+	})
 }
 
 // IsExpired is a util function that checks if the user's JWT data has expired.

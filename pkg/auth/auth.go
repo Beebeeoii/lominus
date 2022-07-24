@@ -13,6 +13,12 @@ type JsonResponse struct {
 	ExpiresIn   int    `json:"expires_in"`
 }
 
+// TODO Documentation
+type CredentialsData struct {
+	CanvasCredentials  CanvasCredentials
+	LuminusCredentials LuminusCredentials
+}
+
 // TokenData struct is the datapack that describes the user's tokens data.
 type TokensData struct {
 	CanvasToken  CanvasTokenData
@@ -52,6 +58,31 @@ func LoadTokensData(tokensPath string) (TokensData, error) {
 }
 
 // TODO Documentation
+func saveCredentialsData(credentialsPath string, credentailsData CredentialsData) error {
+	if file.Exists(credentialsPath) {
+		localCredentialsData, err := LoadCredentialsData(credentialsPath)
+		if err != nil {
+			return err
+		}
+
+		credentailsData.Merge(localCredentialsData)
+	}
+
+	return file.EncodeStructToFile(credentialsPath, credentailsData)
+}
+
+// TODO Documentation
+func LoadCredentialsData(credentialsPath string) (CredentialsData, error) {
+	credentialsData := CredentialsData{}
+	if !file.Exists(credentialsPath) {
+		return credentialsData, &file.FileNotFoundError{FileName: credentialsPath}
+	}
+	err := file.DecodeStructFromFile(credentialsPath, &credentialsData)
+
+	return credentialsData, err
+}
+
+// TODO Documentation
 func (t *TokensData) Merge(t2 TokensData) {
 	if t.CanvasToken == (CanvasTokenData{}) {
 		t.CanvasToken = t2.CanvasToken
@@ -59,6 +90,17 @@ func (t *TokensData) Merge(t2 TokensData) {
 
 	if t.LuminusToken == (LuminusTokenData{}) {
 		t.LuminusToken = t2.LuminusToken
+	}
+}
+
+// TODO Documentation
+func (t *CredentialsData) Merge(t2 CredentialsData) {
+	if t.CanvasCredentials == (CanvasCredentials{}) {
+		t.CanvasCredentials = t2.CanvasCredentials
+	}
+
+	if t.LuminusCredentials == (LuminusCredentials{}) {
+		t.LuminusCredentials = t2.LuminusCredentials
 	}
 }
 

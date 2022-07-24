@@ -126,13 +126,13 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 	if file.Exists(credentialsPath) {
 		logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
-		credentials, err := auth.LoadCredentials(credentialsPath)
+		credentials, err := auth.LoadCredentialsData(credentialsPath)
 		if err != nil {
 			return tab, err
 		}
 
-		usernameEntry.SetText(credentials.Username)
-		passwordEntry.SetText(credentials.Password)
+		usernameEntry.SetText(credentials.LuminusCredentials.Username)
+		passwordEntry.SetText(credentials.LuminusCredentials.Password)
 	}
 
 	credentialsForm := widget.NewForm(widget.NewFormItem("Username", usernameEntry), widget.NewFormItem("Password", passwordEntry))

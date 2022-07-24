@@ -437,7 +437,7 @@ func BuildDocumentRequest(builder interface{}, mode int) (DocumentRequest, error
 
 // retrieveJwtToken is a util function that loads user's JWT data to be used to communicate with Luminus servers.
 func retrieveJwtToken() (string, error) {
-	jwtPath, getJwtPathErr := appAuth.GetJwtPath()
+	jwtPath, getJwtPathErr := appAuth.GetTokensPath()
 	if getJwtPathErr != nil {
 		return jwtPath, getJwtPathErr
 	}
@@ -456,12 +456,12 @@ func retrieveJwtToken() (string, error) {
 		return tokensData.LuminusToken.JwtToken, getCredentialsPathErr
 	}
 
-	credentials, credentialsErr := auth.LoadCredentials(credentialsPath)
+	credentials, credentialsErr := auth.LoadCredentialsData(credentialsPath)
 	if credentialsErr != nil {
 		return tokensData.LuminusToken.JwtToken, credentialsErr
 	}
 
-	return auth.RetrieveJwtToken(credentials, true)
+	return auth.RetrieveJwtToken(credentials.LuminusCredentials, true)
 }
 
 func (req Request) Send(res interface{}) error {
