@@ -126,6 +126,11 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		return tab, getCredentialsPathErr
 	}
 
+	tokensPath, getTokensPathErr := appAuth.GetTokensPath()
+	if getTokensPathErr != nil {
+		return tab, getTokensPathErr
+	}
+
 	if file.Exists(credentialsPath) {
 		logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
 		credentials, err := auth.LoadCredentialsData(credentialsPath)
@@ -176,6 +181,10 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			CanvasApiToken: canvasTokenEntry.Text,
 		}
 
+		canvasTokens := auth.CanvasTokenData{
+			CanvasApiToken: canvasTokenEntry.Text,
+		}
+
 		status := widget.NewLabel("Please wait while we verify your credentials...")
 		progressBar := widget.NewProgressBarInfinite()
 
@@ -186,12 +195,12 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		err := canvasCredentials.Authenticate()
 		mainDialog.Hide()
 		if err != nil {
-			log.Println(err)
 			logs.Logger.Debugln("verfication failed")
 			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
 		} else {
 			logs.Logger.Debugln("verfication succesful - saving credentials")
 			canvasCredentials.Save(credentialsPath)
+			canvasTokens.Save(tokensPath)
 			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
 		}
 	})
