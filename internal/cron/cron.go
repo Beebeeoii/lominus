@@ -8,6 +8,7 @@ import (
 	"time"
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
@@ -17,6 +18,8 @@ import (
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
+	"github.com/beebeeoii/lominus/pkg/auth"
+	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 
 	"github.com/go-co-op/gocron"
@@ -120,43 +123,89 @@ func createJob(frequency int) (*gocron.Job, error) {
 		logs.Logger.Debugln("loading - telegram")
 		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
 
-		logs.Logger.Debugln("building - module request")
-		moduleRequest, modReqErr := api.BuildModuleRequest()
-		if modReqErr != nil {
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Authentication failed"}
-			logs.Logger.Errorln(modReqErr)
+		logs.Logger.Debugln("loading - credentials and tokens")
+		tokensPath, credsErr := appAuth.GetTokensPath()
+		if credsErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Credentials path load failed"}
+			logs.Logger.Errorln(credsErr)
+			return
+		}
+		tokensData, tokensErr := auth.LoadTokensData(tokensPath)
+		if tokensErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: tokensErr.Error()}
+			logs.Logger.Errorln(tokensErr)
 			return
 		}
 
-		logs.Logger.Debugln("retrieving - modules")
-		modules, modErr := moduleRequest.GetModules()
-		if modErr != nil {
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve modules"}
-			logs.Logger.Errorln(modErr)
+		logs.Logger.Debugln("building - module request")
+		modules := []api.Module{}
+
+		canvasModulesRequest, canvasModulesReqErr := api.BuildModulesRequest(tokensData.CanvasToken.CanvasApiToken, constants.Canvas)
+		if canvasModulesReqErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModulesReqErr.Error()}
+			logs.Logger.Errorln(canvasModulesReqErr)
 			return
 		}
+		canvasModules, canvasModErr := canvasModulesRequest.GetModules()
+		if canvasModErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModErr.Error()}
+			logs.Logger.Errorln(canvasModErr)
+			return
+		}
+		modules = append(modules, canvasModules...)
+
+		luminusModulesRequest, luminusModulesReqErr := api.BuildModulesRequest(tokensData.LuminusToken.JwtToken, constants.Luminus)
+		if luminusModulesReqErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusModulesReqErr.Error()}
+			logs.Logger.Errorln(luminusModulesReqErr)
+			return
+		}
+		luminusModules, luminusModErr := luminusModulesRequest.GetModules()
+		if luminusModErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusModErr.Error()}
+			logs.Logger.Errorln(luminusModErr)
+			return
+		}
+		modules = append(modules, luminusModules...)
 
 		if preferences.Directory != "" {
 			updatedFiles := make([]api.File, 0)
+			folders := []api.Folder{}
 			for _, module := range modules {
-				logs.Logger.Debugln("building - document request")
-				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
-				if fileReqErr != nil {
-					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
-					logs.Logger.Errorln(fileReqErr)
-					continue
+				canvasFoldersReq, canvasFoldersReqErr := api.BuildFoldersRequest(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, module)
+				if canvasFoldersReqErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFoldersReqErr.Error()}
+					logs.Logger.Errorln(canvasFoldersReqErr)
+					return
 				}
-
-				logs.Logger.Debugln("retrieving - root files")
-				files, fileErr := fileRequest.GetRootFiles()
-				if fileErr != nil {
-					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
-					logs.Logger.Errorln(fileErr)
-					continue
+				canvasFolders, canvasFoldersErr := canvasFoldersReq.GetFolders()
+				if canvasFoldersErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFoldersErr.Error()}
+					logs.Logger.Errorln(canvasFoldersErr)
+					return
 				}
+				folders = append(folders, canvasFolders...)
 
-				updatedFiles = append(updatedFiles, files...)
+				luminusFoldersReq, luminusFoldersReqErr := api.BuildFoldersRequest(tokensData.LuminusToken.JwtToken, constants.Luminus, module)
+				if luminusFoldersReqErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFoldersReqErr.Error()}
+					logs.Logger.Errorln(luminusFoldersReqErr)
+					return
+				}
+				luminusFolders, luminusFoldersErr := luminusFoldersReq.GetFolders()
+				if luminusFoldersErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFoldersErr.Error()}
+					logs.Logger.Errorln(luminusFoldersErr)
+					return
+				}
+				folders = append(folders, luminusFolders...)
 			}
+
+			// TODO
+			// for _, folder := range folders {
+
+			// }
+			return
 
 			logs.Logger.Debugln("building - index map")
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
