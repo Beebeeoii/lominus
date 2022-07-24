@@ -165,7 +165,7 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 			folders = append(folders, Folder{
 				Id:           strconv.Itoa(folderObject.Id),
-				Name:         folderObject.Name,
+				Name:         file.CleanseFolderFileName(folderObject.Name),
 				Downloadable: !folderObject.HiddenForUser,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
@@ -209,9 +209,12 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	files := []File{}
-	ancestors := []string{}
 
-	ancestors = append(filesRequest.Folder.Ancestors, filesRequest.Folder.Name)
+	if !filesRequest.Folder.Downloadable {
+		return files, nil
+	}
+
+	ancestors := append(filesRequest.Folder.Ancestors, filesRequest.Folder.Name)
 
 	switch folderDataType := filesRequest.Request.Url.Platform; folderDataType {
 	case constants.Canvas:
@@ -226,7 +229,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 			files = append(files, File{
 				Id:          strconv.Itoa(fileObject.Id),
-				Name:        fileObject.Name,
+				Name:        file.CleanseFolderFileName(fileObject.Name),
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
 				DownloadUrl: fileObject.Url,
@@ -270,7 +273,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 			files = append(files, File{
 				Id:          fileObject.Id,
-				Name:        fileObject.Name,
+				Name:        file.CleanseFolderFileName(fileObject.Name),
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
 				DownloadUrl: downloadUrlResponse.DownloadUrl,
