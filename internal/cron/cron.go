@@ -12,7 +12,7 @@ import (
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	files "github.com/beebeeoii/lominus/internal/file"
+	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
@@ -169,7 +169,6 @@ func createJob(frequency int) (*gocron.Job, error) {
 		modules = append(modules, luminusModules...)
 
 		if preferences.Directory != "" {
-			updatedFiles := make([]api.File, 0)
 			folders := []api.Folder{}
 			for _, module := range modules {
 				canvasFoldersReq, canvasFoldersReqErr := api.BuildFoldersRequest(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, module)
@@ -201,12 +200,6 @@ func createJob(frequency int) (*gocron.Job, error) {
 				folders = append(folders, luminusFolders...)
 			}
 
-			// TODO
-			// for _, folder := range folders {
-
-			// }
-			return
-
 			logs.Logger.Debugln("building - index map")
 			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
 			if currentFilesErr != nil {
@@ -217,18 +210,51 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 			nFilesToUpdate := 0
 			filesUpdated := []api.File{}
+			files := []api.File{}
 
-			for _, file := range updatedFiles {
+			for _, folder := range folders {
+				canvasFilesReq, canvasFilesReqErr := api.BuildFilesRequest(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, folder)
+				if canvasFilesReqErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFilesReqErr.Error()}
+					logs.Logger.Errorln(canvasFilesReqErr)
+					return
+				}
+				canvasFiles, canvasFilesErr := canvasFilesReq.GetFiles()
+				if canvasFilesErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFilesErr.Error()}
+					logs.Logger.Errorln(canvasFilesErr)
+					return
+				}
+				files = append(files, canvasFiles...)
+
+				luminusFilesReq, luminusFilesReqErr := api.BuildFilesRequest(tokensData.LuminusToken.JwtToken, constants.Luminus, folder)
+				if luminusFilesReqErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFilesReqErr.Error()}
+					logs.Logger.Errorln(luminusFilesReqErr)
+					return
+				}
+				luminusFiles, luminusFilesErr := luminusFilesReq.GetFiles()
+				if luminusFilesErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFilesErr.Error()}
+					logs.Logger.Errorln(luminusFilesErr)
+					return
+				}
+				files = append(files, luminusFiles...)
+			}
+
+			for _, file := range files {
 				key := fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name)
-
 				localLastUpdated := currentFiles[key].LastUpdated
-				luminusLastUpdated := file.LastUpdated
+				platformLastUpdated := file.LastUpdated
 
-				if _, exists := currentFiles[key]; !exists || localLastUpdated.Before(luminusLastUpdated) {
+				if _, exists := currentFiles[key]; !exists || localLastUpdated.Before(platformLastUpdated) {
 					nFilesToUpdate += 1
 
-					logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), luminusLastUpdated.String())
-					downloadErr := downloadFile(preferences.Directory, file)
+					logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), platformLastUpdated.String())
+					fileDirSlice := append([]string{preferences.Directory}, file.Ancestors...)
+					filePath := filepath.Join(fileDirSlice...)
+					appFiles.EnsureDir(filePath)
+					downloadErr := file.Download(filePath)
 					if downloadErr != nil {
 						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
 						logs.Logger.Errorln(downloadErr)
@@ -281,7 +307,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 		var lastSync time.Time
 		baseDir, _ := appDir.GetBaseDir()
 
-		existingGradeErr := files.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
+		existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
 		if existingGradeErr != nil {
 			logs.Logger.Debugln(existingGradeErr)
 		}
@@ -320,32 +346,9 @@ func createJob(frequency int) (*gocron.Job, error) {
 			}
 		}
 
-		err := files.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
+		err := appFiles.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
 		if err != nil {
 			logs.Logger.Debugln(err)
 		}
 	})
-}
-
-// downloadFile is a helper function to download the respective files into their corresponding
-// directory based on the File's Ancestors.
-func downloadFile(baseDir string, file api.File) error {
-	fileDirSlice := append([]string{baseDir}, file.Ancestors...)
-	filePath := filepath.Join(append(fileDirSlice, file.Name)...)
-	files.EnsureDir(filePath)
-
-	downloadReq, dlReqErr := api.BuildDocumentRequest(file, api.DOWNLOAD_FILE)
-	if dlReqErr != nil {
-		return dlReqErr
-	}
-
-	if files.Exists(filePath) {
-		renameErr := files.AutoRename(filePath)
-
-		if renameErr != nil {
-			return renameErr
-		}
-	}
-
-	return downloadReq.Download(filepath.Join(fileDirSlice...))
 }
