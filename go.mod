@@ -39,7 +39,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20220128195007-1f435e4c2b44 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220128185129-2efea2b9ea41 // indirect
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/yuin/goldmark v1.4.10 // indirect
 	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
