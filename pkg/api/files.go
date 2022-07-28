@@ -136,7 +136,10 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	switch folderDataType := filesRequest.Request.Url.Platform; folderDataType {
 	case constants.Canvas:
 		response := []interfaces.CanvasFileObject{}
-		filesRequest.Request.Send(&response)
+		reqErr := filesRequest.Request.Send(&response)
+		if reqErr != nil {
+			return files, reqErr
+		}
 
 		for _, fileObject := range response {
 			lastUpdated, err := time.Parse(time.RFC3339, fileObject.LastUpdated)
@@ -156,13 +159,19 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 		filesData := []interfaces.LuminusFileObject{}
 
 		response := interfaces.LuminusRawResponse{}
-		filesRequest.Request.Send(&response)
+		reqErr := filesRequest.Request.Send(&response)
+		if reqErr != nil {
+			return files, reqErr
+		}
 
 		data := reflect.ValueOf(response.Data)
 		if data.Kind() == reflect.Slice {
 			for i := 0; i < data.Len(); i++ {
 				fileData := interfaces.LuminusFileObject{}
-				mapstructure.Decode(data.Index(i).Interface(), &fileData)
+				decodeErr := mapstructure.Decode(data.Index(i).Interface(), &fileData)
+				if decodeErr != nil {
+					return files, decodeErr
+				}
 				filesData = append(filesData, fileData)
 			}
 		}
