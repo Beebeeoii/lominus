@@ -8,15 +8,18 @@ import (
 	"time"
 
 	appApp "github.com/beebeeoii/lominus/internal/app"
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	files "github.com/beebeeoii/lominus/internal/file"
+	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
+	"github.com/beebeeoii/lominus/pkg/auth"
+	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 
 	"github.com/go-co-op/gocron"
@@ -89,6 +92,9 @@ func GetLastRan() time.Time {
 // createJob creates the cronjob that would run at the given frequency.
 // It returns a Job which can be used in the main scheduler.
 // This is where the bulk of the syncing logic lives.
+//
+// TODO Cleanup notifications - make it more user friendly. No point
+// putting technical logs in notifications.
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
@@ -120,147 +126,135 @@ func createJob(frequency int) (*gocron.Job, error) {
 		logs.Logger.Debugln("loading - telegram")
 		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
 
+		logs.Logger.Debugln("loading - credentials and tokens")
+		tokensData, tokensErr := loadTokensData()
+		if tokensErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: tokensErr.Error()}
+			logs.Logger.Errorln(tokensErr)
+			return
+		}
+
 		logs.Logger.Debugln("building - module request")
-		moduleRequest, modReqErr := api.BuildModuleRequest()
-		if modReqErr != nil {
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Authentication failed"}
-			logs.Logger.Errorln(modReqErr)
+
+		canvasModules, canvasModErr := getModules(tokensData.CanvasToken.CanvasApiToken, constants.Canvas)
+		if canvasModErr != nil {
+			// TODO Somehow collate this error and display to user at the end
+			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModErr.Error()}
+			logs.Logger.Errorln(canvasModErr)
+		}
+
+		luminusModules, luninusModErr := getModules(tokensData.LuminusToken.JwtToken, constants.Luminus)
+		if luninusModErr != nil {
+			// TODO Somehow collate this error and display to user at the end
+			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luninusModErr.Error()}
+			logs.Logger.Errorln(luninusModErr)
+		}
+
+		// Note that grades is currently only supported for Luminus
+		grades, gradesErr := getGrades(luminusModules)
+		if gradesErr != nil {
+			logs.Logger.Errorln(gradesErr)
+		}
+
+		if telegramInfoErr != nil {
+			for _, grade := range grades {
+				message := telegram.GenerateGradeMessageFormat(grade)
+				sendErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
+				if sendErr != nil {
+					logs.Logger.Errorln(sendErr)
+				}
+			}
+		}
+
+		// If directory for file sync is not set, exit from job.
+		if preferences.Directory == "" {
 			return
 		}
 
-		logs.Logger.Debugln("retrieving - modules")
-		modules, modErr := moduleRequest.GetModules()
-		if modErr != nil {
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve modules"}
-			logs.Logger.Errorln(modErr)
+		logs.Logger.Debugln("building - index map")
+		currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
+		if currentFilesErr != nil {
+			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Failed to get current downloaded files"}
+			logs.Logger.Errorln(currentFilesErr)
 			return
 		}
 
-		if preferences.Directory != "" {
-			updatedFiles := make([]api.File, 0)
-			for _, module := range modules {
-				logs.Logger.Debugln("building - document request")
-				fileRequest, fileReqErr := api.BuildDocumentRequest(module, api.GET_ALL_FILES)
-				if fileReqErr != nil {
-					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
-					logs.Logger.Errorln(fileReqErr)
-					continue
-				}
-
-				logs.Logger.Debugln("retrieving - root files")
-				files, fileErr := fileRequest.GetRootFiles()
-				if fileErr != nil {
-					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to retrieve files"}
-					logs.Logger.Errorln(fileErr)
-					continue
-				}
-
-				updatedFiles = append(updatedFiles, files...)
+		canvasFolders := []api.Folder{}
+		for _, module := range canvasModules {
+			folders, canvasFoldersErr := getFolders(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, module)
+			if canvasFoldersErr != nil {
+				// TODO Somehow collate this error and display to user at the end
+				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFoldersErr.Error()}
+				logs.Logger.Errorln(canvasFoldersErr)
 			}
-
-			logs.Logger.Debugln("building - index map")
-			currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
-			if currentFilesErr != nil {
-				notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Unable to sync files"}
-				logs.Logger.Errorln(currentFilesErr)
-				return
-			}
-
-			nFilesToUpdate := 0
-			filesUpdated := []api.File{}
-
-			for _, file := range updatedFiles {
-				key := fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name)
-
-				localLastUpdated := currentFiles[key].LastUpdated
-				luminusLastUpdated := file.LastUpdated
-
-				if _, exists := currentFiles[key]; !exists || localLastUpdated.Before(luminusLastUpdated) {
-					nFilesToUpdate += 1
-
-					logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), luminusLastUpdated.String())
-					downloadErr := downloadFile(preferences.Directory, file)
-					if downloadErr != nil {
-						notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
-						logs.Logger.Errorln(downloadErr)
-						continue
-					}
-					filesUpdated = append(filesUpdated, file)
-				}
-			}
-
-			if nFilesToUpdate > 0 {
-				nFilesUpdated := len(filesUpdated)
-				updatedFilesModulesNames := []string{}
-
-				for _, file := range filesUpdated {
-					if telegramInfoErr == nil {
-						message := telegram.GenerateFileUpdatedMessageFormat(file)
-						gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
-
-						if gradeMsgErr != nil {
-							logs.Logger.Errorln(gradeMsgErr)
-							continue
-						}
-					}
-
-					updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
-				}
-
-				var updatedFileNamesString string
-
-				if nFilesUpdated > 4 {
-					updatedFileNamesString = strings.Join(append(updatedFilesModulesNames[:3], "..."), "\n")
-				} else {
-					updatedFileNamesString = strings.Join(updatedFilesModulesNames, "\n")
-				}
-
-				notifications.NotificationChannel <- notifications.Notification{
-					Title:   fmt.Sprintf("Sync: %d/%d updated", nFilesUpdated, nFilesToUpdate),
-					Content: updatedFileNamesString,
-				}
-			} else {
-				notifications.NotificationChannel <- notifications.Notification{
-					Title:   "Sync",
-					Content: "Your files are up to date",
-				}
-			}
-
-			logs.Logger.Infof("job completed: %s", time.Now().Format(time.RFC3339))
+			canvasFolders = append(canvasFolders, folders...)
 		}
 
-		var lastSync time.Time
-		baseDir, _ := appDir.GetBaseDir()
-
-		existingGradeErr := files.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
-		if existingGradeErr != nil {
-			logs.Logger.Debugln(existingGradeErr)
+		luminusFolders := []api.Folder{}
+		for _, module := range luminusModules {
+			folders, luminusFoldersErr := getFolders(tokensData.LuminusToken.JwtToken, constants.Luminus, module)
+			if luminusFoldersErr != nil {
+				// TODO Somehow collate this error and display to user at the end
+				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFoldersErr.Error()}
+				logs.Logger.Errorln(luminusFoldersErr)
+			}
+			luminusFolders = append(luminusFolders, folders...)
 		}
 
-		for _, module := range modules {
-			logs.Logger.Debugln("building - grade request")
-			gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
-			if gradeReqErr != nil {
-				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
-				logs.Logger.Errorln(gradeReqErr)
-				continue
-			}
+		nFilesToUpdate := 0
+		filesUpdated := []api.File{}
 
-			logs.Logger.Debugln("retrieving - grade")
-			allGrades, gradesErr := gradeRequest.GetGrades()
-			if gradesErr != nil {
-				notifications.NotificationChannel <- notifications.Notification{Title: "Grades", Content: "Unable to retrieve grades"}
-				logs.Logger.Errorln(gradesErr)
-				continue
+		files := []api.File{}
+		for _, folder := range canvasFolders {
+			canvasFiles, canvasFilesErr := getFiles(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, folder)
+			if canvasFilesErr != nil {
+				// TODO Somehow collate this error and display to user at the end
+				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFilesErr.Error()}
+				logs.Logger.Errorln(canvasFilesErr)
 			}
+			files = append(files, canvasFiles...)
 
-			for _, grade := range allGrades {
-				if time.Unix(grade.LastUpdated, 0).Before(lastSync) {
+		}
+
+		for _, folder := range luminusFolders {
+			luminusFiles, luminusFilesErr := getFiles(tokensData.LuminusToken.JwtToken, constants.Luminus, folder)
+			if luminusFilesErr != nil {
+				// TODO Somehow collate this error and display to user at the end
+				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFilesErr.Error()}
+				logs.Logger.Errorln(luminusFilesErr)
+			}
+			files = append(files, luminusFiles...)
+		}
+
+		for _, file := range files {
+			key := fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name)
+			localLastUpdated := currentFiles[key].LastUpdated
+			platformLastUpdated := file.LastUpdated
+
+			if _, exists := currentFiles[key]; !exists || localLastUpdated.Before(platformLastUpdated) {
+				nFilesToUpdate += 1
+
+				logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), platformLastUpdated.String())
+				fileDirSlice := append([]string{preferences.Directory}, file.Ancestors...)
+				filePath := filepath.Join(fileDirSlice...)
+				appFiles.EnsureDir(filePath)
+				downloadErr := file.Download(filePath)
+				if downloadErr != nil {
+					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
+					logs.Logger.Errorln(downloadErr)
 					continue
 				}
+				filesUpdated = append(filesUpdated, file)
+			}
+		}
 
+		if nFilesToUpdate > 0 {
+			nFilesUpdated := len(filesUpdated)
+			updatedFilesModulesNames := []string{}
+
+			for _, file := range filesUpdated {
 				if telegramInfoErr == nil {
-					message := telegram.GenerateGradeMessageFormat(grade)
+					message := telegram.GenerateFileUpdatedMessageFormat(file)
 					gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
 
 					if gradeMsgErr != nil {
@@ -268,35 +262,130 @@ func createJob(frequency int) (*gocron.Job, error) {
 						continue
 					}
 				}
+
+				updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
+			}
+
+			var updatedFileNamesString string
+
+			if nFilesUpdated > 4 {
+				updatedFileNamesString = strings.Join(append(updatedFilesModulesNames[:3], "..."), "\n")
+			} else {
+				updatedFileNamesString = strings.Join(updatedFilesModulesNames, "\n")
+			}
+
+			notifications.NotificationChannel <- notifications.Notification{
+				Title:   fmt.Sprintf("Sync: %d/%d updated", nFilesUpdated, nFilesToUpdate),
+				Content: updatedFileNamesString,
+			}
+		} else {
+			notifications.NotificationChannel <- notifications.Notification{
+				Title:   "Sync",
+				Content: "Your files are up to date",
 			}
 		}
 
-		err := files.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
-		if err != nil {
-			logs.Logger.Debugln(err)
-		}
+		logs.Logger.Infof("job completed: %s", time.Now().Format(time.RFC3339))
 	})
 }
 
-// downloadFile is a helper function to download the respective files into their corresponding
-// directory based on the File's Ancestors.
-func downloadFile(baseDir string, file api.File) error {
-	fileDirSlice := append([]string{baseDir}, file.Ancestors...)
-	filePath := filepath.Join(append(fileDirSlice, file.Name)...)
-	files.EnsureDir(filePath)
+func loadTokensData() (auth.TokensData, error) {
+	var tokensData auth.TokensData
 
-	downloadReq, dlReqErr := api.BuildDocumentRequest(file, api.DOWNLOAD_FILE)
-	if dlReqErr != nil {
-		return dlReqErr
+	tokensPath, credsErr := appAuth.GetTokensPath()
+	if credsErr != nil {
+		return tokensData, credsErr
 	}
 
-	if files.Exists(filePath) {
-		renameErr := files.AutoRename(filePath)
+	tokensData, tokensErr := auth.LoadTokensData(tokensPath)
+	if tokensErr != nil {
+		return tokensData, tokensErr
+	}
 
-		if renameErr != nil {
-			return renameErr
+	return tokensData, nil
+}
+
+func getModules(token string, platform constants.Platform) ([]api.Module, error) {
+	modules := []api.Module{}
+
+	modulesRequest, modulesReqErr := api.BuildModulesRequest(token, platform)
+	if modulesReqErr != nil {
+		return modules, modulesReqErr
+	}
+
+	modules, modulesErr := modulesRequest.GetModules()
+	if modulesErr != nil {
+		return modules, modulesErr
+	}
+
+	return modules, nil
+}
+
+func getFolders(token string, platform constants.Platform, module api.Module) ([]api.Folder, error) {
+	folders := []api.Folder{}
+
+	foldersReq, foldersReqErr := api.BuildFoldersRequest(token, platform, module)
+	if foldersReqErr != nil {
+		return folders, foldersReqErr
+	}
+
+	folders, foldersErr := foldersReq.GetFolders()
+	if foldersErr != nil {
+		return folders, foldersErr
+	}
+
+	return folders, nil
+}
+
+func getFiles(token string, platform constants.Platform, folder api.Folder) ([]api.File, error) {
+	files := []api.File{}
+
+	filesReq, filesReqErr := api.BuildFilesRequest(token, platform, folder)
+	if filesReqErr != nil {
+		return files, filesReqErr
+	}
+
+	files, filesErr := filesReq.GetFiles()
+	if filesErr != nil {
+		return files, filesErr
+	}
+
+	return files, nil
+}
+
+func getGrades(modules []api.Module) ([]api.Grade, error) {
+	grades := []api.Grade{}
+
+	var lastSync time.Time
+	baseDir, _ := appDir.GetBaseDir()
+
+	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
+	if existingGradeErr != nil {
+		return grades, existingGradeErr
+	}
+
+	for _, module := range modules {
+		logs.Logger.Debugln("building - grade request")
+		gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
+		if gradeReqErr != nil {
+			logs.Logger.Errorln(gradeReqErr)
+			continue
 		}
+
+		logs.Logger.Debugln("retrieving - grade")
+		allGrades, gradesErr := gradeRequest.GetGrades()
+		if gradesErr != nil {
+			logs.Logger.Errorln(gradesErr)
+			continue
+		}
+
+		grades = append(grades, allGrades...)
 	}
 
-	return downloadReq.Download(filepath.Join(fileDirSlice...))
+	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
+	if err != nil {
+		return []api.Grade{}, err
+	}
+
+	return grades, nil
 }

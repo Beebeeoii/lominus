@@ -6,8 +6,10 @@ require (
 	fyne.io/fyne/v2 v2.2.3
 	github.com/go-co-op/gocron v1.15.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/sqweek/dialog v0.0.0-20220504154117-be45b268883a
+	github.com/stretchr/testify v1.8.0
 )
 
 require (
@@ -37,7 +39,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20220128195007-1f435e4c2b44 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220128185129-2efea2b9ea41 // indirect
-	github.com/stretchr/testify v1.7.5 // indirect
 	github.com/yuin/goldmark v1.4.10 // indirect
 	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect

@@ -82,10 +82,8 @@ func AutoRename(filePath string) error {
 // EnsureDir is a helper function that ensures that the directory exists by creating them
 // if they do not already exist.
 func EnsureDir(dir string) error {
-	dirName := filepath.Dir(dir)
-
-	if _, serr := os.Stat(dirName); serr != nil {
-		merr := os.MkdirAll(dirName, os.ModePerm)
+	if _, serr := os.Stat(dir); serr != nil {
+		merr := os.MkdirAll(dir, os.ModePerm)
 		if merr != nil {
 			return merr
 		}

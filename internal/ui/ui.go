@@ -118,32 +118,44 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	usernameEntry.SetPlaceHolder("Eg: nusstu\\e0123456")
 	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetPlaceHolder("Password")
+	canvasTokenEntry := widget.NewPasswordEntry()
+	canvasTokenEntry.SetPlaceHolder("Account > Settings > New access token > Generate Token")
 
 	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
 	if getCredentialsPathErr != nil {
 		return tab, getCredentialsPathErr
 	}
 
+	tokensPath, getTokensPathErr := appAuth.GetTokensPath()
+	if getTokensPathErr != nil {
+		return tab, getTokensPathErr
+	}
+
 	if file.Exists(credentialsPath) {
 		logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
-		credentials, err := auth.LoadCredentials(credentialsPath)
+		credentials, err := auth.LoadCredentialsData(credentialsPath)
 		if err != nil {
 			return tab, err
 		}
 
-		usernameEntry.SetText(credentials.Username)
-		passwordEntry.SetText(credentials.Password)
+		usernameEntry.SetText(credentials.LuminusCredentials.Username)
+		passwordEntry.SetText(credentials.LuminusCredentials.Password)
+		canvasTokenEntry.SetText(credentials.CanvasCredentials.CanvasApiToken)
 	}
 
-	credentialsForm := widget.NewForm(widget.NewFormItem("Username", usernameEntry), widget.NewFormItem("Password", passwordEntry))
+	luminusCredentialsForm := widget.NewForm(widget.NewFormItem("Username", usernameEntry), widget.NewFormItem("Password", passwordEntry))
+	canvasCredentialsForm := widget.NewForm(widget.NewFormItem("Canvas Token", canvasTokenEntry))
 
 	saveButtonText := "Save Credentials"
 	if usernameEntry.Text != "" && passwordEntry.Text != "" {
 		saveButtonText = "Update Credentials"
 	}
 
-	saveButton := widget.NewButton(saveButtonText, func() {
-		credentials := auth.Credentials{Username: usernameEntry.Text, Password: passwordEntry.Text}
+	luminusSaveButton := widget.NewButton(saveButtonText, func() {
+		luminusCredentials := auth.LuminusCredentials{
+			Username: usernameEntry.Text,
+			Password: passwordEntry.Text,
+		}
 
 		status := widget.NewLabel("Please wait while we verify your credentials...")
 		progressBar := widget.NewProgressBarInfinite()
@@ -152,14 +164,43 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		mainDialog.Show()
 
 		logs.Logger.Debugln("verifying credentials")
-		_, err := auth.RetrieveJwtToken(credentials, true)
+		_, err := auth.RetrieveJwtToken(luminusCredentials, true)
 		mainDialog.Hide()
 		if err != nil {
 			logs.Logger.Debugln("verfication failed")
 			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
 		} else {
 			logs.Logger.Debugln("verfication succesful - saving credentials")
-			auth.SaveCredentials(credentialsPath, credentials)
+			luminusCredentials.Save(credentialsPath)
+			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
+		}
+	})
+
+	canvasSaveButton := widget.NewButton(saveButtonText, func() {
+		canvasCredentials := auth.CanvasCredentials{
+			CanvasApiToken: canvasTokenEntry.Text,
+		}
+
+		canvasTokens := auth.CanvasTokenData{
+			CanvasApiToken: canvasTokenEntry.Text,
+		}
+
+		status := widget.NewLabel("Please wait while we verify your credentials...")
+		progressBar := widget.NewProgressBarInfinite()
+
+		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
+		mainDialog.Show()
+
+		logs.Logger.Debugln("verifying credentials")
+		err := canvasCredentials.Authenticate()
+		mainDialog.Hide()
+		if err != nil {
+			logs.Logger.Debugln("verfication failed")
+			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
+		} else {
+			logs.Logger.Debugln("verfication succesful - saving credentials")
+			canvasCredentials.Save(credentialsPath)
+			canvasTokens.Save(tokensPath)
 			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
 		}
 	})
@@ -168,8 +209,11 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		label,
 		widget.NewSeparator(),
 		subLabel,
-		credentialsForm,
-		saveButton,
+		luminusCredentialsForm,
+		luminusSaveButton,
+		widget.NewSeparator(),
+		canvasCredentialsForm,
+		canvasSaveButton,
 	)
 
 	return tab, nil

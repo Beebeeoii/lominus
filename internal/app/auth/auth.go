@@ -9,7 +9,7 @@ import (
 )
 
 // GetJwtPath returns the file path to user's JWT data.
-func GetJwtPath() (string, error) {
+func GetTokensPath() (string, error) {
 	var jwtPath string
 
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
@@ -17,7 +17,7 @@ func GetJwtPath() (string, error) {
 		return jwtPath, retrieveBaseDirErr
 	}
 
-	jwtPath = filepath.Join(baseDir, lominus.JWT_DATA_FILE_NAME)
+	jwtPath = filepath.Join(baseDir, lominus.TOKENS_FILE_NAME)
 
 	return jwtPath, nil
 }

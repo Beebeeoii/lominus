@@ -17,7 +17,7 @@ type RawResponse struct {
 }
 
 // DownloadResponse struct is the datapack for containing API download response raw data.
-type DownloadResponse struct {
+type LuminusDownloadResponse struct {
 	Code        int    `json:"code"`
 	Status      string `json:"status"`
 	DownloadUrl string `json:"data"`
@@ -34,12 +34,12 @@ type LTIDataResponse struct {
 // Argument provided must be a pointer.
 func (req Request) GetRawResponse(res interface{}) error {
 
-	request, err := http.NewRequest("GET", req.Url, nil)
+	request, err := http.NewRequest("GET", req.Url.Url, nil)
 	if err != nil {
 		return err
 	}
 
-	request.Header.Add("Authorization", "Bearer "+req.JwtToken)
+	request.Header.Add("Authorization", "Bearer "+req.Token)
 
 	cl := &http.Client{}
 
