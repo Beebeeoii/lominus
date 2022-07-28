@@ -22,23 +22,9 @@ type Request struct {
 	UserAgent string
 }
 
-// DocumentRequest struct is the datapack for containing details about a specific HTTP request used for documents (Luminus Files).
-type DocumentRequest struct {
-	File    File
-	Folder  Folder
-	Module  Module
-	Request Request
-	Mode    int
-}
-
 // GradeRequest struct is the datapack for containing details about a specific HTTP request used for grades (Luminus Gradebook).
 type GradeRequest struct {
 	Module  Module
-	Request Request
-}
-
-// ModuleRequest struct is the datapack for containing details about a specific HTTP request used for modules being taken.
-type ModuleRequest struct {
 	Request Request
 }
 
@@ -67,12 +53,6 @@ type MultimediaVideoRequest struct {
 	MultimediaChannel MultimediaChannel
 	Request           Request
 }
-
-const (
-	GET_ALL_FOLDERS = 0
-	GET_ALL_FILES   = 1
-	DOWNLOAD_FILE   = 2
-)
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
 const POST = "POST"
