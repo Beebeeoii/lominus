@@ -21,6 +21,7 @@ type Module struct {
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
 
+// TODO Documentation
 func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 	modules := []Module{}
 
