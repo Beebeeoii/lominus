@@ -74,7 +74,11 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 	switch moduleDataType := modulesRequest.Request.Url.Platform; moduleDataType {
 	case constants.Canvas:
 		response := []interfaces.CanvasModuleObject{}
-		modulesRequest.Request.Send(&response)
+		reqErr := modulesRequest.Request.Send(&response)
+
+		if reqErr != nil {
+			return modules, reqErr
+		}
 
 		for _, moduleObject := range response {
 			modules = append(modules, Module{
@@ -87,13 +91,20 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 		modulesData := []interfaces.LuminusModuleObject{}
 
 		response := interfaces.LuminusRawResponse{}
-		modulesRequest.Request.Send(&response)
+		reqErr := modulesRequest.Request.Send(&response)
+
+		if reqErr != nil {
+			return modules, reqErr
+		}
 
 		data := reflect.ValueOf(response.Data)
 		if data.Kind() == reflect.Slice {
 			for i := 0; i < data.Len(); i++ {
 				moduleData := interfaces.LuminusModuleObject{}
-				mapstructure.Decode(data.Index(i).Interface(), &moduleData)
+				decodeErr := mapstructure.Decode(data.Index(i).Interface(), &moduleData)
+				if decodeErr != nil {
+					return modules, decodeErr
+				}
 				modulesData = append(modulesData, moduleData)
 			}
 		}
