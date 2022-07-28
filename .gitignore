@@ -3,3 +3,5 @@
 *.txt
 *.exe
 *.app
+fyne-cross
+dev_test.go
