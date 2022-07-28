@@ -97,7 +97,6 @@ func Init() error {
 	w.SetMaster()
 	w.SetCloseIntercept(func() {
 		w.Hide()
-		notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Lominus is still running in the background to keep your files synced"}
 	})
 	mainApp.Lifecycle().SetOnEnteredForeground(func() {
 		w.Show()
