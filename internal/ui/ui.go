@@ -3,17 +3,16 @@ package ui
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
-	appApp "github.com/beebeeoii/lominus/internal/app"
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
@@ -24,7 +23,7 @@ import (
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
-	"github.com/getlantern/systray"
+
 	fileDialog "github.com/sqweek/dialog"
 )
 
@@ -51,9 +50,6 @@ var w fyne.Window
 
 // Init builds and initialises the UI.
 func Init() error {
-	if runtime.GOOS == "windows" {
-		systray.Register(onReady, onExit)
-	}
 	mainApp = app.NewWithID(lominus.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
@@ -65,6 +61,11 @@ func Init() error {
 	}()
 
 	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
+
+	if desk, ok := mainApp.(desktop.App); ok {
+		m := BuildSystemTray()
+		desk.SetSystemTrayMenu(m)
+	}
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(w)
 	if credentialsUiErr != nil {
@@ -96,7 +97,6 @@ func Init() error {
 	w.SetMaster()
 	w.SetCloseIntercept(func() {
 		w.Hide()
-		notifications.NotificationChannel <- notifications.Notification{Title: "Lominus", Content: "Lominus is still running in the background to keep your files synced"}
 	})
 	mainApp.Lifecycle().SetOnEnteredForeground(func() {
 		w.Show()
@@ -417,10 +417,6 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 // getQuitButton builds the quit button in the main UI.
 func getQuitButton() *widget.Button {
 	return widget.NewButton("Quit Lominus", func() {
-		if appApp.GetOs() == "windows" {
-			logs.Logger.Infoln("systray quit")
-			systray.Quit()
-		}
 		logs.Logger.Infoln("lominus quit")
 		mainApp.Quit()
 	})
