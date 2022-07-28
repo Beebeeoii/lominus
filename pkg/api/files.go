@@ -137,6 +137,7 @@ func (req DocumentRequest) GetAllFolders() ([]Folder, error) {
 // 	return folders, nil
 // }
 
+// TODO Documentation
 func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	folders := []Folder{}
 	ancestors := []string{}
@@ -151,7 +152,10 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	switch folderDataType := foldersRequest.Request.Url.Platform; folderDataType {
 	case constants.Canvas:
 		response := []interfaces.CanvasFolderObject{}
-		foldersRequest.Request.Send(&response)
+		reqErr := foldersRequest.Request.Send(&response)
+		if reqErr != nil {
+			return folders, reqErr
+		}
 
 		for _, folderObject := range response {
 			// All the folders and files of a module are stored under the "course files" folder.
@@ -175,13 +179,19 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 		foldersData := []interfaces.LuminusFolderObject{}
 
 		response := interfaces.LuminusRawResponse{}
-		foldersRequest.Request.Send(&response)
+		reqErr := foldersRequest.Request.Send(&response)
+		if reqErr != nil {
+			return folders, reqErr
+		}
 
 		data := reflect.ValueOf(response.Data)
 		if data.Kind() == reflect.Slice {
 			for i := 0; i < data.Len(); i++ {
 				folderData := interfaces.LuminusFolderObject{}
-				mapstructure.Decode(data.Index(i).Interface(), &folderData)
+				decodeErr := mapstructure.Decode(data.Index(i).Interface(), &folderData)
+				if decodeErr != nil {
+					return folders, decodeErr
+				}
 				foldersData = append(foldersData, folderData)
 			}
 		}
