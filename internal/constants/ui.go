@@ -21,6 +21,25 @@ const (
 	VERIFICATION_SUCCESSFUL_MESSAGE = "Verification successful."
 	VERIFICATION_FAILED_MESSAGE     = "Verification failed. Please check your credentials."
 
+	// Preferences Tab
+	PREFERENCES_TITLE = "Preferences"
+
+	FILE_DIRECTORY_TAB_TITLE             = "File Directory"
+	FILE_DIRECTORY_TAB_DESCRIPTION       = "Select the root folder to store all your modules' files."
+	FILE_DIRECTORY_FOLDER_PATH_DEFAULT   = "Folder path not set"
+	FILE_DIRECTORY_SELECT_DIRECTORY_TEXT = "Choose folder"
+
+	SYNC_TAB_TITLE             = "Sync"
+	SYNC_TAB_DESCRIPTION       = "Lominus helps to sync files and more **automatically** at the frequency specified below."
+	SYNC_FREQUENCY_DISABLED    = "Disabled"
+	SYNC_FREQUENCY_ONE_HOUR    = "1 hour"
+	SYNC_FREQUENCY_TWO_HOUR    = "2 hour"
+	SYNC_FREQUENCY_FOUR_HOUR   = "4 hour"
+	SYNC_FREQUENCY_SIX_HOUR    = "6 hour"
+	SYNC_FREQUENCY_TWELVE_HOUR = "12 hour"
+
+	SAVE_PREFERENCES_FAILED_MESSAGE = "An error has occurred :( Please try again"
+
 	// General
 	CANCEL_TEXT = "Cancel"
 )
