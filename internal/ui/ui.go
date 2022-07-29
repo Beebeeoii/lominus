@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
@@ -96,14 +97,23 @@ func getPreferences() appPref.Preferences {
 
 // getSyncButton builds the sync button in the main UI.
 func getSyncButton(parentWindow fyne.Window) *widget.Button {
-	return widget.NewButton("Sync Now", func() {
+	return widget.NewButton(appConstants.SYNC_TEXT, func() {
 		preferences := getPreferences()
 		if preferences.Directory == "" {
-			dialog.NewInformation(lominus.APP_NAME, "Please set the directory to store your Luminus files", parentWindow).Show()
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.NO_FOLDER_DIRECTORY_SELECTED,
+				parentWindow,
+			).Show()
 			return
 		}
+
 		if preferences.Frequency == -1 {
-			dialog.NewInformation(lominus.APP_NAME, "Sync is currently disabled. Please choose a sync frequency to sync now.", parentWindow).Show()
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.NO_FREQUENCY_SELECTED,
+				parentWindow,
+			).Show()
 			return
 		}
 		cron.Rerun(getPreferences().Frequency)
@@ -112,7 +122,7 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 
 // getQuitButton builds the quit button in the main UI.
 func getQuitButton() *widget.Button {
-	return widget.NewButton("Quit Lominus", func() {
+	return widget.NewButton(appConstants.QUIT_LOMINUS_TEXT, func() {
 		logs.Logger.Infoln("lominus quit")
 		mainApp.Quit()
 	})
