@@ -40,6 +40,21 @@ const (
 
 	SAVE_PREFERENCES_FAILED_MESSAGE = "An error has occurred :( Please try again"
 
+	// Integrations
+	INTEGRATIONS_TITLE = "Integrations"
+
+	TELEGRAM_TITLE                      = "Telegram"
+	TELEGRAM_DESCRIPTION                = "Lominus can be linked to your Telegram bot to notify you when new grades are released.\n\nTo get started, you will need to create a bot via [BotFather](https://t.me/botfather) to retrieve a bot API token.\n\nAfterwards, you will need your Telegram User ID. One way is to use [userinfobot](https://t.me/userinfobot)."
+	TELEGRAM_BOT_TOKEN_TEXT             = "Bot API Token"
+	TELEGRAM_BOT_TOKEN_PLACEHOLDER      = "Your bot's API token"
+	TELEGRAM_USER_ID_TEXT               = "User ID"
+	TELEGRAM_USER_ID_PLACEHOLDER        = "Your User ID"
+	TELEGRAM_DEFAULT_TEST_MESSAGE       = "Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!\n\nBy integrating Telegram with Lominus, you will be notified of the following whenever Lominus polls for new update based on the intervals set:\n💥 new grades releases\n💥 new announcements (TBC)"
+	TELEGRAM_TESTING_MESSAGE            = "Please wait while we send you a test message..."
+	TELEGRAM_TESTING_SUCCESSFUL_MESSAGE = "Telegram integration successful!"
+	TELEGRAM_TESTING_FAILED_MESSAGE     = "Telegram integration failed. Please ensure that you have chatted with your bot before."
+	SAVE_TELEGRAM_DATA_TEXT             = "Save Telegram Info"
+
 	// General
 	CANCEL_TEXT = "Cancel"
 )
