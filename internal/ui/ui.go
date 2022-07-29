@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
-	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/cron"
@@ -21,7 +20,6 @@ import (
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
-	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 
 	fileDialog "github.com/sqweek/dialog"
@@ -103,120 +101,6 @@ func Init() error {
 	})
 	w.ShowAndRun()
 	return nil
-}
-
-// getCredentialsTab builds the credentials tab in the main UI.
-func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
-	logs.Logger.Debugln("credentials tab loaded")
-	tab := container.NewTabItem("Login Info", container.NewVBox())
-
-	label := widget.NewLabelWithStyle("Your Credentials", fyne.TextAlignLeading, fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0})
-	subLabel := widget.NewRichTextFromMarkdown("Credentials are saved **locally**. It is used to login to [Luminus](https://luminus.nus.edu.sg) **only**.")
-	subLabel.Wrapping = fyne.TextWrapWord
-
-	usernameEntry := widget.NewEntry()
-	usernameEntry.SetPlaceHolder("Eg: nusstu\\e0123456")
-	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetPlaceHolder("Password")
-	canvasTokenEntry := widget.NewPasswordEntry()
-	canvasTokenEntry.SetPlaceHolder("Account > Settings > New access token > Generate Token")
-
-	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
-	if getCredentialsPathErr != nil {
-		return tab, getCredentialsPathErr
-	}
-
-	tokensPath, getTokensPathErr := appAuth.GetTokensPath()
-	if getTokensPathErr != nil {
-		return tab, getTokensPathErr
-	}
-
-	if file.Exists(credentialsPath) {
-		logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
-		credentials, err := auth.LoadCredentialsData(credentialsPath)
-		if err != nil {
-			return tab, err
-		}
-
-		usernameEntry.SetText(credentials.LuminusCredentials.Username)
-		passwordEntry.SetText(credentials.LuminusCredentials.Password)
-		canvasTokenEntry.SetText(credentials.CanvasCredentials.CanvasApiToken)
-	}
-
-	luminusCredentialsForm := widget.NewForm(widget.NewFormItem("Username", usernameEntry), widget.NewFormItem("Password", passwordEntry))
-	canvasCredentialsForm := widget.NewForm(widget.NewFormItem("Canvas Token", canvasTokenEntry))
-
-	saveButtonText := "Save Credentials"
-	if usernameEntry.Text != "" && passwordEntry.Text != "" {
-		saveButtonText = "Update Credentials"
-	}
-
-	luminusSaveButton := widget.NewButton(saveButtonText, func() {
-		luminusCredentials := auth.LuminusCredentials{
-			Username: usernameEntry.Text,
-			Password: passwordEntry.Text,
-		}
-
-		status := widget.NewLabel("Please wait while we verify your credentials...")
-		progressBar := widget.NewProgressBarInfinite()
-
-		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
-		mainDialog.Show()
-
-		logs.Logger.Debugln("verifying credentials")
-		_, err := auth.RetrieveJwtToken(luminusCredentials, true)
-		mainDialog.Hide()
-		if err != nil {
-			logs.Logger.Debugln("verfication failed")
-			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
-		} else {
-			logs.Logger.Debugln("verfication succesful - saving credentials")
-			luminusCredentials.Save(credentialsPath)
-			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
-		}
-	})
-
-	canvasSaveButton := widget.NewButton(saveButtonText, func() {
-		canvasCredentials := auth.CanvasCredentials{
-			CanvasApiToken: canvasTokenEntry.Text,
-		}
-
-		canvasTokens := auth.CanvasTokenData{
-			CanvasApiToken: canvasTokenEntry.Text,
-		}
-
-		status := widget.NewLabel("Please wait while we verify your credentials...")
-		progressBar := widget.NewProgressBarInfinite()
-
-		mainDialog := dialog.NewCustom(lominus.APP_NAME, "Cancel", container.NewVBox(status, progressBar), parentWindow)
-		mainDialog.Show()
-
-		logs.Logger.Debugln("verifying credentials")
-		err := canvasCredentials.Authenticate()
-		mainDialog.Hide()
-		if err != nil {
-			logs.Logger.Debugln("verfication failed")
-			dialog.NewInformation(lominus.APP_NAME, "Verification failed. Please check your credentials.", parentWindow).Show()
-		} else {
-			logs.Logger.Debugln("verfication succesful - saving credentials")
-			canvasCredentials.Save(credentialsPath)
-			canvasTokens.Save(tokensPath)
-			dialog.NewInformation(lominus.APP_NAME, "Verification successful.", parentWindow).Show()
-		}
-	})
-
-	tab.Content = container.NewVBox(
-		label,
-		widget.NewSeparator(),
-		subLabel,
-		luminusCredentialsForm,
-		luminusSaveButton,
-		widget.NewSeparator(),
-		canvasCredentialsForm,
-		canvasSaveButton,
-	)
-
-	return tab, nil
 }
 
 // getPreferencesTab builds the preferences tab in the main UI.
