@@ -56,8 +56,8 @@ const (
 	SAVE_TELEGRAM_DATA_TEXT             = "Save Telegram Info"
 
 	// General
-	NO_FOLDER_DIRECTORY_SELECTED = "Please select a folder from preferences to store your files"
-	NO_FREQUENCY_SELECTED        = "Please choose a sync frequency from preferences to sync now."
+	NO_FOLDER_DIRECTORY_SELECTED = "Please select a folder to store your files: Preferences > Folder Directory"
+	NO_FREQUENCY_SELECTED        = "Please choose a sync frequency: Preferences > Sync"
 	CANCEL_TEXT                  = "Cancel"
 	SYNC_TEXT                    = "Sync"
 	QUIT_LOMINUS_TEXT            = "Quit Lominus"
