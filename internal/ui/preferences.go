@@ -56,26 +56,29 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 	// debugCheckbox.Checked = getPreferences().LogLevel == "debug"
 
-	fileDirectorySubTab, fileDirectorySubTabErr := getFileDirectorySubTab(w)
-	if fileDirectorySubTabErr != nil {
-		return tab, fileDirectorySubTabErr
+	fileDirectoryView, fileDirectoryViewErr := getFileDirectoryView(w)
+	if fileDirectoryViewErr != nil {
+		return tab, fileDirectoryViewErr
 	}
 
-	syncSubTab, syncSubTabErr := getSyncSubTab(w)
-	if syncSubTabErr != nil {
-		return tab, syncSubTabErr
+	syncView, syncViewErr := getSyncView(w)
+	if syncViewErr != nil {
+		return tab, syncViewErr
 	}
 
-	tabsContainer := container.NewAppTabs(fileDirectorySubTab, syncSubTab)
-	tab.Content = container.NewVBox(tabsContainer)
+	tab.Content = container.NewVBox(fileDirectoryView, syncView)
 
 	return tab, nil
 }
 
-func getFileDirectorySubTab(parentWindow fyne.Window) (*container.TabItem, error) {
-	logs.Logger.Debugln("file directory tab loaded")
-	tab := container.NewTabItem(appConstants.FILE_DIRECTORY_TAB_TITLE, container.NewVBox())
+func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("file directory view loaded")
 
+	label := widget.NewLabelWithStyle(
+		appConstants.FILE_DIRECTORY_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
 	description := widget.NewRichTextFromMarkdown(appConstants.FILE_DIRECTORY_TAB_DESCRIPTION)
 	description.Wrapping = fyne.TextWrapWord
 
@@ -133,15 +136,17 @@ func getFileDirectorySubTab(parentWindow fyne.Window) (*container.TabItem, error
 		folderPathLabel.SetText(preferences.Directory)
 	})
 
-	tab.Content = container.NewVBox(description, folderPathLabel, chooseDirButton)
-
-	return tab, nil
+	return container.NewVBox(label, widget.NewSeparator(), description, folderPathLabel, chooseDirButton), nil
 }
 
-func getSyncSubTab(parentWindow fyne.Window) (*container.TabItem, error) {
-	logs.Logger.Debugln("sync tab loaded")
-	tab := container.NewTabItem(appConstants.SYNC_TAB_TITLE, container.NewVBox())
+func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("sync view loaded")
 
+	label := widget.NewLabelWithStyle(
+		appConstants.SYNC_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
 	description := widget.NewRichTextFromMarkdown(appConstants.SYNC_TAB_DESCRIPTION)
 	description.Wrapping = fyne.TextWrapWord
 
@@ -198,7 +203,5 @@ func getSyncSubTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	})
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
-	tab.Content = container.NewVBox(description, frequencySelect)
-
-	return tab, nil
+	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
 }
