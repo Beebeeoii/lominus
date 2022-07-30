@@ -38,7 +38,13 @@ const (
 	SYNC_FREQUENCY_SIX_HOUR    = "6 hour"
 	SYNC_FREQUENCY_TWELVE_HOUR = "12 hour"
 
-	SAVE_PREFERENCES_FAILED_MESSAGE = "An error has occurred :( Please try again"
+	ADVANCED_TAB_TITLE                 = "Advanced"
+	DEBUG_CHECKBOX_TITLE               = "Debug Mode"
+	DEBUG_CHECKBOX_W_LINK_DESCRIPTION  = "Debug mode enables extensive logging to the [logfile](%s)."
+	DEBUG_CHECKBOX_WO_LINK_DESCRIPTION = "Debug mode enables extensive logging to the logfile."
+	DEBUG_TOGGLE_SUCCESSFUL_MESSAGE    = "Please restart Lominus for changes to take place."
+
+	PREFERENCES_FAILED_MESSAGE = "An error has occurred :( Please try again"
 
 	// Integrations Tab
 	INTEGRATIONS_TITLE = "Integrations"

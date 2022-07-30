@@ -1,12 +1,16 @@
 package ui
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/beebeeoii/lominus/internal/lominus"
 
+	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -25,35 +29,6 @@ var frequencyMap = map[int]string{
 func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("preferences tab loaded")
 	tab := container.NewTabItem(appConstants.PREFERENCES_TITLE, container.NewVBox())
-	// debugCheckbox := widget.NewCheck("Debug Mode", func(onDebug bool) {
-	// 	preferences := getPreferences()
-	// 	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	// 	if getPreferencesPathErr != nil {
-	// 		dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
-	// 		logs.Logger.Errorln(getPreferencesPathErr)
-	// 		return
-	// 	}
-
-	// 	if onDebug {
-	// 		preferences.LogLevel = "debug"
-	// 	} else {
-	// 		preferences.LogLevel = "info"
-	// 	}
-
-	// 	logs.SetLogLevel(preferences.LogLevel)
-	// 	logs.Logger.Debugf("debug mode changed to - %v", onDebug)
-
-	// 	savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-	// 	if savePrefErr != nil {
-	// 		dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
-	// 		logs.Logger.Errorln(savePrefErr)
-	// 		return
-	// 	}
-
-	// 	dialog.NewInformation(lominus.APP_NAME, "Please restart Lominus for changes to take place.", parentWindow).Show()
-	// })
-
-	// debugCheckbox.Checked = getPreferences().LogLevel == "debug"
 
 	fileDirectoryView, fileDirectoryViewErr := getFileDirectoryView(w)
 	if fileDirectoryViewErr != nil {
@@ -65,7 +40,12 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		return tab, syncViewErr
 	}
 
-	tab.Content = container.NewVBox(fileDirectoryView, syncView)
+	advancedView, advancedViewErr := getAdvancedView(w)
+	if advancedViewErr != nil {
+		return tab, advancedViewErr
+	}
+
+	tab.Content = container.NewVBox(fileDirectoryView, syncView, advancedView)
 
 	return tab, nil
 }
@@ -94,7 +74,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(
 					lominus.APP_NAME,
-					appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+					appConstants.PREFERENCES_FAILED_MESSAGE,
 					parentWindow,
 				).Show()
 				logs.Logger.Errorln(dirErr)
@@ -116,7 +96,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			if getPreferencesPathErr != nil {
 				dialog.NewInformation(
 					lominus.APP_NAME,
-					appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+					appConstants.PREFERENCES_FAILED_MESSAGE,
 					parentWindow,
 				).Show()
 				logs.Logger.Errorln(getPreferencesPathErr)
@@ -127,7 +107,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			if savePrefErr != nil {
 				dialog.NewInformation(
 					lominus.APP_NAME,
-					appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+					appConstants.PREFERENCES_FAILED_MESSAGE,
 					parentWindow,
 				).Show()
 				logs.Logger.Errorln(savePrefErr)
@@ -184,7 +164,7 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
 				lominus.APP_NAME,
-				appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
 			logs.Logger.Errorln(getPreferencesPathErr)
@@ -195,7 +175,7 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		if savePrefErr != nil {
 			dialog.NewInformation(
 				lominus.APP_NAME,
-				appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
 			logs.Logger.Errorln(savePrefErr)
@@ -206,4 +186,76 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
 	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
+}
+
+func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("advanced view loaded")
+
+	label := widget.NewLabelWithStyle(
+		appConstants.ADVANCED_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
+
+	var description *widget.RichText
+
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		description = widget.NewRichTextFromMarkdown(
+			appConstants.DEBUG_CHECKBOX_WO_LINK_DESCRIPTION,
+		)
+	} else {
+		description = widget.NewRichTextFromMarkdown(
+			fmt.Sprintf(
+				appConstants.DEBUG_CHECKBOX_W_LINK_DESCRIPTION,
+				filepath.Join(baseDir, lominus.LOG_FILE_NAME),
+			),
+		)
+	}
+
+	description.Wrapping = fyne.TextWrapWord
+
+	debugCheckbox := widget.NewCheck(appConstants.DEBUG_CHECKBOX_TITLE, func(onDebug bool) {
+		preferences := getPreferences()
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		if onDebug {
+			preferences.LogLevel = "debug"
+		} else {
+			preferences.LogLevel = "info"
+		}
+
+		logs.SetLogLevel(preferences.LogLevel)
+		logs.Logger.Debugf("debug mode changed to - %v", onDebug)
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(savePrefErr)
+			return
+		}
+
+		dialog.NewInformation(
+			lominus.APP_NAME,
+			appConstants.DEBUG_TOGGLE_SUCCESSFUL_MESSAGE,
+			parentWindow,
+		).Show()
+	})
+
+	debugCheckbox.Checked = getPreferences().LogLevel == "debug"
+
+	return container.NewVBox(label, widget.NewSeparator(), description, debugCheckbox), nil
 }
