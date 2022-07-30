@@ -57,7 +57,7 @@ func Init() error {
 		return integrationsErr
 	}
 
-	tabsContainer := container.NewAppTabs(credentialsTab, preferencesTab, integrationsTab)
+	tabsContainer := container.NewAppTabs(credentialsTab, integrationsTab, preferencesTab)
 	content := container.NewVBox(
 		tabsContainer,
 		layout.NewSpacer(),
