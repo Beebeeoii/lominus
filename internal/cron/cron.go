@@ -297,7 +297,7 @@ func loadTokensData() (auth.TokensData, error) {
 		return tokensData, credsErr
 	}
 
-	tokensData, tokensErr := auth.LoadTokensData(tokensPath)
+	tokensData, tokensErr := auth.LoadTokensData(tokensPath, true)
 	if tokensErr != nil {
 		return tokensData, tokensErr
 	}

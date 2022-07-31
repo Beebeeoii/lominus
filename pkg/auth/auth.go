@@ -2,6 +2,7 @@
 package auth
 
 import (
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	file "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/lominus"
 )
@@ -35,7 +36,7 @@ const AUTH_METHOD = "FormsAuthentication"
 // saveTokenData saves the user's Tokens data to local storage for future use.
 func saveTokenData(tokensPath string, tokensData TokensData) error {
 	if file.Exists(tokensPath) {
-		localTokensData, err := LoadTokensData(tokensPath)
+		localTokensData, err := LoadTokensData(tokensPath, false)
 		if err != nil {
 			return err
 		}
@@ -47,12 +48,35 @@ func saveTokenData(tokensPath string, tokensData TokensData) error {
 }
 
 // LoadTokensData loads the user's Tokens data from local storage.
-func LoadTokensData(tokensPath string) (TokensData, error) {
+func LoadTokensData(tokensPath string, autoRenew bool) (TokensData, error) {
 	tokensData := TokensData{}
+	var err error
 	if !file.Exists(tokensPath) {
 		return tokensData, &file.FileNotFoundError{FileName: tokensPath}
 	}
-	err := file.DecodeStructFromFile(tokensPath, &tokensData)
+
+	err = file.DecodeStructFromFile(tokensPath, &tokensData)
+
+	if !autoRenew || !tokensData.LuminusToken.IsExpired() {
+		return tokensData, err
+	}
+
+	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
+	if getCredentialsPathErr != nil {
+		return tokensData, getCredentialsPathErr
+	}
+
+	credentials, credentialsErr := LoadCredentialsData(credentialsPath)
+	if credentialsErr != nil {
+		return tokensData, credentialsErr
+	}
+
+	_, retrieveErr := RetrieveJwtToken(credentials.LuminusCredentials, true)
+	if retrieveErr != nil {
+		return tokensData, retrieveErr
+	}
+
+	err = file.DecodeStructFromFile(tokensPath, &tokensData)
 
 	return tokensData, err
 }

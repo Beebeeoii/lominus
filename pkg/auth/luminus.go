@@ -118,12 +118,10 @@ func RetrieveJwtToken(credentials LuminusCredentials, save bool) (string, error)
 			return jwtToken, getJwtPathErr
 		}
 
-		return jwtToken, saveTokenData(jwtPath, TokensData{
-			LuminusToken: LuminusTokenData{
-				JwtToken:  jwtToken,
-				JwtExpiry: time.Now().Add(time.Hour * 24).Unix(),
-			},
-		})
+		return jwtToken, LuminusTokenData{
+			JwtToken:  jwtToken,
+			JwtExpiry: time.Now().Add(time.Hour * 24).Unix(),
+		}.Save(jwtPath)
 	}
 
 	return jwtToken, nil

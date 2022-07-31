@@ -229,26 +229,12 @@ func retrieveJwtToken() (string, error) {
 		return jwtPath, getJwtPathErr
 	}
 
-	tokensData, tokensErr := auth.LoadTokensData(jwtPath)
+	tokensData, tokensErr := auth.LoadTokensData(jwtPath, true)
 	if tokensErr != nil {
 		return tokensData.LuminusToken.JwtToken, tokensErr
 	}
 
-	if !tokensData.LuminusToken.IsExpired() {
-		return tokensData.LuminusToken.JwtToken, nil
-	}
-
-	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
-	if getCredentialsPathErr != nil {
-		return tokensData.LuminusToken.JwtToken, getCredentialsPathErr
-	}
-
-	credentials, credentialsErr := auth.LoadCredentialsData(credentialsPath)
-	if credentialsErr != nil {
-		return tokensData.LuminusToken.JwtToken, credentialsErr
-	}
-
-	return auth.RetrieveJwtToken(credentials.LuminusCredentials, true)
+	return tokensData.LuminusToken.JwtToken, tokensErr
 }
 
 func (req Request) Send(res interface{}) error {
