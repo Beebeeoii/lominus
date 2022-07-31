@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/beebeeoii/lominus/internal/file"
+	appFile "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/interfaces"
 	"github.com/mitchellh/mapstructure"
@@ -88,7 +88,7 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 			folders = append(folders, Folder{
 				Id:           strconv.Itoa(folderObject.Id),
-				Name:         file.CleanseFolderFileName(folderObject.Name),
+				Name:         appFile.CleanseFolderFileName(folderObject.Name),
 				Downloadable: !folderObject.HiddenForUser,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
@@ -161,7 +161,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 			files = append(files, File{
 				Id:          strconv.Itoa(fileObject.Id),
-				Name:        file.CleanseFolderFileName(fileObject.Name),
+				Name:        appFile.CleanseFolderFileName(fileObject.Name),
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
 				DownloadUrl: fileObject.Url,
@@ -211,7 +211,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 			files = append(files, File{
 				Id:          fileObject.Id,
-				Name:        file.CleanseFolderFileName(fileObject.Name),
+				Name:        appFile.CleanseFolderFileName(fileObject.Name),
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
 				DownloadUrl: downloadUrlResponse.DownloadUrl,
@@ -224,7 +224,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	return files, nil
 }
 
-func (file File) Download(filePath string) error {
+func (file File) Download(folderPath string) error {
 	if file.DownloadUrl == "" {
 		return errors.New("file.DownloadUrl is empty")
 	}
@@ -240,7 +240,19 @@ func (file File) Download(filePath string) error {
 		return errors.New("received non 200 response code")
 	}
 
-	f, err := os.Create(filepath.Join(filePath, file.Name))
+	filePath := filepath.Join(folderPath, file.Name)
+
+	// This checks if there already exists the specified file
+	// to prevent overwritting of files.
+	if appFile.Exists(filePath) {
+		renameErr := appFile.AutoRename(filePath)
+
+		if renameErr != nil {
+			return renameErr
+		}
+	}
+
+	f, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
