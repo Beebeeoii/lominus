@@ -51,8 +51,16 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 	switch builder := foldersRequest.Builder.(type) {
 	case Module:
+		// Module exists but its contents are restricted to be downloaded.
+		if !builder.IsAccessible {
+			return folders, nil
+		}
 		ancestors = append(ancestors, builder.ModuleCode)
 	case Folder:
+		// Folder exists but its contents are restricted to be downloaded.
+		if !builder.Downloadable {
+			return folders, nil
+		}
 		ancestors = append(builder.Ancestors, builder.Name)
 	}
 

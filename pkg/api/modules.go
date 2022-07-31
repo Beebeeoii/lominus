@@ -14,9 +14,10 @@ import (
 
 // Module struct is the datapack for containing details about every module
 type Module struct {
-	Id         string
-	Name       string
-	ModuleCode string
+	Id           string
+	Name         string
+	ModuleCode   string
+	IsAccessible bool
 }
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
@@ -36,9 +37,10 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 
 		for _, moduleObject := range response {
 			modules = append(modules, Module{
-				Id:         strconv.Itoa(moduleObject.Id),
-				Name:       moduleObject.Name,
-				ModuleCode: cleanseModuleCode(moduleObject.ModuleCode),
+				Id:           strconv.Itoa(moduleObject.Id),
+				Name:         moduleObject.Name,
+				ModuleCode:   cleanseModuleCode(moduleObject.ModuleCode),
+				IsAccessible: !moduleObject.IsAccessRestrictedByDate,
 			})
 		}
 	case constants.Luminus:
@@ -65,9 +67,10 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 
 		for _, moduleObject := range modulesData {
 			modules = append(modules, Module{
-				Id:         moduleObject.Id,
-				Name:       moduleObject.Name,
-				ModuleCode: cleanseModuleCode(moduleObject.ModuleCode),
+				Id:           moduleObject.Id,
+				Name:         moduleObject.Name,
+				ModuleCode:   cleanseModuleCode(moduleObject.ModuleCode),
+				IsAccessible: moduleObject.IsCourseSearchable && moduleObject.IsPublished,
 			})
 		}
 	default:
