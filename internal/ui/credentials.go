@@ -44,29 +44,32 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	}
 	tokensPath = tPath
 
-	luminusSubTab, luminusSubTabErr := getLuminusSubTab(w, credentials.LuminusCredentials)
-	if luminusSubTabErr != nil {
-		return tab, luminusSubTabErr
+	luminusView, luminusViewErr := getLuminusView(w, credentials.LuminusCredentials)
+	if luminusViewErr != nil {
+		return tab, luminusViewErr
 	}
 
-	canvasSubTab, canvasSubTabErr := getCanvasSubTab(w, credentials.CanvasCredentials)
-	if canvasSubTabErr != nil {
-		return tab, canvasSubTabErr
+	canvasView, canvasViewErr := getCanvasView(w, credentials.CanvasCredentials)
+	if canvasViewErr != nil {
+		return tab, canvasViewErr
 	}
 
-	tabsContainer := container.NewAppTabs(luminusSubTab, canvasSubTab)
-	tab.Content = container.NewVBox(tabsContainer)
+	tab.Content = container.NewVBox(luminusView, canvasView)
 
 	return tab, nil
 }
 
-func getLuminusSubTab(
+func getLuminusView(
 	parentWindow fyne.Window,
 	defaultCredentials auth.LuminusCredentials,
-) (*container.TabItem, error) {
-	logs.Logger.Debugln("luminus tab loaded")
-	tab := container.NewTabItem(appConstants.LUMINUS_TAB_TITLE, container.NewVBox())
+) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("luminus view loaded")
 
+	label := widget.NewLabelWithStyle(
+		appConstants.LUMINUS_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
 	description := widget.NewRichTextFromMarkdown(appConstants.LUMINUS_TAB_DESCRIPTION)
 	description.Wrapping = fyne.TextWrapWord
 
@@ -121,22 +124,26 @@ func getLuminusSubTab(
 		}
 	})
 
-	tab.Content = container.NewVBox(
+	return container.NewVBox(
+		label,
+		widget.NewSeparator(),
 		description,
 		luminusCredentialsForm,
 		luminusSaveButton,
-	)
-
-	return tab, nil
+	), nil
 }
 
-func getCanvasSubTab(
+func getCanvasView(
 	parentWindow fyne.Window,
 	defaultCredentials auth.CanvasCredentials,
-) (*container.TabItem, error) {
-	logs.Logger.Debugln("canvas tab loaded")
-	tab := container.NewTabItem(appConstants.CANVAS_TAB_TITLE, container.NewVBox())
+) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("canvas view loaded")
 
+	label := widget.NewLabelWithStyle(
+		appConstants.CANVAS_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
 	description := widget.NewRichTextFromMarkdown(appConstants.CANVAS_TAB_DESCRIPTION)
 	description.Wrapping = fyne.TextWrapWord
 	canvasTokenEntry := widget.NewPasswordEntry()
@@ -190,11 +197,11 @@ func getCanvasSubTab(
 		}
 	})
 
-	tab.Content = container.NewVBox(
+	return container.NewVBox(
+		label,
+		widget.NewSeparator(),
 		description,
 		canvasCredentialsForm,
 		canvasSaveButton,
-	)
-
-	return tab, nil
+	), nil
 }

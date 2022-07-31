@@ -1,16 +1,19 @@
 package ui
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/beebeeoii/lominus/internal/lominus"
 
+	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	fileDialog "github.com/sqweek/dialog"
 )
 
 var frequencyMap = map[int]string{
@@ -26,56 +29,35 @@ var frequencyMap = map[int]string{
 func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("preferences tab loaded")
 	tab := container.NewTabItem(appConstants.PREFERENCES_TITLE, container.NewVBox())
-	// debugCheckbox := widget.NewCheck("Debug Mode", func(onDebug bool) {
-	// 	preferences := getPreferences()
-	// 	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	// 	if getPreferencesPathErr != nil {
-	// 		dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
-	// 		logs.Logger.Errorln(getPreferencesPathErr)
-	// 		return
-	// 	}
 
-	// 	if onDebug {
-	// 		preferences.LogLevel = "debug"
-	// 	} else {
-	// 		preferences.LogLevel = "info"
-	// 	}
-
-	// 	logs.SetLogLevel(preferences.LogLevel)
-	// 	logs.Logger.Debugf("debug mode changed to - %v", onDebug)
-
-	// 	savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-	// 	if savePrefErr != nil {
-	// 		dialog.NewInformation(lominus.APP_NAME, "An error has occurred :( Please try again", parentWindow).Show()
-	// 		logs.Logger.Errorln(savePrefErr)
-	// 		return
-	// 	}
-
-	// 	dialog.NewInformation(lominus.APP_NAME, "Please restart Lominus for changes to take place.", parentWindow).Show()
-	// })
-
-	// debugCheckbox.Checked = getPreferences().LogLevel == "debug"
-
-	fileDirectorySubTab, fileDirectorySubTabErr := getFileDirectorySubTab(w)
-	if fileDirectorySubTabErr != nil {
-		return tab, fileDirectorySubTabErr
+	fileDirectoryView, fileDirectoryViewErr := getFileDirectoryView(w)
+	if fileDirectoryViewErr != nil {
+		return tab, fileDirectoryViewErr
 	}
 
-	syncSubTab, syncSubTabErr := getSyncSubTab(w)
-	if syncSubTabErr != nil {
-		return tab, syncSubTabErr
+	syncView, syncViewErr := getSyncView(w)
+	if syncViewErr != nil {
+		return tab, syncViewErr
 	}
 
-	tabsContainer := container.NewAppTabs(fileDirectorySubTab, syncSubTab)
-	tab.Content = container.NewVBox(tabsContainer)
+	advancedView, advancedViewErr := getAdvancedView(w)
+	if advancedViewErr != nil {
+		return tab, advancedViewErr
+	}
+
+	tab.Content = container.NewVBox(fileDirectoryView, syncView, advancedView)
 
 	return tab, nil
 }
 
-func getFileDirectorySubTab(parentWindow fyne.Window) (*container.TabItem, error) {
-	logs.Logger.Debugln("file directory tab loaded")
-	tab := container.NewTabItem(appConstants.FILE_DIRECTORY_TAB_TITLE, container.NewVBox())
+func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("file directory view loaded")
 
+	label := widget.NewLabelWithStyle(
+		appConstants.FILE_DIRECTORY_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
 	description := widget.NewRichTextFromMarkdown(appConstants.FILE_DIRECTORY_TAB_DESCRIPTION)
 	description.Wrapping = fyne.TextWrapWord
 
@@ -87,61 +69,66 @@ func getFileDirectorySubTab(parentWindow fyne.Window) (*container.TabItem, error
 	folderPathLabel := widget.NewLabel(dir)
 	folderPathLabel.Wrapping = fyne.TextWrapWord
 	chooseDirButton := widget.NewButton(appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT, func() {
-		dir, dirErr := fileDialog.Directory().Title(
-			appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT,
-		).Browse()
-
-		if dirErr != nil {
-			if dirErr.Error() != "Cancelled" {
+		dialog.ShowFolderOpen(func(lu fyne.ListableURI, dirErr error) {
+			if dirErr != nil {
 				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(
 					lominus.APP_NAME,
-					appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+					appConstants.PREFERENCES_FAILED_MESSAGE,
 					parentWindow,
 				).Show()
 				logs.Logger.Errorln(dirErr)
+				return
 			}
-			return
-		}
-		logs.Logger.Debugf("directory chosen - %s", dir)
 
-		preferences := getPreferences()
-		preferences.Directory = dir
+			if lu == nil {
+				return
+			}
 
-		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-		if getPreferencesPathErr != nil {
-			dialog.NewInformation(
-				lominus.APP_NAME,
-				appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
-				parentWindow,
-			).Show()
-			logs.Logger.Errorln(getPreferencesPathErr)
-			return
-		}
+			dir = lu.Path()
 
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-		if savePrefErr != nil {
-			dialog.NewInformation(
-				lominus.APP_NAME,
-				appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
-				parentWindow,
-			).Show()
-			logs.Logger.Errorln(savePrefErr)
-			return
-		}
-		logs.Logger.Debugln("directory saved")
-		folderPathLabel.SetText(preferences.Directory)
+			logs.Logger.Debugf("directory chosen - %s", dir)
+
+			preferences := getPreferences()
+			preferences.Directory = dir
+
+			preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+			if getPreferencesPathErr != nil {
+				dialog.NewInformation(
+					lominus.APP_NAME,
+					appConstants.PREFERENCES_FAILED_MESSAGE,
+					parentWindow,
+				).Show()
+				logs.Logger.Errorln(getPreferencesPathErr)
+				return
+			}
+
+			savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+			if savePrefErr != nil {
+				dialog.NewInformation(
+					lominus.APP_NAME,
+					appConstants.PREFERENCES_FAILED_MESSAGE,
+					parentWindow,
+				).Show()
+				logs.Logger.Errorln(savePrefErr)
+				return
+			}
+			logs.Logger.Debugln("directory saved")
+			folderPathLabel.SetText(preferences.Directory)
+		}, parentWindow)
 	})
 
-	tab.Content = container.NewVBox(description, folderPathLabel, chooseDirButton)
-
-	return tab, nil
+	return container.NewVBox(label, widget.NewSeparator(), description, folderPathLabel, chooseDirButton), nil
 }
 
-func getSyncSubTab(parentWindow fyne.Window) (*container.TabItem, error) {
-	logs.Logger.Debugln("sync tab loaded")
-	tab := container.NewTabItem(appConstants.SYNC_TAB_TITLE, container.NewVBox())
+func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("sync view loaded")
 
+	label := widget.NewLabelWithStyle(
+		appConstants.SYNC_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
 	description := widget.NewRichTextFromMarkdown(appConstants.SYNC_TAB_DESCRIPTION)
 	description.Wrapping = fyne.TextWrapWord
 
@@ -177,7 +164,7 @@ func getSyncSubTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
 				lominus.APP_NAME,
-				appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
 			logs.Logger.Errorln(getPreferencesPathErr)
@@ -188,7 +175,7 @@ func getSyncSubTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		if savePrefErr != nil {
 			dialog.NewInformation(
 				lominus.APP_NAME,
-				appConstants.SAVE_PREFERENCES_FAILED_MESSAGE,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
 			logs.Logger.Errorln(savePrefErr)
@@ -198,7 +185,77 @@ func getSyncSubTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	})
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
-	tab.Content = container.NewVBox(description, frequencySelect)
+	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
+}
 
-	return tab, nil
+func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("advanced view loaded")
+
+	label := widget.NewLabelWithStyle(
+		appConstants.ADVANCED_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
+
+	var description *widget.RichText
+
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		description = widget.NewRichTextFromMarkdown(
+			appConstants.DEBUG_CHECKBOX_WO_LINK_DESCRIPTION,
+		)
+	} else {
+		description = widget.NewRichTextFromMarkdown(
+			fmt.Sprintf(
+				appConstants.DEBUG_CHECKBOX_W_LINK_DESCRIPTION,
+				filepath.Join(baseDir, lominus.LOG_FILE_NAME),
+			),
+		)
+	}
+
+	description.Wrapping = fyne.TextWrapWord
+
+	debugCheckbox := widget.NewCheck(appConstants.DEBUG_CHECKBOX_TITLE, func(onDebug bool) {
+		preferences := getPreferences()
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		if onDebug {
+			preferences.LogLevel = "debug"
+		} else {
+			preferences.LogLevel = "info"
+		}
+
+		logs.SetLogLevel(preferences.LogLevel)
+		logs.Logger.Debugf("debug mode changed to - %v", onDebug)
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(savePrefErr)
+			return
+		}
+
+		dialog.NewInformation(
+			lominus.APP_NAME,
+			appConstants.DEBUG_TOGGLE_SUCCESSFUL_MESSAGE,
+			parentWindow,
+		).Show()
+	})
+
+	debugCheckbox.Checked = getPreferences().LogLevel == "debug"
+
+	return container.NewVBox(label, widget.NewSeparator(), description, debugCheckbox), nil
 }

@@ -8,7 +8,6 @@ require (
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/sqweek/dialog v0.0.0-20220504154117-be45b268883a
 	github.com/stretchr/testify v1.8.0
 )
 
@@ -28,7 +27,6 @@ require (
 )
 
 require (
-	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
