@@ -49,6 +49,10 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	folders := []Folder{}
 	ancestors := []string{}
 
+	if foldersRequest.Request.Token == "" {
+		return folders, nil
+	}
+
 	switch builder := foldersRequest.Builder.(type) {
 	case Module:
 		// Module exists but its contents are restricted to be downloaded.
@@ -135,7 +139,7 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	files := []File{}
 
-	if !filesRequest.Folder.Downloadable {
+	if !filesRequest.Folder.Downloadable || filesRequest.Request.Token == "" {
 		return files, nil
 	}
 

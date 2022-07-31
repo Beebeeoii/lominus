@@ -25,6 +25,9 @@ const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=
 // TODO Documentation
 func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 	modules := []Module{}
+	if modulesRequest.Request.Token == "" {
+		return modules, nil
+	}
 
 	switch moduleDataType := modulesRequest.Request.Url.Platform; moduleDataType {
 	case constants.Canvas:
