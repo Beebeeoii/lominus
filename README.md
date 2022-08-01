@@ -241,5 +241,5 @@ Lominus is far from perfect. All contributions, regardless large or small, are h
     - Please ensure that you have trusted the SSL Certificate used by Luminus, **especially on Unix systems**.
 
 2. Will my annotated lecture notes be overwritten if there exists a newer version uploaded by the Professor?
-    
-    - Your annotated file will be renamed to `[Edit1] XXX.XXX` and the newer version will be downloaded.
+
+    - Your annotated file will be renamed to `[v1] XXX.XXX` and the newer version will be downloaded.
