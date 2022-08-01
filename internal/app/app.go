@@ -3,12 +3,15 @@ package app
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
+	"time"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
 // Init initialises and ensures log and preference files that Lominus requires are available.
@@ -59,6 +62,17 @@ func Init() error {
 	logInitErr := logs.Init()
 	if logInitErr != nil {
 		return logInitErr
+	}
+
+	// TODO Consider moving this to its own module in the future.
+	gradesPath := filepath.Join(baseDir, lominus.GRADES_FILE_NAME)
+
+	if !file.Exists(gradesPath) {
+		gradeFileErr := file.EncodeStructToFile(gradesPath, time.Now())
+
+		if gradeFileErr != nil {
+			return gradeFileErr
+		}
 	}
 
 	return nil
