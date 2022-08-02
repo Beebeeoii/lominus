@@ -30,7 +30,7 @@ const (
 	FILE_DIRECTORY_SELECT_DIRECTORY_TEXT = "Choose folder"
 
 	SYNC_TAB_TITLE             = "Sync"
-	SYNC_TAB_DESCRIPTION       = "Lominus helps to sync files and more **automatically** at the frequency specified below."
+	SYNC_TAB_DESCRIPTION       = "Sync files and more **automatically** at the frequency specified below."
 	SYNC_FREQUENCY_DISABLED    = "Disabled"
 	SYNC_FREQUENCY_ONE_HOUR    = "1 hour"
 	SYNC_FREQUENCY_TWO_HOUR    = "2 hour"
@@ -50,11 +50,11 @@ const (
 	INTEGRATIONS_TITLE = "Integrations"
 
 	TELEGRAM_TITLE                      = "Telegram"
-	TELEGRAM_DESCRIPTION                = "Lominus can be linked to your Telegram bot to notify you when new grades are released.\n\nTo get started, you will need to create a bot via [BotFather](https://t.me/botfather) to retrieve a bot API token.\n\nAfterwards, you will need your Telegram User ID. One way is to use [userinfobot](https://t.me/userinfobot)."
+	TELEGRAM_DESCRIPTION                = "Link Lominus to your Telegram bot to get notified of grades releases.\n\nYou will need:\n- your bot token via [BotFather](https://t.me/botfather) on Telegram\n- your Telegram user ID (one way is to use [userinfobot](https://t.me/userinfobot))"
 	TELEGRAM_BOT_TOKEN_TEXT             = "Bot API Token"
 	TELEGRAM_BOT_TOKEN_PLACEHOLDER      = "Your bot's API token"
 	TELEGRAM_USER_ID_TEXT               = "User ID"
-	TELEGRAM_USER_ID_PLACEHOLDER        = "Your User ID"
+	TELEGRAM_USER_ID_PLACEHOLDER        = "Your user ID"
 	TELEGRAM_DEFAULT_TEST_MESSAGE       = "Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!\n\nBy integrating Telegram with Lominus, you will be notified of the following whenever Lominus polls for new update based on the intervals set:\n💥 new grades releases\n💥 new announcements (TBC)"
 	TELEGRAM_TESTING_MESSAGE            = "Please wait while we send you a test message..."
 	TELEGRAM_TESTING_SUCCESSFUL_MESSAGE = "Telegram integration successful!"
