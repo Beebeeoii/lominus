@@ -108,6 +108,7 @@ sudo make install
 
 ### Prerequisites <a name="getting-started-building-prerequisites">
 
+
 1. [Golang](https://go.dev/dl/)
 
 2. `gcc`
@@ -131,6 +132,7 @@ sudo make install
     ``` bash
     go install
     ```
+
 
 3. Install [fyne](https://developer.fyne.io/index.html)
 
@@ -225,6 +227,7 @@ func getCanvasModules() {
 Telegram can be used to receive notifications for things such as new grades releases.
 
 ### Setting up
+
 
 1) Create a bot via [BotFather](https://telegram.me/BotFather). Take note of the _bot token_.
 
