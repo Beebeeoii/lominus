@@ -58,8 +58,6 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		fyne.TextAlignLeading,
 		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
 	)
-	description := widget.NewRichTextFromMarkdown(appConstants.FILE_DIRECTORY_TAB_DESCRIPTION)
-	description.Wrapping = fyne.TextWrapWord
 
 	dir := getPreferences().Directory
 	if dir == "" {
@@ -69,7 +67,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	folderPathLabel := widget.NewLabel(dir)
 	folderPathLabel.Wrapping = fyne.TextWrapWord
 	chooseDirButton := widget.NewButton(appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT, func() {
-		dialog.ShowFolderOpen(func(lu fyne.ListableURI, dirErr error) {
+		fileDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, dirErr error) {
 			if dirErr != nil {
 				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(
@@ -116,9 +114,11 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			logs.Logger.Debugln("directory saved")
 			folderPathLabel.SetText(preferences.Directory)
 		}, parentWindow)
+		fileDialog.SetConfirmText(appConstants.FILE_DIRECTORY_CHOOSE_LOCATION_TEXT)
+		fileDialog.Show()
 	})
 
-	return container.NewVBox(label, widget.NewSeparator(), description, folderPathLabel, chooseDirButton), nil
+	return container.NewVBox(label, widget.NewSeparator(), folderPathLabel, chooseDirButton), nil
 }
 
 func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
