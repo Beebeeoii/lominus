@@ -3,5 +3,6 @@
 *.txt
 *.exe
 *.app
+.DS_Store
 fyne-cross
 dev_test.go
