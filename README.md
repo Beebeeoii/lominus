@@ -108,7 +108,6 @@ sudo make install
 
 ### Prerequisites <a name="getting-started-building-prerequisites">
 
-
 1. [Golang](https://go.dev/dl/)
 
 2. `gcc`
@@ -132,7 +131,6 @@ sudo make install
     ``` bash
     go install
     ```
-
 
 3. Install [fyne](https://developer.fyne.io/index.html)
 
@@ -228,16 +226,15 @@ Telegram can be used to receive notifications for things such as new grades rele
 
 ### Setting up
 
+1) Retrieve your _bot token_ via [BotFather](https://telegram.me/BotFather).
 
-1) Create a bot via [BotFather](https://telegram.me/BotFather). Take note of the _bot token_.
+2) Retrieve your _Telegram user ID_. The simplest way is via [UserInfoBot](https://telegram.me/userinfobot).
 
-2) **_Important_**: Drop the bot you have just created a message to enable it to message you.
+3) Copy and paste the _bot token_ and your _Telegram user ID_ in Lominus, under the Integrations tab.
 
-3) Retrieve your _Telegram user ID_. The simplest way is via [UserInfoBot](https://telegram.me/userinfobot).
+4) Save and you should receive a test message from your bot.
 
-4) Copy and paste the _bot token_ and your _Telegram user ID_ in Lominus, under the Integrations tab.
-
-5) Save and you should receive a test message from your bot.
+> Ensure that the bot is able to message you by dropping it a message.
 
 # Screenshots <a name="screenshots">
 
