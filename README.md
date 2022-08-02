@@ -1,4 +1,4 @@
-![GitHub Lominus version](https://img.shields.io/badge/Lominus-v1.2.1-blueviolet)
+![GitHub Lominus version](https://img.shields.io/badge/Lominus-v2.0.0-blueviolet)
 ![GitHub all releases](https://img.shields.io/github/downloads/beebeeoii/lominus/total)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus)
 [![Go Reference](https://pkg.go.dev/badge/github.com/beebeeoii/lominus.svg)](https://pkg.go.dev/github.com/beebeeoii/lominus)
