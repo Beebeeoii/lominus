@@ -25,9 +25,9 @@ const (
 	PREFERENCES_TITLE = "Preferences"
 
 	FILE_DIRECTORY_TAB_TITLE             = "File Directory"
-	FILE_DIRECTORY_TAB_DESCRIPTION       = "Select the root folder to store all your modules' files."
-	FILE_DIRECTORY_FOLDER_PATH_DEFAULT   = "Folder path not set"
+	FILE_DIRECTORY_FOLDER_PATH_DEFAULT   = "Select the root folder to store all your modules' files."
 	FILE_DIRECTORY_SELECT_DIRECTORY_TEXT = "Choose folder"
+	FILE_DIRECTORY_CHOOSE_LOCATION_TEXT  = "Choose"
 
 	SYNC_TAB_TITLE             = "Sync"
 	SYNC_TAB_DESCRIPTION       = "Sync files and more **automatically** at the frequency specified below."
