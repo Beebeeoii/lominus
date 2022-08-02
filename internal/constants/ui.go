@@ -40,7 +40,7 @@ const (
 
 	ADVANCED_TAB_TITLE                 = "Advanced"
 	DEBUG_CHECKBOX_TITLE               = "Debug Mode"
-	DEBUG_CHECKBOX_W_LINK_DESCRIPTION  = "Debug mode enables extensive logging to the [logfile](<file://%s>)."
+	DEBUG_CHECKBOX_W_LINK_DESCRIPTION  = "Debug mode enables extensive logging to the [logfile](<%s>)."
 	DEBUG_CHECKBOX_WO_LINK_DESCRIPTION = "Debug mode enables extensive logging to the logfile."
 	DEBUG_TOGGLE_SUCCESSFUL_MESSAGE    = "Please restart Lominus for changes to take place."
 
