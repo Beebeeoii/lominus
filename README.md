@@ -6,7 +6,9 @@
   <img src="https://img.shields.io/badge/Lominus-v2.0.0-blueviolet" />
   <img src="https://img.shields.io/github/downloads/beebeeoii/lominus/total" />
   <img src="https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus" />
-  <img src="https://pkg.go.dev/github.com/beebeeoii/lominus" />
+  <a href="https://pkg.go.dev/github.com/beebeeoii/lominus">
+    <img src="https://pkg.go.dev/badge/github.com/beebeeoii/lominus.svg" alt="Go Reference">
+  </a>
 </p>
 
 # Table of Contents
