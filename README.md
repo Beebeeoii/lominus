@@ -66,8 +66,6 @@ Your anti-virus software like Windows Defender may prompt that `lominus.exe` as 
 
 This occurs because the app is unsigned amongst other reasons regarding Go executables which you may find out more [here](https://go.dev/doc/faq#virus). Signing it requires a valid certificate which is payable.
 
-If you want to be sure (which is highly recommended), compile and build the source code manually. You may find out more under [Building](#getting-started-building)
-
 ### macOS <a name="getting-started-installation-mac">
 
 > Tested on M1 MacBook Air 2020 macOS Monterey Version 12.1
@@ -110,7 +108,7 @@ sudo make install
 
 ### Prerequisites <a name="getting-started-building-prerequisites">
 
-1. [Go](https://go.dev/dl/)
+1. [Golang](https://go.dev/dl/)
 
 2. `gcc`
 
