@@ -62,7 +62,6 @@ func Init() error {
 		tabsContainer,
 		layout.NewSpacer(),
 		getSyncButton(w),
-		getQuitButton(),
 	)
 
 	w.SetContent(content)
@@ -117,13 +116,5 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 			return
 		}
 		cron.Rerun(getPreferences().Frequency)
-	})
-}
-
-// getQuitButton builds the quit button in the main UI.
-func getQuitButton() *widget.Button {
-	return widget.NewButton(appConstants.QUIT_LOMINUS_TEXT, func() {
-		logs.Logger.Infoln("lominus quit")
-		mainApp.Quit()
 	})
 }
