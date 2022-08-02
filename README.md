@@ -1,7 +1,13 @@
-![GitHub Lominus version](https://img.shields.io/badge/Lominus-v2.0.0-blueviolet)
-![GitHub all releases](https://img.shields.io/github/downloads/beebeeoii/lominus/total)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus)
-[![Go Reference](https://pkg.go.dev/badge/github.com/beebeeoii/lominus.svg)](https://pkg.go.dev/github.com/beebeeoii/lominus)
+<p align="center">
+  <img src="./assets/app-icon.png" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Lominus-v2.0.0-blueviolet" />
+  <img src="https://img.shields.io/github/downloads/beebeeoii/lominus/total" />
+  <img src="https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus" />
+  <img src="https://pkg.go.dev/github.com/beebeeoii/lominus" />
+</p>
 
 # Table of Contents
 
