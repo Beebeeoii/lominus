@@ -208,7 +208,9 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		description = widget.NewRichTextFromMarkdown(
 			fmt.Sprintf(
 				appConstants.DEBUG_CHECKBOX_W_LINK_DESCRIPTION,
-				filepath.FromSlash(fmt.Sprintf("file://%s", filepath.Join(baseDir, lominus.LOG_FILE_NAME))),
+				filepath.FromSlash(
+					fmt.Sprintf("file://%s", filepath.Join(baseDir, lominus.LOG_FILE_NAME)),
+				),
 			),
 		)
 	}
