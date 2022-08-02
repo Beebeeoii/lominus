@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/app-icon.png" />
+  <img src="./assets/app-icon.png" alt="lominus-app-icon" width="196" />
 </p>
 
 <p align="center">
