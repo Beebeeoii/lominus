@@ -67,4 +67,6 @@ const (
 	CANCEL_TEXT                  = "Cancel"
 	SYNC_TEXT                    = "Sync"
 	QUIT_LOMINUS_TEXT            = "Quit Lominus"
+
+	DIALOG_PADDING = 30
 )
