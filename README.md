@@ -240,10 +240,10 @@ Telegram can be used to receive notifications for things such as new grades rele
 
 Click [here](./screenshots/SCREENSHOTS.md) for more screenshots
 
-Credentials&nbsp; | Integrations | Preferences&nbsp;
-:----------:|:------------:|:-----------:
-![image](./screenshots/main-light-1.png) | ![image](./screenshots/main-light-2.png) | ![image](./screenshots/main-light-3.png)
-![image](./screenshots/main-dark-1.png) | ![image](./screenshots/main-dark-2.png) | ![image](./screenshots/main-dark-3.png)
+| Credentials | Integrations | Preferences |
+| :---------: | :----------: | :---------: |
+| ![image](./screenshots/main-light-1.png) | ![image](./screenshots/main-light-2.png) | ![image](./screenshots/main-light-3.png) |
+| ![image](./screenshots/main-dark-1.png) | ![image](./screenshots/main-dark-2.png) | ![image](./screenshots/main-dark-3.png) |
 
 # Contributing <a name="contributing">
 
