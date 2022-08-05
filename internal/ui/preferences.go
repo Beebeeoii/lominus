@@ -115,6 +115,9 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			folderPathLabel.SetText(preferences.Directory)
 		}, parentWindow)
 		fileDialog.SetConfirmText(appConstants.FILE_DIRECTORY_CHOOSE_LOCATION_TEXT)
+		fileDialog.Resize(
+			w.Canvas().Size().SubtractWidthHeight(appConstants.DIALOG_PADDING, appConstants.DIALOG_PADDING),
+		)
 		fileDialog.Show()
 	})
 
