@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	appApp "github.com/beebeeoii/lominus/internal/app"
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
@@ -27,13 +26,11 @@ import (
 
 var mainScheduler *gocron.Scheduler
 var mainJob *gocron.Job
-var LastRanChannel chan string
 
 // Init initialises the cronjob with the desired frequency set by the user.
 // If frequency is unset, cronjob is not initialised.
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
-	LastRanChannel = make(chan string)
 
 	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 	if getPreferencesPathErr != nil {
@@ -98,9 +95,6 @@ func GetLastRan() time.Time {
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
-		if appApp.GetOs() == "windows" {
-			LastRanChannel <- GetLastRan().Format("2 Jan 15:04:05")
-		}
 
 		logs.Logger.Debugln("retrieving - preferences path")
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
