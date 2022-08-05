@@ -181,6 +181,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 		canvasFolders := []api.Folder{}
 		for _, module := range canvasModules {
+			// TODO Check if it is even possible for files to be in module's root folder
 			folders, canvasFoldersErr := getFolders(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, module)
 			if canvasFoldersErr != nil {
 				// TODO Somehow collate this error and display to user at the end
@@ -192,12 +193,21 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 		luminusFolders := []api.Folder{}
 		for _, module := range luminusModules {
+			// This ensures that files in the module's root folder are downloaded as well.
+			moduleMainFolder := api.Folder{
+				Id:           module.Id,
+				Name:         module.Name,
+				Downloadable: module.IsAccessible,
+				HasSubFolder: true,       // doesn't matter
+				Ancestors:    []string{}, // main folder does not have any ancestors
+			}
 			folders, luminusFoldersErr := getFolders(tokensData.LuminusToken.JwtToken, constants.Luminus, module)
 			if luminusFoldersErr != nil {
 				// TODO Somehow collate this error and display to user at the end
 				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFoldersErr.Error()}
 				logs.Logger.Errorln(luminusFoldersErr)
 			}
+			luminusFolders = append(luminusFolders, moduleMainFolder)
 			luminusFolders = append(luminusFolders, folders...)
 		}
 
