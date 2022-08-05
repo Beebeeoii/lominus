@@ -4,6 +4,7 @@ package file
 import (
 	"encoding/gob"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,6 +111,11 @@ func CleanseFolderFileName(name string) string {
 	name = strings.Replace(name, "?", " ", -1)
 	name = strings.Replace(name, "*", " ", -1)
 	name = strings.TrimSpace(name)
+
+	// We can ignore the error (if any) because it would just mean
+	// that the "%XX" that appears in the name is legit, and not
+	// because of URL encoding.
+	name, _ = url.QueryUnescape(name)
 
 	return name
 }
