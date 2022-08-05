@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Lominus-v2.0.0-blueviolet" />
+  <img src="https://img.shields.io/badge/Lominus-v2.0.1-blueviolet" />
   <img src="https://img.shields.io/github/downloads/beebeeoii/lominus/total" />
   <img src="https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus" />
   <a href="https://pkg.go.dev/github.com/beebeeoii/lominus">
