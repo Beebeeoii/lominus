@@ -181,6 +181,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 		canvasFolders := []api.Folder{}
 		for _, module := range canvasModules {
+			// TODO Check if it is even possible for files to be in module's root folder
 			folders, canvasFoldersErr := getFolders(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, module)
 			if canvasFoldersErr != nil {
 				// TODO Somehow collate this error and display to user at the end
