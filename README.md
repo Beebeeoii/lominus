@@ -11,6 +11,8 @@
   </a>
 </p>
 
+![image](./screenshots/lominus-demo.gif)
+
 # Table of Contents
 
 1. [About](#about)
