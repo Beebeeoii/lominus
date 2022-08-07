@@ -27,6 +27,7 @@ type Folder struct {
 	Downloadable bool
 	HasSubFolder bool
 	Ancestors    []string
+	IsRootFolder bool
 }
 
 // File struct is the datapack for containing details about a File
@@ -77,21 +78,14 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 		}
 
 		for _, folderObject := range response {
-			// All the folders and files of a module are stored under the "course files" folder.
-			// We do not want to get that folder as we just want the folders and files in that
-			// folder.
-			//
-			// The "course files" folder resembles the 'home directory' of a module.
-			if folderObject.FullName == "course files" {
-				continue
-			}
-
 			folders = append(folders, Folder{
 				Id:           strconv.Itoa(folderObject.Id),
 				Name:         appFile.CleanseFolderFileName(folderObject.Name),
 				Downloadable: !folderObject.HiddenForUser,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
+				IsRootFolder: folderObject.ParentFolderId == 0 &&
+					folderObject.FullName == "course files",
 			})
 		}
 	case constants.Luminus:
@@ -127,6 +121,7 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 				Downloadable: folderObject.IsActive && !folderObject.AllowUpload,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
+				IsRootFolder: false,
 			})
 		}
 	default:
@@ -147,6 +142,15 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 	switch folderDataType := filesRequest.Request.Url.Platform; folderDataType {
 	case constants.Canvas:
+		// All the folders and files of a module are stored under the "course files" folder.
+		// We do not want to get that folder as we just want the folders and files in that
+		// folder.
+		//
+		// The "course files" folder resembles the 'home directory' of a module.
+		if filesRequest.Folder.IsRootFolder {
+			ancestors = filesRequest.Folder.Ancestors
+		}
+
 		response := []interfaces.CanvasFileObject{}
 		reqErr := filesRequest.Request.Send(&response)
 		if reqErr != nil {
