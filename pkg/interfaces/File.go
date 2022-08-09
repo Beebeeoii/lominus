@@ -7,7 +7,7 @@ type CanvasFileObject struct {
 	UUID          string `json:"uuid"`
 	Url           string `json:"url"`
 	HiddenForUser bool   `json:"hidden_for_user"`
-	LastUpdated   string `json:"updated_at"`
+	LastUpdated   string `json:"modified_at"`
 }
 
 // TODO Documentation
