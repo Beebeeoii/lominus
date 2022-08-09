@@ -2,10 +2,6 @@
 package main
 
 import (
-	"log"
-	"os"
-	"runtime"
-
 	"github.com/beebeeoii/lominus/internal/app"
 	appLock "github.com/beebeeoii/lominus/internal/app/lock"
 	"github.com/beebeeoii/lominus/internal/cron"
@@ -13,35 +9,10 @@ import (
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/internal/ui"
 
-	"github.com/creativeprojects/go-selfupdate"
+	updater "github.com/beebeeoii/lominus/internal/app/updater"
+
 	"github.com/juju/fslock"
 )
-
-func doSelfUpdate() {
-	version := "1.2.4"
-	selfupdate.SetLogger(log.New(os.Stderr, "", log.LstdFlags))
-
-	latest, found, err := selfupdate.DetectLatest("Beebeeoii/lominus")
-	if err != nil {
-		println("error occurred while detecting version: %v", err)
-	}
-	if !found {
-		println("latest version for %s/%s could not be found from github repository", runtime.GOOS, runtime.GOARCH)
-	}
-
-	if latest.LessOrEqual(version) {
-		println("Current version (%s) is the latest", version)
-	}
-
-	exe, err := os.Executable()
-	if err != nil {
-		println("could not locate executable path")
-	}
-	if err := selfupdate.UpdateTo(latest.AssetURL, latest.AssetName, exe); err != nil {
-		println("error occurred while updating binary: %v", err)
-	}
-	log.Printf("Successfully updated to version %s", latest.Version())
-}
 
 // Main is the starting point of where magic begins.
 func main() {
@@ -74,7 +45,7 @@ func main() {
 	}
 	logs.Logger.Infoln("cron initialised")
 
-	doSelfUpdate()
+	updater.DoSelfUpdate()
 
 	uiInitErr := ui.Init()
 
