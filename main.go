@@ -2,40 +2,45 @@
 package main
 
 import (
+	"log"
+	"os"
+	"runtime"
+
 	"github.com/beebeeoii/lominus/internal/app"
 	appLock "github.com/beebeeoii/lominus/internal/app/lock"
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/internal/ui"
-	"github.com/blang/semver"
+
+	"github.com/creativeprojects/go-selfupdate"
 	"github.com/juju/fslock"
-	"github.com/rhysd/go-github-selfupdate/selfupdate"
 )
 
 func doSelfUpdate() {
-	v := semver.MustParse("1.2.4")
-	selfupdate.EnableLog()
+	version := "1.2.4"
+	selfupdate.SetLogger(log.New(os.Stderr, "", log.LstdFlags))
 
-	// println(selfupdate.DetectVersion("Beebeeoii/lominus", "1.2.4"))
-	// println(selfupdate.DetectLatest("Beebeeoii/lominus"))
-
-	latest, err := selfupdate.UpdateSelf(v, "Beebeeoii/lominus")
+	latest, found, err := selfupdate.DetectLatest("Beebeeoii/lominus")
 	if err != nil {
-		println("Binary update failed:", err)
-		return
+		println("error occurred while detecting version: %v", err)
+	}
+	if !found {
+		println("latest version for %s/%s could not be found from github repository", runtime.GOOS, runtime.GOARCH)
 	}
 
-	println(latest)
-	println(latest.Version.String())
-
-	if latest.Version.Equals(v) {
-		// latest version is the same as current version. It means current binary is up to date.
-		println("Current binary is the latest version 1.2.3")
-	} else {
-		println("Successfully updated to version", latest.Version.String())
-		println("Release note:\n", latest.ReleaseNotes)
+	if latest.LessOrEqual(version) {
+		println("Current version (%s) is the latest", version)
 	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		println("could not locate executable path")
+	}
+	if err := selfupdate.UpdateTo(latest.AssetURL, latest.AssetName, exe); err != nil {
+		println("error occurred while updating binary: %v", err)
+	}
+	log.Printf("Successfully updated to version %s", latest.Version())
 }
 
 // Main is the starting point of where magic begins.
@@ -68,6 +73,7 @@ func main() {
 		logs.Logger.Fatalln(cronInitErr)
 	}
 	logs.Logger.Infoln("cron initialised")
+
 	doSelfUpdate()
 
 	uiInitErr := ui.Init()
