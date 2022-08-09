@@ -2,9 +2,14 @@
 package updater
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/dialog"
+
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	lominus "github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/creativeprojects/go-selfupdate"
@@ -15,7 +20,7 @@ const (
 	VERSION     = lominus.APP_VERSION
 )
 
-func DoSelfUpdate() {
+func DoSelfUpdate(parentWindow fyne.Window) {
 	selfupdate.SetLogger(logs.Logger)
 
 	latest, found, err := selfupdate.DetectLatest(GITHUB_REPO)
@@ -38,6 +43,14 @@ func DoSelfUpdate() {
 		logs.Logger.Fatalln("Error occurred while updating binary: %v", err)
 	}
 
+	updateMessage := fmt.Sprintf(appConstants.UPDATE_DIALOG_MESSAGE, latest.Version())
+
 	// TODO: popup a GUI stating that it is updated
-	logs.Logger.Infoln("Successfully updated to version %s. Restart app to see changes.", latest.Version())
+	logs.Logger.Infoln(updateMessage)
+
+	dialog.NewInformation(
+		lominus.APP_NAME,
+		updateMessage,
+		parentWindow,
+	).Show()
 }

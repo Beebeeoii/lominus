@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	updater "github.com/beebeeoii/lominus/internal/app/updater"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -35,6 +36,8 @@ func Init() error {
 	}()
 
 	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", appConstants.APP_NAME, appConstants.APP_VERSION))
+
+	updater.DoSelfUpdate(w)
 
 	if desk, ok := mainApp.(desktop.App); ok {
 		m := BuildSystemTray()
