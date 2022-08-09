@@ -9,8 +9,6 @@ import (
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/internal/ui"
 
-	updater "github.com/beebeeoii/lominus/internal/app/updater"
-
 	"github.com/juju/fslock"
 )
 
@@ -44,8 +42,6 @@ func main() {
 		logs.Logger.Fatalln(cronInitErr)
 	}
 	logs.Logger.Infoln("cron initialised")
-
-	updater.DoSelfUpdate()
 
 	uiInitErr := ui.Init()
 

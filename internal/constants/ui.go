@@ -69,4 +69,7 @@ const (
 	QUIT_LOMINUS_TEXT            = "Quit Lominus"
 
 	DIALOG_PADDING = 30
+
+	// Update Dialog
+	UPDATE_DIALOG_MESSAGE = "Successfully updated to version %s. Restart app to see changes."
 )
