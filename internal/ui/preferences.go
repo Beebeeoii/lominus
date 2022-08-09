@@ -14,6 +14,7 @@ import (
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	fileDialog "github.com/sqweek/dialog"
 )
 
 var frequencyMap = map[int]string{
@@ -67,8 +68,12 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	folderPathLabel := widget.NewLabel(dir)
 	folderPathLabel.Wrapping = fyne.TextWrapWord
 	chooseDirButton := widget.NewButton(appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT, func() {
-		fileDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, dirErr error) {
-			if dirErr != nil {
+		dir, dirErr := fileDialog.Directory().Title(
+			appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT,
+		).Browse()
+
+		if dirErr != nil {
+			if dirErr.Error() != "Cancelled" {
 				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(
 					lominus.APP_NAME,
@@ -76,49 +81,37 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 					parentWindow,
 				).Show()
 				logs.Logger.Errorln(dirErr)
-				return
 			}
+			return
+		}
+		logs.Logger.Debugf("directory chosen - %s", dir)
 
-			if lu == nil {
-				return
-			}
+		preferences := getPreferences()
+		preferences.Directory = dir
 
-			dir = lu.Path()
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
 
-			logs.Logger.Debugf("directory chosen - %s", dir)
-
-			preferences := getPreferences()
-			preferences.Directory = dir
-
-			preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-			if getPreferencesPathErr != nil {
-				dialog.NewInformation(
-					lominus.APP_NAME,
-					appConstants.PREFERENCES_FAILED_MESSAGE,
-					parentWindow,
-				).Show()
-				logs.Logger.Errorln(getPreferencesPathErr)
-				return
-			}
-
-			savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-			if savePrefErr != nil {
-				dialog.NewInformation(
-					lominus.APP_NAME,
-					appConstants.PREFERENCES_FAILED_MESSAGE,
-					parentWindow,
-				).Show()
-				logs.Logger.Errorln(savePrefErr)
-				return
-			}
-			logs.Logger.Debugln("directory saved")
-			folderPathLabel.SetText(preferences.Directory)
-		}, parentWindow)
-		fileDialog.SetConfirmText(appConstants.FILE_DIRECTORY_CHOOSE_LOCATION_TEXT)
-		fileDialog.Resize(
-			w.Canvas().Size().SubtractWidthHeight(appConstants.DIALOG_PADDING, appConstants.DIALOG_PADDING),
-		)
-		fileDialog.Show()
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(savePrefErr)
+			return
+		}
+		logs.Logger.Debugln("directory saved")
+		folderPathLabel.SetText(preferences.Directory)
 	})
 
 	return container.NewVBox(label, widget.NewSeparator(), folderPathLabel, chooseDirButton), nil
