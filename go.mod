@@ -4,11 +4,10 @@ go 1.18
 
 require (
 	fyne.io/fyne/v2 v2.2.3
-	github.com/blang/semver v3.5.1+incompatible
+	github.com/creativeprojects/go-selfupdate v0.6.1
 	github.com/go-co-op/gocron v1.15.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/rhysd/go-github-selfupdate v1.2.3
 	github.com/sirupsen/logrus v1.8.1
 )
 
@@ -28,6 +27,8 @@ require (
 )
 
 require (
+	code.gitea.io/sdk/gitea v0.13.2 // indirect
+	github.com/Masterminds/semver/v3 v3.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
@@ -38,12 +39,11 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-github/v30 v30.1.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf // indirect
+	github.com/hashicorp/go-version v1.2.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20220128195007-1f435e4c2b44 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220128185129-2efea2b9ea41 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
-	github.com/tcnksm/go-gitconfig v0.1.2 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
