@@ -165,7 +165,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 			files = append(files, File{
 				Id:          strconv.Itoa(fileObject.Id),
-				Name:        appFile.CleanseFolderFileName(fileObject.Name),
+				Name:        appFile.CleanseFolderFileName(fileObject.DisplayName),
 				LastUpdated: lastUpdated,
 				Ancestors:   ancestors,
 				DownloadUrl: fileObject.Url,
