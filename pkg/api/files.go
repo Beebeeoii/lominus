@@ -142,6 +142,112 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	return folders, nil
 }
 
+// GetRootFiles returns a slice of File objects and nested File objects that are in a Folder.
+// It will traverse all nested folders and return all nested files.
+func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
+	files := []File{}
+
+	if foldersRequest.Request.Token == "" {
+		return files, nil
+	}
+
+	switch builder := foldersRequest.Builder.(type) {
+	case Module:
+		// Module exists but its contents are restricted to be downloaded.
+		if !builder.IsAccessible {
+			return files, nil
+		}
+
+		// Retrieving of folders in main folder is only required for Luminus
+		// as Canvas already returns its
+		if foldersRequest.Request.Url.Platform != constants.Luminus {
+			break
+		}
+
+		moduleMainFolder := Folder{
+			Id:           builder.Id,
+			Name:         builder.Name,
+			Downloadable: true,
+			HasSubFolder: true,       // doesn't matter
+			Ancestors:    []string{}, // main folder does not have any ancestors
+		}
+		subFilesReq, subFilesReqErr := BuildFilesRequest(
+			foldersRequest.Request.Token,
+			foldersRequest.Request.Url.Platform,
+			moduleMainFolder,
+		)
+		if subFilesReqErr != nil {
+			return files, subFilesReqErr
+		}
+
+		subFiles, subFilesErr := subFilesReq.GetFiles()
+		if subFilesErr != nil {
+			return files, subFilesErr
+		}
+
+		files = append(files, subFiles...)
+	case Folder:
+		// Folder exists but its contents are restricted to be downloaded.
+		if !builder.Downloadable {
+			return files, nil
+		}
+
+		subFilesReq, subFilesReqErr := BuildFilesRequest(
+			foldersRequest.Request.Token,
+			foldersRequest.Request.Url.Platform,
+			builder,
+		)
+		if subFilesReqErr != nil {
+			return files, subFilesReqErr
+		}
+
+		subFiles, subFilesErr := subFilesReq.GetFiles()
+		if subFilesErr != nil {
+			return files, subFilesErr
+		}
+
+		files = append(files, subFiles...)
+
+		if !builder.HasSubFolder {
+			break
+		}
+	}
+
+	subFoldersReq, subFoldersReqErr := BuildFoldersRequest(
+		foldersRequest.Request.Token,
+		foldersRequest.Request.Url.Platform,
+		foldersRequest.Builder,
+	)
+	if subFoldersReqErr != nil {
+		return files, subFoldersReqErr
+	}
+
+	subFolders, subFoldersErr := subFoldersReq.GetFolders()
+	if subFoldersErr != nil {
+		return files, subFoldersErr
+	}
+
+	for _, subFolder := range subFolders {
+		nestedFoldersReq, nestedFoldersReqErr := BuildFoldersRequest(
+			foldersRequest.Request.Token,
+			foldersRequest.Request.Url.Platform,
+			subFolder,
+		)
+		if nestedFoldersReqErr != nil {
+			return files, nestedFoldersReqErr
+		}
+
+		nestedFiles, nestedFilesErr := nestedFoldersReq.GetRootFiles()
+		if nestedFilesErr != nil {
+			return files, nestedFilesErr
+		}
+
+		files = append(files, nestedFiles...)
+	}
+
+	return files, nil
+}
+
 func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	files := []File{}
 
