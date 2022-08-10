@@ -78,10 +78,21 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 		}
 
 		for _, folderObject := range response {
+			// All the folders and files of a module are stored under the "course files" folder.
+			// We do not want to download that folder as we just want the folders and files in that
+			// folder.
+			//
+			// The "course files" folder resembles the 'home directory' of a module.
+			downloadable := !folderObject.HiddenForUser
+
+			if folderObject.FullName == "course files" {
+				downloadable = false
+			}
+
 			folders = append(folders, Folder{
 				Id:           strconv.Itoa(folderObject.Id),
 				Name:         appFile.CleanseFolderFileName(folderObject.Name),
-				Downloadable: !folderObject.HiddenForUser,
+				Downloadable: downloadable,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
 				IsRootFolder: folderObject.ParentFolderId == 0 &&
