@@ -90,22 +90,61 @@ func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequ
 func BuildFoldersRequest(token string, platform constants.Platform, builder interface{}) (FoldersRequest, error) {
 	var url string
 
-	switch builder := builder.(type) {
+	switch b := builder.(type) {
 	case Module:
 		switch p := platform; p {
 		case constants.Canvas:
-			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, b.Id)
+			folderRequest := FoldersRequest{
+				Request: Request{
+					Method: GET_METHOD,
+					Token:  token,
+					Url: interfaces.Url{
+						Url:      url,
+						Platform: platform,
+					},
+					UserAgent: USER_AGENT,
+				},
+				Builder: b,
+			}
+
+			folders, foldersErr := folderRequest.GetFolders()
+			if foldersErr != nil {
+				return folderRequest, foldersErr
+			}
+
+			var rootFolderId string
+			for _, folder := range folders {
+				if folder.Name == "course files" {
+					rootFolderId = folder.Id
+					break
+				}
+			}
+
+			if rootFolderId == "" {
+				return folderRequest, foldersErr
+			}
+
+			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, b.Id)
+
+			builder = Folder{
+				Id:           rootFolderId,
+				Name:         b.ModuleCode,
+				Downloadable: b.IsAccessible,
+				HasSubFolder: true,
+				Ancestors:    []string{},
+			}
 		case constants.Luminus:
-			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, b.Id)
 		default:
 			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
 	case Folder:
 		switch p := platform; p {
 		case constants.Canvas:
-			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, b.Id)
 		case constants.Luminus:
-			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, b.Id)
 		default:
 			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
