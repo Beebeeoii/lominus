@@ -1,3 +1,5 @@
+// Package auth provides functions that link up and communicate with LMS (Luminus/Canvas)
+// authentication server.
 package auth
 
 import (
@@ -19,13 +21,16 @@ const (
 	EXPIRY_HOURS = 1
 )
 
-// TODO Documentation
+// LuminusTokenData is a struct that encapsulates the token required for authentication.
+// In this case, it is the JwtToken which is a string, and the corresponding expiry timestamp
+// in milliseconds.
 type LuminusTokenData struct {
 	JwtToken  string
 	JwtExpiry int64
 }
 
-// Credentials struct is the datapack that describes the user's credentials.
+// LuminusCredentials is a struct that encapsulates the credentials required for authentication.
+// In this case, it is the username and password.
 type LuminusCredentials struct {
 	Username string
 	Password string
@@ -127,21 +132,21 @@ func RetrieveJwtToken(credentials LuminusCredentials, save bool) (string, error)
 	return jwtToken, nil
 }
 
-// TODO Documentation
+// Save takes in the LuminusTokenData and saves it locally with the path provided as arguments.
 func (luminusTokenData LuminusTokenData) Save(tokensPath string) error {
 	return saveTokenData(tokensPath, TokensData{
 		LuminusToken: luminusTokenData,
 	})
 }
 
-// SaveCredentials saves the user's Credentials for future authentications or renewals of JWT data.
+// Save takes in the LuminusCredentials and saves it locally with the path provided as arguments.
 func (credentials LuminusCredentials) Save(credentialsPath string) error {
 	return saveCredentialsData(credentialsPath, CredentialsData{
 		LuminusCredentials: credentials,
 	})
 }
 
-// IsExpired is a util function that checks if the user's JWT data has expired.
+// IsExpired is a helper function that checks if the user's JWT data has expired.
 func (luminusTokenData LuminusTokenData) IsExpired() bool {
 	expiry := time.Unix(luminusTokenData.JwtExpiry, 0)
 	return time.Until(expiry).Hours() <= EXPIRY_HOURS
