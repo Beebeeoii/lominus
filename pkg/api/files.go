@@ -1,4 +1,5 @@
-// Package api provides functions that link up and communicate with Luminus servers.
+// Package api provides functions that link up and communicate with LMS servers,
+// such as Canvas and Luminus (probably removed in near future).
 package api
 
 import (
@@ -18,9 +19,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Folder struct is the datapack for containing details about a Folder
-// Ancestors the relative folders that precedes the current folder, including itself.
-// Eg. Ancestors for a folder with the path: /folder1/folder2/folder3 is ['folder1', 'folder2', 'folder3']
+// Folder struct is the datapack for containing details about a Folder.
+// Ancestors describe the relative folders that precedes the current folder, exclusing itself.
+// Eg. Ancestors for a folder with the path: /MA2001/Lectures/Week1 is ['MA2001', 'Lectures'].
+// IsRootFolder = true if the folder is the root for a module. Root folders are expected to
+// be named the module code.
 type Folder struct {
 	Id           string
 	Name         string
@@ -30,9 +33,9 @@ type Folder struct {
 	IsRootFolder bool
 }
 
-// File struct is the datapack for containing details about a File
-// Ancestors the relative folders that precedes the current folder, including itself.
-// Eg. Ancestors for a file with the path: /folder1/folder2/file.pdf is ['folder1', 'folder2', 'file.pdf']
+// File struct is the datapack for containing details about a File.
+// Ancestors describe the relative folders that precedes the current file, excluding itself.
+// Eg. Ancestors for a file with the path: /MA2001/Lectures/Lecture1.pdf is ['MA2001', 'Lectures'].
 type File struct {
 	Id          string
 	Name        string
@@ -45,7 +48,9 @@ const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=t
 const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?populate=Creator,lastUpdatedUser,comment"
 const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
 
-// TODO Documentation
+// GetFolders returns a slice of Folder objects from a given FoldersRequest.
+// Only the folders in the current Folder/Module (via the builder) provided
+// in the FoldersRequest will be returned. In other words, nested folders will not be included.
 func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	folders := []Folder{}
 	ancestors := []string{}
@@ -142,8 +147,9 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 	return folders, nil
 }
 
-// GetRootFiles returns a slice of File objects and nested File objects that are in a Folder.
-// It will traverse all nested folders and return all nested files.
+// GetRootFiles is a recursive function that returns a slice of File objects and nested
+// File objects that are in a Folder.
+// Note that it will traverse all nested folders and return all nested files.
 func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
 	files := []File{}
 
@@ -248,6 +254,9 @@ func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
 	return files, nil
 }
 
+// GetFiles returns a slice of File objects from a given FilesRequest.
+// Only the files in the current Folder provided in the FilesRequest will be returned.
+// In other words, nested files will not be included.
 func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	files := []File{}
 
@@ -345,6 +354,8 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 	return files, nil
 }
 
+// Download downloads the given file via the DownloadUrl of the File object.
+// The downloaded file will be placed in the folderPath specified in the parameter.
 func (file File) Download(folderPath string) error {
 	if file.DownloadUrl == "" {
 		return errors.New("file.DownloadUrl is empty")
