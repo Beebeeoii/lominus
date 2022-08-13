@@ -1,9 +1,5 @@
 package interfaces
 
-type FolderObject interface {
-	CanvasFolderObject | LuminusFolderObject
-}
-
 // TODO Documentation
 type CanvasFolderObject struct {
 	Id             int    `json:"id"`
