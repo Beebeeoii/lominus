@@ -1,6 +1,8 @@
 package interfaces
 
-// TODO Documentation
+// CanvasFileObject depicts the actual object return from Canvas.
+// There are more fields being returned by Canvas, but these are just the
+// relevant ones as of now.
 type CanvasFileObject struct {
 	Id   int    `json:"id"`
 	Name string `json:"filename"`
@@ -18,7 +20,9 @@ type CanvasFileObject struct {
 	LastUpdated   string `json:"modified_at"`
 }
 
-// TODO Documentation
+// LuminusFileObject depicts the actual object return from Luminus.
+// There are more fields being returned by Luminus, but these are just the
+// relevant ones as of now.
 type LuminusFileObject struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
