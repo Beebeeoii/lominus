@@ -1,3 +1,4 @@
+// Package constants provides constants such as web endpoints.
 package constants
 
 // Canvas Endpoints
