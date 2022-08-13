@@ -1,4 +1,5 @@
-// Package auth provides functions that link up and communicate with Luminus authentication server.
+// Package auth provides functions that link up and communicate with LMS (Luminus/Canvas)
+// authentication server.
 package auth
 
 import (
@@ -14,13 +15,15 @@ type JsonResponse struct {
 	ExpiresIn   int    `json:"expires_in"`
 }
 
-// TODO Documentation
+// CredentialsData struct is the datapack that contains all the different Credentials for
+// available LMS (Luminus, Canvas etc.).
 type CredentialsData struct {
 	CanvasCredentials  CanvasCredentials
 	LuminusCredentials LuminusCredentials
 }
 
-// TokenData struct is the datapack that describes the user's tokens data.
+// TokensData struct is the datapack that contains all the different Tokens for
+// available LMS (Luminus, Canvas etc.).
 type TokensData struct {
 	CanvasToken  CanvasTokenData
 	LuminusToken LuminusTokenData
@@ -81,7 +84,7 @@ func LoadTokensData(tokensPath string, autoRenew bool) (TokensData, error) {
 	return tokensData, err
 }
 
-// TODO Documentation
+// saveCredentialsData saves the user's Credentials data to local storage for future use.
 func saveCredentialsData(credentialsPath string, credentailsData CredentialsData) error {
 	if file.Exists(credentialsPath) {
 		localCredentialsData, err := LoadCredentialsData(credentialsPath)
@@ -95,7 +98,7 @@ func saveCredentialsData(credentialsPath string, credentailsData CredentialsData
 	return file.EncodeStructToFile(credentialsPath, credentailsData)
 }
 
-// TODO Documentation
+// LoadCredentialsData loads the user's Credentials data from local storage.
 func LoadCredentialsData(credentialsPath string) (CredentialsData, error) {
 	credentialsData := CredentialsData{}
 	if !file.Exists(credentialsPath) {
@@ -106,7 +109,10 @@ func LoadCredentialsData(credentialsPath string) (CredentialsData, error) {
 	return credentialsData, err
 }
 
-// TODO Documentation
+// Merge takes n individual Token data encapsulated in TokensData and merge/combine them
+// into a TokensData that contains the individual Token data.
+// Eg. a := TokensData{CanvasToken}
+//     a.merge(TokensData{LuminusToken}) // a == TokensData{CanvasToken, LuminusToken}
 func (t *TokensData) Merge(t2 TokensData) {
 	if t.CanvasToken == (CanvasTokenData{}) {
 		t.CanvasToken = t2.CanvasToken
@@ -117,7 +123,10 @@ func (t *TokensData) Merge(t2 TokensData) {
 	}
 }
 
-// TODO Documentation
+// Merge takes n individual Credentials data encapsulated in CredentialsData and merge/combine them
+// into a CredentialsData that contains the individual Credentials data.
+// Eg. a := CredentialsData{CanvasCredentials}
+//     a.merge(CredentialsData{LuminusCredentials}) // a == CredentialsData{CanvasCredentials, LuminusCredentials}
 func (t *CredentialsData) Merge(t2 CredentialsData) {
 	if t.CanvasCredentials == (CanvasCredentials{}) {
 		t.CanvasCredentials = t2.CanvasCredentials
