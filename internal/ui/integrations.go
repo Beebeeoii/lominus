@@ -12,7 +12,6 @@ import (
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
@@ -64,7 +63,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		progressBar := widget.NewProgressBarInfinite()
 
 		mainDialog := dialog.NewCustom(
-			lominus.APP_NAME,
+			appConstants.APP_NAME,
 			appConstants.CANCEL_TEXT,
 			container.NewVBox(status, progressBar),
 			parentWindow,
@@ -82,7 +81,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			)
 			logs.Logger.Errorln(errMessage)
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.TELEGRAM_TESTING_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -93,7 +92,7 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 			)
 			logs.Logger.Debugln("telegram test message sent successfully")
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.TELEGRAM_TESTING_SUCCESSFUL_MESSAGE,
 				parentWindow,
 			).Show()

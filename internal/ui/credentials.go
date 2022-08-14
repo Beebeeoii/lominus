@@ -10,7 +10,6 @@ import (
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/pkg/auth"
 )
 
@@ -98,7 +97,7 @@ func getLuminusView(
 		progressBar := widget.NewProgressBarInfinite()
 
 		mainDialog := dialog.NewCustom(
-			lominus.APP_NAME,
+			appConstants.APP_NAME,
 			appConstants.CANCEL_TEXT,
 			container.NewVBox(status, progressBar),
 			parentWindow,
@@ -111,7 +110,7 @@ func getLuminusView(
 		if err != nil {
 			logs.Logger.Debugln("verfication failed")
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.VERIFICATION_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -119,7 +118,7 @@ func getLuminusView(
 			logs.Logger.Debugln("verfication succesful - saving credentials")
 			luminusCredentials.Save(credentialsPath)
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.VERIFICATION_SUCCESSFUL_MESSAGE,
 				parentWindow,
 			).Show()
@@ -171,7 +170,7 @@ func getCanvasView(
 		progressBar := widget.NewProgressBarInfinite()
 
 		mainDialog := dialog.NewCustom(
-			lominus.APP_NAME,
+			appConstants.APP_NAME,
 			appConstants.CANCEL_TEXT,
 			container.NewVBox(status, progressBar),
 			parentWindow,
@@ -184,7 +183,7 @@ func getCanvasView(
 		if err != nil {
 			logs.Logger.Debugln("verfication failed")
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.VERIFICATION_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -193,7 +192,7 @@ func getCanvasView(
 			canvasCredentials.Save(credentialsPath)
 			canvasTokens.Save(tokensPath)
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.VERIFICATION_SUCCESSFUL_MESSAGE,
 				parentWindow,
 			).Show()

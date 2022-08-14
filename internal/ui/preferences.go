@@ -9,7 +9,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/beebeeoii/lominus/internal/lominus"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
@@ -79,7 +78,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			if dirErr.Error() != "Cancelled" {
 				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(
-					lominus.APP_NAME,
+					appConstants.APP_NAME,
 					appConstants.PREFERENCES_FAILED_MESSAGE,
 					parentWindow,
 				).Show()
@@ -95,7 +94,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -106,7 +105,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -164,7 +163,7 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -175,7 +174,7 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -212,7 +211,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			fmt.Sprintf(
 				appConstants.DEBUG_CHECKBOX_W_LINK_DESCRIPTION,
 				filepath.FromSlash(
-					fmt.Sprintf("file://%s", filepath.Join(baseDir, lominus.LOG_FILE_NAME)),
+					fmt.Sprintf("file://%s", filepath.Join(baseDir, appConstants.LOG_FILE_NAME)),
 				),
 			),
 		)
@@ -225,7 +224,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -245,7 +244,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -254,7 +253,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		}
 
 		dialog.NewInformation(
-			lominus.APP_NAME,
+			appConstants.APP_NAME,
 			appConstants.DEBUG_TOGGLE_SUCCESSFUL_MESSAGE,
 			parentWindow,
 		).Show()

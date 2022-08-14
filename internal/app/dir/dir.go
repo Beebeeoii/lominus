@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/beebeeoii/lominus/internal/lominus"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 )
 
 // GetBaseDir returns the directory where config files for Lominus will be stored in.
@@ -23,7 +23,7 @@ func GetBaseDir() (string, error) {
 		return baseDir, err
 	}
 
-	baseDir = filepath.Join(userConfigDir, lominus.APP_NAME)
+	baseDir = filepath.Join(userConfigDir, appConstants.APP_NAME)
 
 	return baseDir, nil
 }

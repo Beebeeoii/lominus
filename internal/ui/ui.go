@@ -16,7 +16,6 @@ import (
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 )
 
@@ -25,7 +24,7 @@ var w fyne.Window
 
 // Init builds and initialises the UI.
 func Init() error {
-	mainApp = app.NewWithID(lominus.APP_NAME)
+	mainApp = app.NewWithID(appConstants.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
 	go func() {
@@ -35,7 +34,7 @@ func Init() error {
 		}
 	}()
 
-	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", lominus.APP_NAME, lominus.APP_VERSION))
+	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", appConstants.APP_NAME, appConstants.APP_VERSION))
 
 	if desk, ok := mainApp.(desktop.App); ok {
 		m := BuildSystemTray()
@@ -100,7 +99,7 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 		preferences := getPreferences()
 		if preferences.Directory == "" {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.NO_FOLDER_DIRECTORY_SELECTED,
 				parentWindow,
 			).Show()
@@ -109,7 +108,7 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 
 		if preferences.Frequency == -1 {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.NO_FREQUENCY_SELECTED,
 				parentWindow,
 			).Show()
