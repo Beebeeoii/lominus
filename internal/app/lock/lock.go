@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	"github.com/beebeeoii/lominus/internal/lominus"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 )
 
 // GetLockPath returns the file path to Lominus lock file.
@@ -17,7 +17,7 @@ func GetLockPath() (string, error) {
 		return lockPath, retrieveBaseDirErr
 	}
 
-	lockPath = filepath.Join(baseDir, lominus.LOCK_FILE_NAME)
+	lockPath = filepath.Join(baseDir, appConstants.LOCK_FILE_NAME)
 
 	return lockPath, nil
 }

@@ -9,7 +9,7 @@ import (
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	"github.com/beebeeoii/lominus/internal/lominus"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -91,7 +91,7 @@ func getLogPath() (string, error) {
 		return logPath, retrieveBaseDirErr
 	}
 
-	logPath = filepath.Join(baseDir, lominus.LOG_FILE_NAME)
+	logPath = filepath.Join(baseDir, appConstants.LOG_FILE_NAME)
 
 	return logPath, nil
 }

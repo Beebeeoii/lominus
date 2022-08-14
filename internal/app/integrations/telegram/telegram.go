@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	"github.com/beebeeoii/lominus/internal/lominus"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 )
 
 // GetTelegramInfoPath returns the file path to user's telegram config file.
@@ -17,7 +17,7 @@ func GetTelegramInfoPath() (string, error) {
 		return telegramInfoPath, retrieveBaseDirErr
 	}
 
-	telegramInfoPath = filepath.Join(baseDir, lominus.TELEGRAM_FILE_NAME)
+	telegramInfoPath = filepath.Join(baseDir, appConstants.TELEGRAM_FILE_NAME)
 
 	return telegramInfoPath, nil
 }

@@ -1,4 +1,5 @@
-// Package api provides functions that link up and communicate with Luminus servers.
+// Package api provides functions that link up and communicate with LMS servers,
+// such as Canvas and Luminus (probably removed in near future).
 package api
 
 import (
@@ -22,33 +23,42 @@ type Request struct {
 	UserAgent string
 }
 
-// GradeRequest struct is the datapack for containing details about a specific HTTP request used for grades (Luminus Gradebook).
+// GradeRequest struct is the datapack for containing details about a specific
+// HTTP request used for grades (Luminus Gradebook only).
 type GradeRequest struct {
 	Module  Module
 	Request Request
 }
 
+// ModulesRequest struct is the datapack for containing details about a specific
+// HTTP request used for retrieving all the modules taken by the user.
 type ModulesRequest struct {
 	Request Request
 }
 
+// FoldersRequest struct is the datapack for containing details about a specific
+// HTTP request used for retrieving folders in a module's uploaded files on Luminus/Canvas.
 type FoldersRequest struct {
 	Request Request
 	Builder interface{}
 }
 
+// FilesRequest struct is the datapack for containing details about a specific
+// HTTP request used for retrieving files in a module's uploaded files on Luminus/Canvas.
 type FilesRequest struct {
 	Request Request
 	Folder  Folder
 }
 
-// MultimediaChannelRequest struct is the datapack for containing details about a specific HTTP request used for multimedia channels (Luminus Multimedia).
+// MultimediaChannelRequest struct is the datapack for containing details about a
+// specific HTTP request used for multimedia channels (Luminus Multimedia).
 type MultimediaChannelRequest struct {
 	Module  Module
 	Request Request
 }
 
-// MultimediaVideoRequest struct is the datapack for containing details about a specific HTTP request used for multimedia video (Luminus Multimedia).
+// MultimediaVideoRequest struct is the datapack for containing details about a
+// specific HTTP request used for multimedia video (Luminus Multimedia).
 type MultimediaVideoRequest struct {
 	MultimediaChannel MultimediaChannel
 	Request           Request
@@ -60,7 +70,8 @@ const GET_METHOD = "GET"
 const CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
 const CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
 
-// TODO Documentations
+// BuildModulesRequest builds and returns a ModulesRequest that can be used to retrieve
+// all modules taken by a user.
 func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequest, error) {
 	var url string
 
@@ -86,26 +97,66 @@ func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequ
 	}, nil
 }
 
-// TODO Documentations
+// BuildFoldersRequest builds and returns a FoldersRequest that can be used for Folder related
+// operations such as retrieving folders of a module.
 func BuildFoldersRequest(token string, platform constants.Platform, builder interface{}) (FoldersRequest, error) {
 	var url string
 
-	switch builder := builder.(type) {
+	switch b := builder.(type) {
 	case Module:
 		switch p := platform; p {
 		case constants.Canvas:
-			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, b.Id)
+			folderRequest := FoldersRequest{
+				Request: Request{
+					Method: GET_METHOD,
+					Token:  token,
+					Url: interfaces.Url{
+						Url:      url,
+						Platform: platform,
+					},
+					UserAgent: USER_AGENT,
+				},
+				Builder: b,
+			}
+
+			folders, foldersErr := folderRequest.GetFolders()
+			if foldersErr != nil {
+				return folderRequest, foldersErr
+			}
+
+			var rootFolderId string
+			for _, folder := range folders {
+				if folder.Name == "course files" {
+					rootFolderId = folder.Id
+					break
+				}
+			}
+
+			if rootFolderId == "" {
+				return folderRequest, foldersErr
+			}
+
+			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, b.Id)
+
+			builder = Folder{
+				Id:           rootFolderId,
+				Name:         b.ModuleCode,
+				Downloadable: b.IsAccessible,
+				HasSubFolder: true,
+				Ancestors:    []string{},
+			}
 		case constants.Luminus:
-			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, b.Id)
 		default:
 			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
 	case Folder:
 		switch p := platform; p {
 		case constants.Canvas:
-			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, b.Id)
 		case constants.Luminus:
-			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, builder.Id)
+			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, b.Id)
 		default:
 			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
@@ -129,7 +180,8 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 	}, nil
 }
 
-// TODO Documentations
+// BuildFilesRequest builds and returns a FilesRequest that can be used for File related operations
+// such as retrieving files of a module.
 func BuildFilesRequest(token string, platform constants.Platform, folder Folder) (FilesRequest, error) {
 	var url string
 
@@ -237,6 +289,9 @@ func retrieveJwtToken() (string, error) {
 	return tokensData.LuminusToken.JwtToken, tokensErr
 }
 
+// Send takes a Request that encapsulates a HTTP request and sends it. The response body is then
+// unmarshalled into the interface{} argument provided.
+// Note that the argument parsed must be a pointer.
 func (req Request) Send(res interface{}) error {
 	request, err := http.NewRequest(req.Method, req.Url.Url, nil)
 	if err != nil {

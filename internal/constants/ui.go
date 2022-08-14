@@ -1,3 +1,5 @@
+// Package constants provide constants to be used internally within Lominus (not exported as API)
+// such as UI constants.
 package constants
 
 const (
@@ -58,7 +60,7 @@ const (
 	TELEGRAM_DEFAULT_TEST_MESSAGE       = "Thank you for using Lominus! You have succesfully integrated Telegram with Lominus!\n\nBy integrating Telegram with Lominus, you will be notified of the following whenever Lominus polls for new update based on the intervals set:\n💥 new grades releases\n💥 new announcements (TBC)"
 	TELEGRAM_TESTING_MESSAGE            = "Please wait while we send you a test message..."
 	TELEGRAM_TESTING_SUCCESSFUL_MESSAGE = "Telegram integration successful!"
-	TELEGRAM_TESTING_FAILED_MESSAGE     = "Telegram integration failed. Please ensure that you have chatted with your bot before."
+	TELEGRAM_TESTING_FAILED_MESSAGE     = "Telegram integration failed.\nPlease ensure that you have chatted with your bot before."
 	SAVE_TELEGRAM_DATA_TEXT             = "Save Telegram Info"
 
 	// General

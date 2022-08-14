@@ -1,4 +1,5 @@
-// Package api provides functions that link up and communicate with Luminus servers.
+// Package api provides functions that link up and communicate with LMS servers,
+// such as Canvas and Luminus (probably removed in near future).
 package api
 
 import (
@@ -7,7 +8,7 @@ import (
 	"net/http"
 )
 
-// RawResponse struct is the datapack for containing API response raw data.
+// RawResponse struct is the datapack for containing API response raw data for Luminus.
 type RawResponse struct {
 	Status string                   `json:"status"`
 	Code   int                      `json:"code"`

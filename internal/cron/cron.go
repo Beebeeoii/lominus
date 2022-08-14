@@ -11,10 +11,10 @@ import (
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/auth"
@@ -173,64 +173,47 @@ func createJob(frequency int) (*gocron.Job, error) {
 			return
 		}
 
-		canvasFolders := []api.Folder{}
+		lmsFiles := []api.File{}
 		for _, module := range canvasModules {
-			// TODO Check if it is even possible for files to be in module's root folder
-			folders, canvasFoldersErr := getFolders(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, module)
-			if canvasFoldersErr != nil {
-				// TODO Somehow collate this error and display to user at the end
-				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFoldersErr.Error()}
-				logs.Logger.Errorln(canvasFoldersErr)
+			foldersReq, foldersReqErr := api.BuildFoldersRequest(
+				tokensData.CanvasToken.CanvasApiToken,
+				constants.Canvas,
+				module,
+			)
+			if foldersReqErr != nil {
+				logs.Logger.Errorln(foldersReqErr)
 			}
-			canvasFolders = append(canvasFolders, folders...)
+
+			files, foldersErr := foldersReq.GetRootFiles()
+			if foldersErr != nil {
+				logs.Logger.Errorln(foldersErr)
+			}
+
+			lmsFiles = append(lmsFiles, files...)
 		}
 
-		luminusFolders := []api.Folder{}
 		for _, module := range luminusModules {
-			// This ensures that files in the module's root folder are downloaded as well.
-			moduleMainFolder := api.Folder{
-				Id:           module.Id,
-				Name:         module.Name,
-				Downloadable: module.IsAccessible,
-				HasSubFolder: true,       // doesn't matter
-				Ancestors:    []string{}, // main folder does not have any ancestors
+			foldersReq, foldersReqErr := api.BuildFoldersRequest(
+				tokensData.LuminusToken.JwtToken,
+				constants.Luminus,
+				module,
+			)
+			if foldersReqErr != nil {
+				logs.Logger.Errorln(foldersReqErr)
 			}
-			folders, luminusFoldersErr := getFolders(tokensData.LuminusToken.JwtToken, constants.Luminus, module)
-			if luminusFoldersErr != nil {
-				// TODO Somehow collate this error and display to user at the end
-				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFoldersErr.Error()}
-				logs.Logger.Errorln(luminusFoldersErr)
+
+			files, foldersErr := foldersReq.GetRootFiles()
+			if foldersErr != nil {
+				logs.Logger.Errorln(foldersErr)
 			}
-			luminusFolders = append(luminusFolders, moduleMainFolder)
-			luminusFolders = append(luminusFolders, folders...)
+
+			lmsFiles = append(lmsFiles, files...)
 		}
 
 		nFilesToUpdate := 0
 		filesUpdated := []api.File{}
 
-		files := []api.File{}
-		for _, folder := range canvasFolders {
-			canvasFiles, canvasFilesErr := getFiles(tokensData.CanvasToken.CanvasApiToken, constants.Canvas, folder)
-			if canvasFilesErr != nil {
-				// TODO Somehow collate this error and display to user at the end
-				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasFilesErr.Error()}
-				logs.Logger.Errorln(canvasFilesErr)
-			}
-			files = append(files, canvasFiles...)
-
-		}
-
-		for _, folder := range luminusFolders {
-			luminusFiles, luminusFilesErr := getFiles(tokensData.LuminusToken.JwtToken, constants.Luminus, folder)
-			if luminusFilesErr != nil {
-				// TODO Somehow collate this error and display to user at the end
-				// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luminusFilesErr.Error()}
-				logs.Logger.Errorln(luminusFilesErr)
-			}
-			files = append(files, luminusFiles...)
-		}
-
-		for _, file := range files {
+		for _, file := range lmsFiles {
 			key := fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name)
 			localLastUpdated := currentFiles[key].LastUpdated
 			platformLastUpdated := file.LastUpdated
@@ -293,6 +276,8 @@ func createJob(frequency int) (*gocron.Job, error) {
 	})
 }
 
+// loadTokensData is a helper function that retrieves locally stored Tokens
+// data into a TokensData object.
 func loadTokensData() (auth.TokensData, error) {
 	var tokensData auth.TokensData
 
@@ -309,6 +294,8 @@ func loadTokensData() (auth.TokensData, error) {
 	return tokensData, nil
 }
 
+// getModules is a helper function that retrieves Module objects based on the platform
+// passed in the arguments.
 func getModules(token string, platform constants.Platform) ([]api.Module, error) {
 	modules := []api.Module{}
 
@@ -325,45 +312,14 @@ func getModules(token string, platform constants.Platform) ([]api.Module, error)
 	return modules, nil
 }
 
-func getFolders(token string, platform constants.Platform, module api.Module) ([]api.Folder, error) {
-	folders := []api.Folder{}
-
-	foldersReq, foldersReqErr := api.BuildFoldersRequest(token, platform, module)
-	if foldersReqErr != nil {
-		return folders, foldersReqErr
-	}
-
-	folders, foldersErr := foldersReq.GetFolders()
-	if foldersErr != nil {
-		return folders, foldersErr
-	}
-
-	return folders, nil
-}
-
-func getFiles(token string, platform constants.Platform, folder api.Folder) ([]api.File, error) {
-	files := []api.File{}
-
-	filesReq, filesReqErr := api.BuildFilesRequest(token, platform, folder)
-	if filesReqErr != nil {
-		return files, filesReqErr
-	}
-
-	files, filesErr := filesReq.GetFiles()
-	if filesErr != nil {
-		return files, filesErr
-	}
-
-	return files, nil
-}
-
+// getGrades is a helper function that retrieves Grade objects for Luminus LMS.
 func getGrades(modules []api.Module) ([]api.Grade, error) {
 	grades := []api.Grade{}
 
 	var lastSync time.Time
 	baseDir, _ := appDir.GetBaseDir()
 
-	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
+	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), &lastSync)
 	if existingGradeErr != nil {
 		return grades, existingGradeErr
 	}
@@ -386,7 +342,7 @@ func getGrades(modules []api.Module) ([]api.Grade, error) {
 		grades = append(grades, allGrades...)
 	}
 
-	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
+	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), time.Now())
 	if err != nil {
 		return []api.Grade{}, err
 	}

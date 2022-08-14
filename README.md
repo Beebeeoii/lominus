@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Lominus-v2.0.1-blueviolet" />
+  <img src="https://img.shields.io/badge/Lominus-v2.0.2-blueviolet" />
   <img src="https://img.shields.io/github/downloads/beebeeoii/lominus/total" />
   <img src="https://img.shields.io/github/go-mod/go-version/beebeeoii/lominus" />
   <a href="https://pkg.go.dev/github.com/beebeeoii/lominus">
@@ -110,7 +110,7 @@ sudo make install
 
 ### Prerequisites <a name="getting-started-building-prerequisites">
 
-1. [Golang](https://go.dev/dl/)
+1. [Golang >= 1.18](https://go.dev/dl/)
 
 2. `gcc`
 
@@ -126,7 +126,11 @@ sudo make install
 
 ### Build <a name="getting-started-building-build">
 
-1. Ensure Go is set in you system env var
+1. Ensure `GOPATH` is set in your system env
+
+    ``` bash
+    export GOPATH=$HOME/go
+    ```
 
 2. Install dependencies in the directory where you cloned
 
@@ -137,18 +141,20 @@ sudo make install
 3. Install [fyne](https://developer.fyne.io/index.html)
 
     ``` bash
-    go get fyne.io/fyne/v2/cmd/fyne
+    go install fyne.io/fyne/v2/cmd/fyne@latest
     ```
 
-4. Finally, build and compile
+4. Ensure that your system `PATH` contains `$GOPATH/bin` before building.
 
     ``` bash
+    export PATH=$GOPATH/bin:$PATH
     fyne package
     ```
 
 ## API <a name="getting-started-api">
 
 Lominus can also be used as an API. Please visit [documentations](https://pkg.go.dev/github.com/beebeeoii/lominus) for more details.
+However, do note that the documentations are lacking after v2.0.0 update due to lack of time :(. This should be fixed in due time.
 
 ### Example: Retrieving your modules <a name="getting-started-api-example">
 

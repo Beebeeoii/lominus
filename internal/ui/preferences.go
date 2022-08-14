@@ -1,3 +1,4 @@
+// Package ui provides primitives that initialises the UI.
 package ui
 
 import (
@@ -8,12 +9,12 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/beebeeoii/lominus/internal/lominus"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	fileDialog "github.com/sqweek/dialog"
 )
 
 var frequencyMap = map[int]string{
@@ -50,6 +51,8 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	return tab, nil
 }
 
+// getFileDirectoryView builds the view for choosing folder directory for LMS files
+// to be stored locally. It is placed in the Preferences tab.
 func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("file directory view loaded")
 
@@ -67,63 +70,57 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	folderPathLabel := widget.NewLabel(dir)
 	folderPathLabel.Wrapping = fyne.TextWrapWord
 	chooseDirButton := widget.NewButton(appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT, func() {
-		fileDialog := dialog.NewFolderOpen(func(lu fyne.ListableURI, dirErr error) {
-			if dirErr != nil {
+		dir, dirErr := fileDialog.Directory().Title(
+			appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT,
+		).Browse()
+
+		if dirErr != nil {
+			if dirErr.Error() != "Cancelled" {
 				logs.Logger.Debugln("directory selection cancelled")
 				dialog.NewInformation(
-					lominus.APP_NAME,
+					appConstants.APP_NAME,
 					appConstants.PREFERENCES_FAILED_MESSAGE,
 					parentWindow,
 				).Show()
 				logs.Logger.Errorln(dirErr)
-				return
 			}
+			return
+		}
+		logs.Logger.Debugf("directory chosen - %s", dir)
 
-			if lu == nil {
-				return
-			}
+		preferences := getPreferences()
+		preferences.Directory = dir
 
-			dir = lu.Path()
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(
+				appConstants.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
 
-			logs.Logger.Debugf("directory chosen - %s", dir)
-
-			preferences := getPreferences()
-			preferences.Directory = dir
-
-			preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-			if getPreferencesPathErr != nil {
-				dialog.NewInformation(
-					lominus.APP_NAME,
-					appConstants.PREFERENCES_FAILED_MESSAGE,
-					parentWindow,
-				).Show()
-				logs.Logger.Errorln(getPreferencesPathErr)
-				return
-			}
-
-			savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-			if savePrefErr != nil {
-				dialog.NewInformation(
-					lominus.APP_NAME,
-					appConstants.PREFERENCES_FAILED_MESSAGE,
-					parentWindow,
-				).Show()
-				logs.Logger.Errorln(savePrefErr)
-				return
-			}
-			logs.Logger.Debugln("directory saved")
-			folderPathLabel.SetText(preferences.Directory)
-		}, parentWindow)
-		fileDialog.SetConfirmText(appConstants.FILE_DIRECTORY_CHOOSE_LOCATION_TEXT)
-		fileDialog.Resize(
-			w.Canvas().Size().SubtractWidthHeight(appConstants.DIALOG_PADDING, appConstants.DIALOG_PADDING),
-		)
-		fileDialog.Show()
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			dialog.NewInformation(
+				appConstants.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(savePrefErr)
+			return
+		}
+		logs.Logger.Debugln("directory saved")
+		folderPathLabel.SetText(preferences.Directory)
 	})
 
 	return container.NewVBox(label, widget.NewSeparator(), folderPathLabel, chooseDirButton), nil
 }
 
+// getSyncView builds the view for choosing frequency of sync for LMS files.
+// It is placed in the Preferences tab.
 func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("sync view loaded")
 
@@ -166,7 +163,7 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -177,7 +174,7 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -191,6 +188,8 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
 }
 
+// getAdvancedView builds the view for advanced options such as debug mode.
+// It is placed in the Preferences tab.
 func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("advanced view loaded")
 
@@ -212,7 +211,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			fmt.Sprintf(
 				appConstants.DEBUG_CHECKBOX_W_LINK_DESCRIPTION,
 				filepath.FromSlash(
-					fmt.Sprintf("file://%s", filepath.Join(baseDir, lominus.LOG_FILE_NAME)),
+					fmt.Sprintf("file://%s", filepath.Join(baseDir, appConstants.LOG_FILE_NAME)),
 				),
 			),
 		)
@@ -225,7 +224,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -245,7 +244,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -254,7 +253,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		}
 
 		dialog.NewInformation(
-			lominus.APP_NAME,
+			appConstants.APP_NAME,
 			appConstants.DEBUG_TOGGLE_SUCCESSFUL_MESSAGE,
 			parentWindow,
 		).Show()

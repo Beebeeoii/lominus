@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	"github.com/beebeeoii/lominus/internal/lominus"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 )
 
 // GetJwtPath returns the file path to user's JWT data.
@@ -17,7 +17,7 @@ func GetTokensPath() (string, error) {
 		return jwtPath, retrieveBaseDirErr
 	}
 
-	jwtPath = filepath.Join(baseDir, lominus.TOKENS_FILE_NAME)
+	jwtPath = filepath.Join(baseDir, appConstants.TOKENS_FILE_NAME)
 
 	return jwtPath, nil
 }
@@ -31,7 +31,7 @@ func GetCredentialsPath() (string, error) {
 		return credentialsPath, retrieveBaseDirErr
 	}
 
-	credentialsPath = filepath.Join(baseDir, lominus.CREDENTIALS_FILE_NAME)
+	credentialsPath = filepath.Join(baseDir, appConstants.CREDENTIALS_FILE_NAME)
 
 	return credentialsPath, nil
 }
