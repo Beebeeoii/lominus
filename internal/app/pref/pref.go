@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/file"
-	"github.com/beebeeoii/lominus/internal/lominus"
 )
 
-const PREFERENCES_FILE_NAME = lominus.PREFERENCES_FILE_NAME
+const PREFERENCES_FILE_NAME = appConstants.PREFERENCES_FILE_NAME
 
 // Preferences struct describes the data being stored in the user's preferences file.
 type Preferences struct {
@@ -27,7 +27,7 @@ func GetPreferencesPath() (string, error) {
 		return preferencesPath, retrieveBaseDirErr
 	}
 
-	preferencesPath = filepath.Join(baseDir, lominus.PREFERENCES_FILE_NAME)
+	preferencesPath = filepath.Join(baseDir, appConstants.PREFERENCES_FILE_NAME)
 
 	return preferencesPath, nil
 }

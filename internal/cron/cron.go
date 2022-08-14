@@ -11,10 +11,10 @@ import (
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/auth"
@@ -319,7 +319,7 @@ func getGrades(modules []api.Module) ([]api.Grade, error) {
 	var lastSync time.Time
 	baseDir, _ := appDir.GetBaseDir()
 
-	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), &lastSync)
+	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), &lastSync)
 	if existingGradeErr != nil {
 		return grades, existingGradeErr
 	}
@@ -342,7 +342,7 @@ func getGrades(modules []api.Module) ([]api.Grade, error) {
 		grades = append(grades, allGrades...)
 	}
 
-	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, lominus.GRADES_FILE_NAME), time.Now())
+	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), time.Now())
 	if err != nil {
 		return []api.Grade{}, err
 	}

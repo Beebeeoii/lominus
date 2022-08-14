@@ -3,15 +3,15 @@ package ui
 
 import (
 	"fyne.io/fyne/v2"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
-	"github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/beebeeoii/lominus/internal/notifications"
 )
 
 // BuildSystemTray creates the system tray icon and its menu options, used to be initialised
 // when Lominus starts.
 func BuildSystemTray() *fyne.Menu {
-	return fyne.NewMenu(lominus.APP_NAME,
+	return fyne.NewMenu(appConstants.APP_NAME,
 		fyne.NewMenuItem("Sync Now", func() {
 			preferences := getPreferences()
 			if preferences.Directory == "" {
