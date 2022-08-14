@@ -8,7 +8,8 @@ import (
 	"github.com/beebeeoii/lominus/internal/notifications"
 )
 
-// TODO Documentation
+// BuildSystemTray creates the system tray icon and its menu options, used to be initialised
+// when Lominus starts.
 func BuildSystemTray() *fyne.Menu {
 	return fyne.NewMenu(lominus.APP_NAME,
 		fyne.NewMenuItem("Sync Now", func() {

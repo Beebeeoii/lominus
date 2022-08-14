@@ -1,3 +1,4 @@
+// Package ui provides primitives that initialises the UI.
 package ui
 
 import (

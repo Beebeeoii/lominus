@@ -1,3 +1,5 @@
+// Package constants provide constants to be used internally within Lominus (not exported as API)
+// such as UI constants.
 package constants
 
 const (

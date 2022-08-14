@@ -1,4 +1,5 @@
-// Package api provides functions that link up and communicate with Luminus servers.
+// Package api provides functions that link up and communicate with LMS servers,
+// such as Canvas and Luminus (probably removed in near future).
 package api
 
 import (
@@ -31,6 +32,7 @@ func getScoreDetailFieldsRequired() []string {
 
 // GetGrades retrieves all grades for a particular module represented by moduleCode specified in GradeRequest.
 // Find out more about GradeRequests under request.go.
+// Note that Grades API works only for Luminus and not supported for Canvas yet.
 func (req GradeRequest) GetGrades() ([]Grade, error) {
 	var grades []Grade
 

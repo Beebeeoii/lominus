@@ -1,6 +1,10 @@
+// Package interfaces provide the fundamental blueprint for how each object
+// looks like.
 package interfaces
 
-// TODO Documentation
+// CanvasModuleObject depicts the actual object return from Canvas.
+// There are more fields being returned by Canvas, but these are just the
+// relevant ones as of now.
 type CanvasModuleObject struct {
 	Id                       int    `json:"id"`
 	UUID                     string `json:"uuid"`
@@ -9,7 +13,10 @@ type CanvasModuleObject struct {
 	IsAccessRestrictedByDate bool   `json:"access_restricted_by_date"`
 }
 
-// TODO Documentation
+// LuminusModuleObject depicts the actual object return from Luminus.
+// There are more fields being returned by Luminus, but these are just the
+// relevant ones as of now.
+// For more details on what mapstructure means: https://github.com/mitchellh/mapstructure
 type LuminusModuleObject struct {
 	Id                 string `json:"id"`
 	Name               string `json:"courseName" mapstructure:"courseName"`

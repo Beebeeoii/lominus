@@ -1,3 +1,4 @@
+// Package ui provides primitives that initialises the UI.
 package ui
 
 import (
@@ -59,6 +60,7 @@ func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	return tab, nil
 }
 
+// getLuminusView builds the view for Luminus credentials placed in the credentials tab.
 func getLuminusView(
 	parentWindow fyne.Window,
 	defaultCredentials auth.LuminusCredentials,
@@ -133,6 +135,7 @@ func getLuminusView(
 	), nil
 }
 
+// getCanvasView builds the view for Canvas credentials placed in the credentials tab.
 func getCanvasView(
 	parentWindow fyne.Window,
 	defaultCredentials auth.CanvasCredentials,

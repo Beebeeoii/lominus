@@ -1,4 +1,5 @@
-// Package api provides functions that link up and communicate with Luminus servers.
+// Package api provides functions that link up and communicate with LMS servers,
+// such as Canvas and Luminus (probably removed in near future).
 package api
 
 import (
@@ -22,7 +23,8 @@ type Module struct {
 
 const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
 
-// TODO Documentation
+// GetModules retrieves all the modules being taken by the user on the specified LMS
+// via a ModulesRequest.
 func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 	modules := []Module{}
 	if modulesRequest.Request.Token == "" {
@@ -83,7 +85,8 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 	return modules, nil
 }
 
-// TODO Documentation
+// cleanseModuleCode is a helper function that replaces all instances of "/" with "-".
+// This is necessary for multi-coded modules like ST2131/MA2216.
 func cleanseModuleCode(code string) string {
 	return strings.Replace(code, "/", "-", -1)
 }

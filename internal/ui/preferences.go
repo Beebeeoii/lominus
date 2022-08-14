@@ -1,3 +1,4 @@
+// Package ui provides primitives that initialises the UI.
 package ui
 
 import (
@@ -51,6 +52,8 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	return tab, nil
 }
 
+// getFileDirectoryView builds the view for choosing folder directory for LMS files
+// to be stored locally. It is placed in the Preferences tab.
 func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("file directory view loaded")
 
@@ -117,6 +120,8 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	return container.NewVBox(label, widget.NewSeparator(), folderPathLabel, chooseDirButton), nil
 }
 
+// getSyncView builds the view for choosing frequency of sync for LMS files.
+// It is placed in the Preferences tab.
 func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("sync view loaded")
 
@@ -184,6 +189,8 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
 }
 
+// getAdvancedView builds the view for advanced options such as debug mode.
+// It is placed in the Preferences tab.
 func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("advanced view loaded")
 
