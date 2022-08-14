@@ -276,6 +276,8 @@ func createJob(frequency int) (*gocron.Job, error) {
 	})
 }
 
+// loadTokensData is a helper function that retrieves locally stored Tokens
+// data into a TokensData object.
 func loadTokensData() (auth.TokensData, error) {
 	var tokensData auth.TokensData
 
@@ -292,6 +294,8 @@ func loadTokensData() (auth.TokensData, error) {
 	return tokensData, nil
 }
 
+// getModules is a helper function that retrieves Module objects based on the platform
+// passed in the arguments.
 func getModules(token string, platform constants.Platform) ([]api.Module, error) {
 	modules := []api.Module{}
 
@@ -308,6 +312,7 @@ func getModules(token string, platform constants.Platform) ([]api.Module, error)
 	return modules, nil
 }
 
+// getGrades is a helper function that retrieves Grade objects for Luminus LMS.
 func getGrades(modules []api.Module) ([]api.Grade, error) {
 	grades := []api.Grade{}
 
