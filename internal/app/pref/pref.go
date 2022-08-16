@@ -13,9 +13,10 @@ const PREFERENCES_FILE_NAME = lominus.PREFERENCES_FILE_NAME
 
 // Preferences struct describes the data being stored in the user's preferences file.
 type Preferences struct {
-	Directory string
-	Frequency int
-	LogLevel  string
+	Directory  string
+	Frequency  int
+	LogLevel   string
+	AutoUpdate bool
 }
 
 // GetJwtPath returns the file path to user's preferences.

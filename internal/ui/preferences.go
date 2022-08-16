@@ -12,6 +12,7 @@ import (
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	"github.com/beebeeoii/lominus/internal/app/updater"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
 )
@@ -40,12 +41,17 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 		return tab, syncViewErr
 	}
 
+	updateView, updateViewErr := getUpdateView(w)
+	if updateViewErr != nil {
+		return tab, updateViewErr
+	}
+
 	advancedView, advancedViewErr := getAdvancedView(w)
 	if advancedViewErr != nil {
 		return tab, advancedViewErr
 	}
 
-	tab.Content = container.NewVBox(fileDirectoryView, syncView, advancedView)
+	tab.Content = container.NewVBox(fileDirectoryView, syncView, updateView, advancedView)
 
 	return tab, nil
 }
@@ -189,6 +195,61 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
 
 	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
+}
+
+func getUpdateView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+	logs.Logger.Debugln("update view loaded")
+	label := widget.NewLabelWithStyle(
+		appConstants.UPDATE_TAB_TITLE,
+		fyne.TextAlignLeading,
+		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
+	)
+
+	autoUpdateDescription := widget.NewRichTextFromMarkdown(
+		appConstants.AUTO_UPDATE_CHECKBOX_DESCRIPTION,
+	)
+
+	autoUpdateDescription.Wrapping = fyne.TextWrapWord
+
+	autoUpdateCheckbox := widget.NewCheck(appConstants.AUTO_UPDATE_CHECKBOX_TITLE, func(onAutoUpdate bool) {
+		preferences := getPreferences()
+		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
+		if getPreferencesPathErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(getPreferencesPathErr)
+			return
+		}
+
+		if onAutoUpdate {
+			preferences.AutoUpdate = true
+		} else {
+			preferences.AutoUpdate = false
+		}
+
+		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		if savePrefErr != nil {
+			dialog.NewInformation(
+				lominus.APP_NAME,
+				appConstants.PREFERENCES_FAILED_MESSAGE,
+				parentWindow,
+			).Show()
+			logs.Logger.Errorln(savePrefErr)
+			return
+		}
+		logs.Logger.Debugln("auto update preference saved")
+	})
+
+	autoUpdateCheckbox.Checked = getPreferences().AutoUpdate
+
+	updateNowButton := widget.NewButton(appConstants.UPDATE_BUTTON_TITLE, func() {
+		updater.DoSelfUpdate(parentWindow)
+	})
+
+	return container.NewVBox(label, widget.NewSeparator(), autoUpdateDescription, autoUpdateCheckbox, updateNowButton), nil
 }
 
 func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
