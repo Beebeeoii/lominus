@@ -37,7 +37,9 @@ func Init() error {
 
 	w = mainApp.NewWindow(fmt.Sprintf("%s v%s", appConstants.APP_NAME, appConstants.APP_VERSION))
 
-	updater.DoSelfUpdate(w)
+	if getPreferences().AutoUpdate {
+		updater.DoSelfUpdate(w)
+	}
 
 	if desk, ok := mainApp.(desktop.App); ok {
 		m := BuildSystemTray()

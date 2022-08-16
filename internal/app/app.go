@@ -34,9 +34,10 @@ func Init() error {
 
 	if !file.Exists(preferencesPath) {
 		preferences := appPref.Preferences{
-			Directory: "",
-			Frequency: -1,
-			LogLevel:  "info",
+			Directory:  "",
+			Frequency:  -1,
+			LogLevel:   "info",
+			AutoUpdate: false,
 		}
 
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
