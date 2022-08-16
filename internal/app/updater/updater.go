@@ -11,13 +11,12 @@ import (
 
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	logs "github.com/beebeeoii/lominus/internal/log"
-	lominus "github.com/beebeeoii/lominus/internal/lominus"
 	"github.com/creativeprojects/go-selfupdate"
 )
 
 const (
-	GITHUB_REPO = "Beebeeoii/lominus"
-	VERSION     = lominus.APP_VERSION
+	GITHUB_REPO = appConstants.GITHUB_REPO
+	VERSION     = appConstants.APP_VERSION
 )
 
 func DoSelfUpdate(parentWindow fyne.Window) {
@@ -49,7 +48,7 @@ func DoSelfUpdate(parentWindow fyne.Window) {
 	logs.Logger.Infoln(updateMessage)
 
 	dialog.NewInformation(
-		lominus.APP_NAME,
+		appConstants.APP_NAME,
 		updateMessage,
 		parentWindow,
 	).Show()

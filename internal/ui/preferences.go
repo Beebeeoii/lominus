@@ -215,7 +215,7 @@ func getUpdateView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
 		if getPreferencesPathErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
@@ -232,7 +232,7 @@ func getUpdateView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
 		if savePrefErr != nil {
 			dialog.NewInformation(
-				lominus.APP_NAME,
+				appConstants.APP_NAME,
 				appConstants.PREFERENCES_FAILED_MESSAGE,
 				parentWindow,
 			).Show()
