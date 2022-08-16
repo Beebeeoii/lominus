@@ -8,6 +8,7 @@ import (
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/internal/ui"
+
 	"github.com/juju/fslock"
 )
 
@@ -43,6 +44,7 @@ func main() {
 	logs.Logger.Infoln("cron initialised")
 
 	uiInitErr := ui.Init()
+
 	if uiInitErr != nil {
 		logs.Logger.Fatalln(uiInitErr)
 	}

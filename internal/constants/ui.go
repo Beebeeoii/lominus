@@ -40,6 +40,11 @@ const (
 	SYNC_FREQUENCY_SIX_HOUR    = "6 hour"
 	SYNC_FREQUENCY_TWELVE_HOUR = "12 hour"
 
+	UPDATE_TAB_TITLE                 = "Updates"
+	AUTO_UPDATE_CHECKBOX_TITLE       = "Auto update"
+	AUTO_UPDATE_CHECKBOX_DESCRIPTION = "Enables auto updating of Lominus on start up"
+	UPDATE_BUTTON_TITLE              = "Update Lominus now"
+
 	ADVANCED_TAB_TITLE                 = "Advanced"
 	DEBUG_CHECKBOX_TITLE               = "Debug Mode"
 	DEBUG_CHECKBOX_W_LINK_DESCRIPTION  = "Debug mode enables extensive logging to the [logfile](<%s>)."
@@ -71,4 +76,7 @@ const (
 	QUIT_LOMINUS_TEXT            = "Quit Lominus"
 
 	DIALOG_PADDING = 30
+
+	// Update Dialog
+	UPDATE_DIALOG_MESSAGE = "Successfully updated to version %s. Restart app to see changes."
 )

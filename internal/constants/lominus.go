@@ -5,6 +5,7 @@ package constants
 const APP_NAME = "Lominus"
 const APP_ID = "com.lominus.beebeeoii"
 const APP_VERSION = "2.0.2"
+const GITHUB_REPO = "Beebeeoii/lominus"
 
 const LOCK_FILE_NAME = "lominus.lock"
 
