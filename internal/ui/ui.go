@@ -3,6 +3,7 @@ package ui
 
 import (
 	"fmt"
+	"runtime"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -71,6 +72,13 @@ func Init() error {
 	w.SetCloseIntercept(func() {
 		w.Hide()
 	})
+	// This is so that command-Q on macOS will exit the application as expected and not just hide.
+	if runtime.GOOS == "darwin" {
+		commandQ := &desktop.CustomShortcut{KeyName: fyne.KeyQ, Modifier: fyne.KeyModifierShortcutDefault}
+		w.Canvas().AddShortcut(commandQ, func(shortcut fyne.Shortcut) {
+			w.Close()
+		})
+	}
 	mainApp.Lifecycle().SetOnEnteredForeground(func() {
 		w.Show()
 	})
