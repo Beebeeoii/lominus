@@ -376,12 +376,10 @@ func (file File) Download(folderPath string) error {
 
 	// This checks if there already exists the specified file
 	// to prevent overwritting of files.
+	// If file exists, new file will have a new name appended with [vX],
+	// where X is an integer.
 	if appFile.Exists(filePath) {
-		renameErr := appFile.AutoRename(filePath)
-
-		if renameErr != nil {
-			return renameErr
-		}
+		filePath = filepath.Join(folderPath, appFile.AutoRename(filePath))
 	}
 
 	f, err := os.Create(filePath)

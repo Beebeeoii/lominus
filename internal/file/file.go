@@ -60,24 +60,24 @@ func Exists(name string) bool {
 	return err == nil
 }
 
-// AutoRename renames a file by prepending "[vX]" to its fileName
+// AutoRename renames a file by appending "[vX]" to its fileName
 // where X is a positive integer.
 // X increments itself starting from 1 until the there exists a
 // the new fileName does not exist in the directory.
-func AutoRename(filePath string) error {
-	FORMAT := "[v%d]%s"
+func AutoRename(filePath string) string {
+	FORMAT := "%s[v%d]"
 	directory, fileName := filepath.Split(filePath)
 	newFileName := fileName
 
 	for x := 1; ; x++ {
-		newFileName = fmt.Sprintf(FORMAT, x, fileName)
+		newFileName = fmt.Sprintf(FORMAT, fileName, x)
 
 		if !Exists(filepath.Join(directory, newFileName)) {
 			break
 		}
 	}
 
-	return os.Rename(filePath, filepath.Join(directory, newFileName))
+	return newFileName
 }
 
 // EnsureDir is a helper function that ensures that the directory exists by creating them
