@@ -65,12 +65,14 @@ func Exists(name string) bool {
 // X increments itself starting from 1 until the there exists a
 // the new fileName does not exist in the directory.
 func AutoRename(filePath string) string {
-	FORMAT := "%s[v%d]"
+	FORMAT := "%s[v%d]%s"
 	directory, fileName := filepath.Split(filePath)
-	newFileName := fileName
+	fileExtension := filepath.Ext(fileName)
+	fileNameWOExtension := fileName[:len(fileName)-len(fileExtension)]
+	var newFileName string
 
 	for x := 1; ; x++ {
-		newFileName = fmt.Sprintf(FORMAT, fileName, x)
+		newFileName = fmt.Sprintf(FORMAT, fileNameWOExtension, x, fileExtension)
 
 		if !Exists(filepath.Join(directory, newFileName)) {
 			break
