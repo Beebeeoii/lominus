@@ -28,8 +28,8 @@ func GetTokensPath() (string, error) {
 	return jwtPath, nil
 }
 
-// Save saves the user's Canvas API token locally.
-func (cred CanvasCredentials) Save() error {
+// SaveCanvasCredentials saves the user's Canvas API token locally.
+func SaveCanvasCredentials(cred CanvasCredentials) error {
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
 	if retrieveBaseDirErr != nil {
 		return retrieveBaseDirErr

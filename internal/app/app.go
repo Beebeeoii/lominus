@@ -42,7 +42,16 @@ func Init() error {
 			return prefBucketErr
 		}
 
+		if prefBucket.Get([]byte("frequency")) == nil {
+			prefBucket.Put([]byte("frequency"), []byte("-1"))
+		}
+
 		logLevel := prefBucket.Get([]byte("logLevel"))
+		if logLevel == nil {
+			logLevel = []byte("info")
+			prefBucket.Put([]byte("logLevel"), []byte(logLevel))
+
+		}
 
 		logInitErr := logs.Init(string(logLevel))
 		if logInitErr != nil {

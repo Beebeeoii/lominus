@@ -4,6 +4,7 @@ package ui
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -20,7 +21,6 @@ import (
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
-	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/boltdb/bolt"
 )
 
@@ -32,7 +32,8 @@ func Init() error {
 	mainApp = app.NewWithID(appConstants.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
-	var canvasToken string
+	var canvasToken, directory, logLevel string
+	var frequency int
 
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
 	if retrieveBaseDirErr != nil {
@@ -47,7 +48,13 @@ func Init() error {
 	}
 
 	tx, _ := db.Begin(false)
-	canvasToken = string(tx.Bucket([]byte("Auth")).Get([]byte("canvasToken")))
+	authBucket := tx.Bucket([]byte("Auth"))
+	canvasToken = string(authBucket.Get([]byte("canvasToken")))
+
+	prefBucket := tx.Bucket([]byte("Preferences"))
+	directory = string(prefBucket.Get([]byte("directory")))
+	frequency, _ = strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
+	logLevel = string(prefBucket.Get([]byte("logLevel")))
 	tx.Rollback()
 
 	db.Close()
@@ -66,16 +73,18 @@ func Init() error {
 		desk.SetSystemTrayMenu(m)
 	}
 
-	credentialsTab, credentialsUiErr := getCredentialsTab(auth.CredentialsData{
-		CanvasCredentials: auth.CanvasCredentials{
-			CanvasApiToken: canvasToken,
-		},
+	credentialsTab, credentialsUiErr := getCredentialsTab(CredentialsData{
+		CanvasApiToken: canvasToken,
 	}, w)
 	if credentialsUiErr != nil {
 		return credentialsUiErr
 	}
 
-	preferencesTab, preferencesErr := getPreferencesTab(w)
+	preferencesTab, preferencesErr := getPreferencesTab(PreferencesData{
+		Directory: directory,
+		Frequency: frequency,
+		LogLevel:  logLevel,
+	}, w)
 	if preferencesErr != nil {
 		return preferencesErr
 	}

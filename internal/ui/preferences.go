@@ -26,22 +26,28 @@ var frequencyMap = map[int]string{
 	-1: appConstants.SYNC_FREQUENCY_DISABLED,
 }
 
+type PreferencesData struct {
+	Directory string
+	Frequency int
+	LogLevel  string
+}
+
 // getPreferencesTab builds the preferences tab in the main UI.
-func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
+func getPreferencesTab(preferencesData PreferencesData, parentWindow fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("preferences tab loaded")
 	tab := container.NewTabItem(appConstants.PREFERENCES_TITLE, container.NewVBox())
 
-	fileDirectoryView, fileDirectoryViewErr := getFileDirectoryView(w)
+	fileDirectoryView, fileDirectoryViewErr := getFileDirectoryView(w, preferencesData.Directory)
 	if fileDirectoryViewErr != nil {
 		return tab, fileDirectoryViewErr
 	}
 
-	syncView, syncViewErr := getSyncView(w)
+	syncView, syncViewErr := getSyncView(w, preferencesData.Frequency)
 	if syncViewErr != nil {
 		return tab, syncViewErr
 	}
 
-	advancedView, advancedViewErr := getAdvancedView(w)
+	advancedView, advancedViewErr := getAdvancedView(w, preferencesData.LogLevel)
 	if advancedViewErr != nil {
 		return tab, advancedViewErr
 	}
@@ -53,7 +59,7 @@ func getPreferencesTab(parentWindow fyne.Window) (*container.TabItem, error) {
 
 // getFileDirectoryView builds the view for choosing folder directory for LMS files
 // to be stored locally. It is placed in the Preferences tab.
-func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+func getFileDirectoryView(parentWindow fyne.Window, directory string) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("file directory view loaded")
 
 	label := widget.NewLabelWithStyle(
@@ -62,12 +68,11 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		fyne.TextStyle{Bold: true, Italic: false, Monospace: false, TabWidth: 0},
 	)
 
-	dir := getPreferences().Directory
-	if dir == "" {
-		dir = appConstants.FILE_DIRECTORY_FOLDER_PATH_DEFAULT
+	if directory == "" {
+		directory = appConstants.FILE_DIRECTORY_FOLDER_PATH_DEFAULT
 	}
 
-	folderPathLabel := widget.NewLabel(dir)
+	folderPathLabel := widget.NewLabel(directory)
 	folderPathLabel.Wrapping = fyne.TextWrapWord
 	chooseDirButton := widget.NewButton(appConstants.FILE_DIRECTORY_SELECT_DIRECTORY_TEXT, func() {
 		dir, dirErr := fileDialog.Directory().Title(
@@ -88,21 +93,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		}
 		logs.Logger.Debugf("directory chosen - %s", dir)
 
-		preferences := getPreferences()
-		preferences.Directory = dir
-
-		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-		if getPreferencesPathErr != nil {
-			dialog.NewInformation(
-				appConstants.APP_NAME,
-				appConstants.PREFERENCES_FAILED_MESSAGE,
-				parentWindow,
-			).Show()
-			logs.Logger.Errorln(getPreferencesPathErr)
-			return
-		}
-
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		savePrefErr := appPref.SaveRootSyncDirectory(dir)
 		if savePrefErr != nil {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
@@ -112,8 +103,9 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 			logs.Logger.Errorln(savePrefErr)
 			return
 		}
+
 		logs.Logger.Debugln("directory saved")
-		folderPathLabel.SetText(preferences.Directory)
+		folderPathLabel.SetText(dir)
 	})
 
 	return container.NewVBox(label, widget.NewSeparator(), folderPathLabel, chooseDirButton), nil
@@ -121,7 +113,7 @@ func getFileDirectoryView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 
 // getSyncView builds the view for choosing frequency of sync for LMS files.
 // It is placed in the Preferences tab.
-func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+func getSyncView(parentWindow fyne.Window, frequency int) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("sync view loaded")
 
 	label := widget.NewLabelWithStyle(
@@ -140,38 +132,27 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		appConstants.SYNC_FREQUENCY_SIX_HOUR,
 		appConstants.SYNC_FREQUENCY_TWELVE_HOUR,
 	}, func(s string) {
-		preferences := getPreferences()
+		var newFrequency int
 		switch s {
 		case appConstants.SYNC_FREQUENCY_DISABLED:
-			preferences.Frequency = -1
+			newFrequency = -1
 		case appConstants.SYNC_FREQUENCY_ONE_HOUR:
-			preferences.Frequency = 1
+			newFrequency = 1
 		case appConstants.SYNC_FREQUENCY_TWO_HOUR:
-			preferences.Frequency = 2
+			newFrequency = 2
 		case appConstants.SYNC_FREQUENCY_FOUR_HOUR:
-			preferences.Frequency = 4
+			newFrequency = 4
 		case appConstants.SYNC_FREQUENCY_SIX_HOUR:
-			preferences.Frequency = 6
+			newFrequency = 6
 		case appConstants.SYNC_FREQUENCY_TWELVE_HOUR:
-			preferences.Frequency = 12
+			newFrequency = 12
 		default:
-			preferences.Frequency = 1
+			newFrequency = 1
 		}
 
-		logs.Logger.Debugf("frequency selected - %d", preferences.Frequency)
+		logs.Logger.Debugf("frequency selected - %d", newFrequency)
 
-		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-		if getPreferencesPathErr != nil {
-			dialog.NewInformation(
-				appConstants.APP_NAME,
-				appConstants.PREFERENCES_FAILED_MESSAGE,
-				parentWindow,
-			).Show()
-			logs.Logger.Errorln(getPreferencesPathErr)
-			return
-		}
-
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		savePrefErr := appPref.SaveSyncFrequency(newFrequency)
 		if savePrefErr != nil {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
@@ -183,14 +164,14 @@ func getSyncView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		}
 		logs.Logger.Debugln("frequency saved")
 	})
-	frequencySelect.Selected = frequencyMap[getPreferences().Frequency]
+	frequencySelect.Selected = frequencyMap[frequency]
 
 	return container.NewVBox(label, widget.NewSeparator(), description, frequencySelect), nil
 }
 
 // getAdvancedView builds the view for advanced options such as debug mode.
 // It is placed in the Preferences tab.
-func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
+func getAdvancedView(parentWindow fyne.Window, logLevel string) (fyne.CanvasObject, error) {
 	logs.Logger.Debugln("advanced view loaded")
 
 	label := widget.NewLabelWithStyle(
@@ -220,28 +201,18 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 	description.Wrapping = fyne.TextWrapWord
 
 	debugCheckbox := widget.NewCheck(appConstants.DEBUG_CHECKBOX_TITLE, func(onDebug bool) {
-		preferences := getPreferences()
-		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-		if getPreferencesPathErr != nil {
-			dialog.NewInformation(
-				appConstants.APP_NAME,
-				appConstants.PREFERENCES_FAILED_MESSAGE,
-				parentWindow,
-			).Show()
-			logs.Logger.Errorln(getPreferencesPathErr)
-			return
-		}
+		var newLogLevel string
 
 		if onDebug {
-			preferences.LogLevel = "debug"
+			newLogLevel = "debug"
 		} else {
-			preferences.LogLevel = "info"
+			newLogLevel = "info"
 		}
 
-		logs.SetLogLevel(preferences.LogLevel)
+		logs.SetLogLevel(newLogLevel)
 		logs.Logger.Debugf("debug mode changed to - %v", onDebug)
 
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
+		savePrefErr := appPref.SaveDebugMode(newLogLevel)
 		if savePrefErr != nil {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
@@ -259,7 +230,7 @@ func getAdvancedView(parentWindow fyne.Window) (fyne.CanvasObject, error) {
 		).Show()
 	})
 
-	debugCheckbox.Checked = getPreferences().LogLevel == "debug"
+	debugCheckbox.Checked = logLevel == "debug"
 
 	return container.NewVBox(label, widget.NewSeparator(), description, debugCheckbox), nil
 }

@@ -3,7 +3,6 @@
 package auth
 
 import (
-	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	file "github.com/beebeeoii/lominus/internal/file"
 )
@@ -64,10 +63,10 @@ func LoadTokensData(tokensPath string, autoRenew bool) (TokensData, error) {
 		return tokensData, err
 	}
 
-	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
-	if getCredentialsPathErr != nil {
-		return tokensData, getCredentialsPathErr
-	}
+	credentialsPath := "appAuth.GetCredentialsPath()"
+	// if getCredentialsPathErr != nil {
+	// 	return tokensData, getCredentialsPathErr
+	// }
 
 	credentials, credentialsErr := LoadCredentialsData(credentialsPath)
 	if credentialsErr != nil {
