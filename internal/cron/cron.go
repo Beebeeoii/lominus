@@ -95,6 +95,7 @@ func GetLastRan() time.Time {
 func createJob(frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
+		return
 
 		logs.Logger.Debugln("retrieving - preferences path")
 		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()

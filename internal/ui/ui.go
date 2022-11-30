@@ -3,6 +3,8 @@ package ui
 
 import (
 	"fmt"
+	"path/filepath"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -12,11 +14,14 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
+	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
+	"github.com/beebeeoii/lominus/pkg/auth"
+	"github.com/boltdb/bolt"
 )
 
 var mainApp fyne.App
@@ -26,6 +31,26 @@ var w fyne.Window
 func Init() error {
 	mainApp = app.NewWithID(appConstants.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
+
+	var canvasToken string
+
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		return retrieveBaseDirErr
+	}
+
+	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
+	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
+
+	if dbErr != nil {
+		return dbErr
+	}
+
+	tx, _ := db.Begin(false)
+	canvasToken = string(tx.Bucket([]byte("Auth")).Get([]byte("canvasToken")))
+	tx.Rollback()
+
+	db.Close()
 
 	go func() {
 		for {
@@ -41,7 +66,11 @@ func Init() error {
 		desk.SetSystemTrayMenu(m)
 	}
 
-	credentialsTab, credentialsUiErr := getCredentialsTab(w)
+	credentialsTab, credentialsUiErr := getCredentialsTab(auth.CredentialsData{
+		CanvasCredentials: auth.CanvasCredentials{
+			CanvasApiToken: canvasToken,
+		},
+	}, w)
 	if credentialsUiErr != nil {
 		return credentialsUiErr
 	}

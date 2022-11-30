@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
-	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/pkg/auth"
 )
@@ -17,26 +16,26 @@ var credentialsPath string
 var tokensPath string
 
 // getCredentialsTab builds the credentials tab in the main UI.
-func getCredentialsTab(parentWindow fyne.Window) (*container.TabItem, error) {
+func getCredentialsTab(credentials auth.CredentialsData, parentWindow fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("credentials tab loaded")
 	tab := container.NewTabItem(appConstants.CREDENTIALS_TITLE, container.NewVBox())
 
-	var credentials auth.CredentialsData
-	cPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
-	if getCredentialsPathErr != nil {
-		return tab, getCredentialsPathErr
-	}
-	credentialsPath = cPath
+	// var credentials auth.CredentialsData
+	// cPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
+	// if getCredentialsPathErr != nil {
+	// 	return tab, getCredentialsPathErr
+	// }
+	// credentialsPath = cPath
 
-	if file.Exists(credentialsPath) {
-		logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
-		c, err := auth.LoadCredentialsData(credentialsPath)
-		if err != nil {
-			return tab, err
-		}
+	// if file.Exists(credentialsPath) {
+	// 	logs.Logger.Debugf("credentials exists - loading from %s", credentialsPath)
+	// 	c, err := auth.LoadCredentialsData(credentialsPath)
+	// 	if err != nil {
+	// 		return tab, err
+	// 	}
 
-		credentials = c
-	}
+	// 	credentials = c
+	// }
 
 	tPath, getTokensPathErr := appAuth.GetTokensPath()
 	if getTokensPathErr != nil {
@@ -162,10 +161,6 @@ func getCanvasView(
 			CanvasApiToken: canvasTokenEntry.Text,
 		}
 
-		canvasTokens := auth.CanvasTokenData{
-			CanvasApiToken: canvasTokenEntry.Text,
-		}
-
 		status := widget.NewLabel(appConstants.VERIFYING_MESSAGE)
 		progressBar := widget.NewProgressBarInfinite()
 
@@ -189,8 +184,11 @@ func getCanvasView(
 			).Show()
 		} else {
 			logs.Logger.Debugln("verfication succesful - saving credentials")
-			canvasCredentials.Save(credentialsPath)
-			canvasTokens.Save(tokensPath)
+
+			appAuth.CanvasCredentials{
+				CanvasApiToken: canvasTokenEntry.Text,
+			}.Save()
+
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.VERIFICATION_SUCCESSFUL_MESSAGE,
