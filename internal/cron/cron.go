@@ -8,10 +8,8 @@ import (
 	"time"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
-	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -143,22 +141,6 @@ func createJob(frequency int) (*gocron.Job, error) {
 			// TODO Somehow collate this error and display to user at the end
 			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luninusModErr.Error()}
 			logs.Logger.Errorln(luninusModErr)
-		}
-
-		// Note that grades is currently only supported for Luminus
-		grades, gradesErr := getGrades(luminusModules)
-		if gradesErr != nil {
-			logs.Logger.Errorln(gradesErr)
-		}
-
-		if telegramInfoErr != nil {
-			for _, grade := range grades {
-				message := telegram.GenerateGradeMessageFormat(grade)
-				sendErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
-				if sendErr != nil {
-					logs.Logger.Errorln(sendErr)
-				}
-			}
 		}
 
 		// If directory for file sync is not set, exit from job.
@@ -311,42 +293,4 @@ func getModules(token string, platform constants.Platform) ([]api.Module, error)
 	}
 
 	return modules, nil
-}
-
-// getGrades is a helper function that retrieves Grade objects for Luminus LMS.
-func getGrades(modules []api.Module) ([]api.Grade, error) {
-	grades := []api.Grade{}
-
-	var lastSync time.Time
-	baseDir, _ := appDir.GetBaseDir()
-
-	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), &lastSync)
-	if existingGradeErr != nil {
-		return grades, existingGradeErr
-	}
-
-	for _, module := range modules {
-		logs.Logger.Debugln("building - grade request")
-		gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
-		if gradeReqErr != nil {
-			logs.Logger.Errorln(gradeReqErr)
-			continue
-		}
-
-		logs.Logger.Debugln("retrieving - grade")
-		allGrades, gradesErr := gradeRequest.GetGrades()
-		if gradesErr != nil {
-			logs.Logger.Errorln(gradesErr)
-			continue
-		}
-
-		grades = append(grades, allGrades...)
-	}
-
-	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), time.Now())
-	if err != nil {
-		return []api.Grade{}, err
-	}
-
-	return grades, nil
 }

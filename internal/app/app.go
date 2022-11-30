@@ -61,17 +61,6 @@ func Init() error {
 		return nil
 	})
 
-	// TODO Consider moving this to its own module in the future.
-	gradesPath := filepath.Join(baseDir, appConstants.GRADES_FILE_NAME)
-
-	if !file.Exists(gradesPath) {
-		gradeFileErr := file.EncodeStructToFile(gradesPath, time.Now())
-
-		if gradeFileErr != nil {
-			return gradeFileErr
-		}
-	}
-
 	return err
 }
 
