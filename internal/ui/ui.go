@@ -32,7 +32,7 @@ func Init() error {
 	mainApp = app.NewWithID(appConstants.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
-	var canvasToken, directory, logLevel string
+	var canvasToken, directory, logLevel, telegramUserId, telegramBotId string
 	var frequency int
 
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
@@ -55,6 +55,10 @@ func Init() error {
 	directory = string(prefBucket.Get([]byte("directory")))
 	frequency, _ = strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
 	logLevel = string(prefBucket.Get([]byte("logLevel")))
+
+	intBucket := tx.Bucket([]byte("Integrations"))
+	telegramUserId = string(intBucket.Get([]byte("telegramUserId")))
+	telegramBotId = string(intBucket.Get([]byte("telegramBotId")))
 	tx.Rollback()
 
 	db.Close()
@@ -89,7 +93,10 @@ func Init() error {
 		return preferencesErr
 	}
 
-	integrationsTab, integrationsErr := getIntegrationsTab(w)
+	integrationsTab, integrationsErr := getIntegrationsTab(IntegrationData{
+		TelegramUserId: telegramUserId,
+		TelegramBotId:  telegramBotId,
+	}, w)
 	if integrationsErr != nil {
 		return integrationsErr
 	}

@@ -9,16 +9,20 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
-	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 
+	appInt "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 )
 
+type IntegrationData struct {
+	TelegramUserId string
+	TelegramBotId  string
+}
+
 // getIntegrationsTab builds the integrations tab in the main UI.
-func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
+func getIntegrationsTab(integrationData IntegrationData, parentWindow fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("integrations tab loaded")
 	tab := container.NewTabItem(appConstants.INTEGRATIONS_TITLE, container.NewVBox())
 
@@ -35,20 +39,8 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 	userIdEntry := widget.NewEntry()
 	userIdEntry.SetPlaceHolder(appConstants.TELEGRAM_USER_ID_PLACEHOLDER)
 
-	telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
-	if getTelegramInfoPathErr != nil {
-		return tab, getTelegramInfoPathErr
-	}
-
-	if file.Exists(telegramInfoPath) {
-		telegramInfo, err := telegram.LoadTelegramData(telegramInfoPath)
-		if err != nil {
-			return tab, err
-		}
-
-		botApiEntry.SetText(telegramInfo.BotApi)
-		userIdEntry.SetText(telegramInfo.UserId)
-	}
+	botApiEntry.SetText(integrationData.TelegramBotId)
+	userIdEntry.SetText(integrationData.TelegramUserId)
 
 	telegramForm := widget.NewForm(
 		widget.NewFormItem(appConstants.TELEGRAM_BOT_TOKEN_TEXT, botApiEntry),
@@ -86,10 +78,17 @@ func getIntegrationsTab(parentWindow fyne.Window) (*container.TabItem, error) {
 				parentWindow,
 			).Show()
 		} else {
-			telegram.SaveTelegramData(
-				telegramInfoPath,
-				telegram.TelegramInfo{BotApi: botApi, UserId: userId},
-			)
+			saveErr := appInt.SaveTelegramCredentials(userId, botApi)
+
+			if saveErr != nil {
+				dialog.NewInformation(
+					appConstants.APP_NAME,
+					appConstants.TELEGRAM_TESTING_FAILED_MESSAGE,
+					parentWindow,
+				).Show()
+				return
+			}
+
 			logs.Logger.Debugln("telegram test message sent successfully")
 			dialog.NewInformation(
 				appConstants.APP_NAME,

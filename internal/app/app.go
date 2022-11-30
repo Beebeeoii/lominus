@@ -37,6 +37,7 @@ func Init() error {
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		tx.CreateBucketIfNotExists([]byte("Auth"))
+		tx.CreateBucketIfNotExists([]byte("Integrations"))
 		prefBucket, prefBucketErr := tx.CreateBucketIfNotExists([]byte("Preferences"))
 		if prefBucketErr != nil {
 			return prefBucketErr
