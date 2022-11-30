@@ -4,12 +4,14 @@ package cron
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
-	appPref "github.com/beebeeoii/lominus/internal/app/pref"
+	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -18,6 +20,7 @@ import (
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
+	"github.com/boltdb/bolt"
 
 	"github.com/go-co-op/gocron"
 )
@@ -30,21 +33,30 @@ var mainJob *gocron.Job
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		return getPreferencesPathErr
+	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+	if retrieveBaseDirErr != nil {
+		return retrieveBaseDirErr
 	}
 
-	preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
-	if loadPrefErr != nil {
-		return loadPrefErr
+	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
+	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{ReadOnly: true})
+
+	if dbErr != nil {
+		return dbErr
 	}
 
-	if preferences.Frequency == -1 {
+	tx, _ := db.Begin(false)
+	prefBucket := tx.Bucket([]byte("Preferences"))
+	directory := string(prefBucket.Get([]byte("directory")))
+	frequency, _ := strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
+
+	defer db.Close()
+
+	if frequency == -1 {
 		return nil
 	}
 
-	job, err := createJob(preferences.Frequency)
+	job, err := createJob(directory, frequency)
 	if err != nil {
 		return err
 	}
@@ -56,14 +68,14 @@ func Init() error {
 }
 
 // Rerun clears the job from the scheduler and reschedules the same job with the new frequency.
-func Rerun(frequency int) error {
+func Rerun(rootSyncDirectory string, frequency int) error {
 	mainScheduler.Clear()
 
 	if frequency == -1 {
 		return nil
 	}
 
-	job, err := createJob(frequency)
+	job, err := createJob(rootSyncDirectory, frequency)
 	if err != nil {
 		return err
 	}
@@ -90,24 +102,10 @@ func GetLastRan() time.Time {
 //
 // TODO Cleanup notifications - make it more user friendly. No point
 // putting technical logs in notifications.
-func createJob(frequency int) (*gocron.Job, error) {
+func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
 		return
-
-		logs.Logger.Debugln("retrieving - preferences path")
-		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-		if getPreferencesPathErr != nil {
-			logs.Logger.Errorln(getPreferencesPathErr)
-			return
-		}
-
-		logs.Logger.Debugln("loading - preferences")
-		preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
-		if loadPrefErr != nil {
-			logs.Logger.Errorln(loadPrefErr)
-			return
-		}
 
 		logs.Logger.Debugln("retrieving - telegram path")
 		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
@@ -144,12 +142,12 @@ func createJob(frequency int) (*gocron.Job, error) {
 		}
 
 		// If directory for file sync is not set, exit from job.
-		if preferences.Directory == "" {
+		if rootSyncDirectory == "" {
 			return
 		}
 
 		logs.Logger.Debugln("building - index map")
-		currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
+		currentFiles, currentFilesErr := indexing.Build(rootSyncDirectory)
 		if currentFilesErr != nil {
 			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Failed to get current downloaded files"}
 			logs.Logger.Errorln(currentFilesErr)
@@ -205,7 +203,7 @@ func createJob(frequency int) (*gocron.Job, error) {
 				nFilesToUpdate += 1
 
 				logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), platformLastUpdated.String())
-				fileDirSlice := append([]string{preferences.Directory}, file.Ancestors...)
+				fileDirSlice := append([]string{rootSyncDirectory}, file.Ancestors...)
 				filePath := filepath.Join(fileDirSlice...)
 				appFiles.EnsureDir(filePath)
 				downloadErr := file.Download(filePath)

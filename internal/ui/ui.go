@@ -16,10 +16,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
-	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/boltdb/bolt"
 )
@@ -123,26 +121,29 @@ func Init() error {
 	return nil
 }
 
-// getPreferences is a util function that retrieves the user's preferences.
-func getPreferences() appPref.Preferences {
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		logs.Logger.Fatalln(getPreferencesPathErr)
-	}
-
-	preference, err := appPref.LoadPreferences(preferencesPath)
-	if err != nil {
-		logs.Logger.Fatalln(err)
-	}
-
-	return preference
-}
-
 // getSyncButton builds the sync button in the main UI.
 func getSyncButton(parentWindow fyne.Window) *widget.Button {
 	return widget.NewButton(appConstants.SYNC_TEXT, func() {
-		preferences := getPreferences()
-		if preferences.Directory == "" {
+		baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+		if retrieveBaseDirErr != nil {
+			return
+		}
+
+		dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
+		db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{ReadOnly: true})
+
+		if dbErr != nil {
+			return
+		}
+
+		tx, _ := db.Begin(false)
+		prefBucket := tx.Bucket([]byte("Preferences"))
+		directory := string(prefBucket.Get([]byte("directory")))
+		frequency, _ := strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
+
+		defer db.Close()
+
+		if directory == "" {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.NO_FOLDER_DIRECTORY_SELECTED,
@@ -151,7 +152,7 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 			return
 		}
 
-		if preferences.Frequency == -1 {
+		if frequency == -1 {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.NO_FREQUENCY_SELECTED,
@@ -159,6 +160,7 @@ func getSyncButton(parentWindow fyne.Window) *widget.Button {
 			).Show()
 			return
 		}
-		cron.Rerun(getPreferences().Frequency)
+
+		cron.Rerun(directory, frequency)
 	})
 }
