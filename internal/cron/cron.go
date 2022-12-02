@@ -10,7 +10,6 @@ import (
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
@@ -105,25 +104,32 @@ func GetLastRan() time.Time {
 func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
+		logs.Logger.Infoln("trying to access database in Read Only for credentials")
+
+		baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
+		if retrieveBaseDirErr != nil {
+			logs.Logger.Errorln(retrieveBaseDirErr)
+			return
+		}
+
+		dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
+		db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{ReadOnly: true})
+
+		if dbErr != nil {
+			logs.Logger.Errorln(dbErr)
+			return
+		}
+
+		defer db.Close()
+		logs.Logger.Infoln("database access: successful")
+
+		tx, _ := db.Begin(false)
+		canvasToken := string(tx.Bucket([]byte("Auth")).Get([]byte("canvasToken")))
+		telegramUserId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramUserId")))
+		telegramBotId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramBotId")))
+		tx.Commit()
+
 		return
-
-		logs.Logger.Debugln("retrieving - telegram path")
-		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
-		if getTelegramInfoPathErr != nil {
-			logs.Logger.Errorln(getTelegramInfoPathErr)
-			return
-		}
-
-		logs.Logger.Debugln("loading - telegram")
-		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
-
-		logs.Logger.Debugln("loading - credentials and tokens")
-		tokensData, tokensErr := loadTokensData()
-		if tokensErr != nil {
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: tokensErr.Error()}
-			logs.Logger.Errorln(tokensErr)
-			return
-		}
 
 		logs.Logger.Debugln("building - module request")
 
