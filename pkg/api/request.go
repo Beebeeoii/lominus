@@ -208,28 +208,6 @@ func BuildFilesRequest(token string, platform constants.Platform, folder Folder)
 	}, nil
 }
 
-// BuildGradeRequest builds and returns a GradeRequest that can be used for Grade related operations
-// such as retrieving grades of a module.
-// A Module is required to build a GradeRequest as it is module specific.
-func BuildGradeRequest(module Module) (GradeRequest, error) {
-	jwtToken, jwtTokenErr := retrieveJwtToken()
-	if jwtTokenErr != nil {
-		return GradeRequest{}, jwtTokenErr
-	}
-
-	return GradeRequest{
-		Module: module,
-		Request: Request{
-			Url: interfaces.Url{
-				Url:      fmt.Sprintf(GRADE_URL_ENDPOINT, module.Id),
-				Platform: constants.Luminus,
-			},
-			Token:     jwtToken,
-			UserAgent: USER_AGENT,
-		},
-	}, nil
-}
-
 // BuildMultimediaChannelRequest builds and returns a MultimediaChannelRequuest that can be used for Multimedia
 // channel related operations such as retrieving all channels of a module.
 // A Module is required to build a BuildMultimediaChannelRequest as it is module specific.

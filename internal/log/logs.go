@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,7 +28,7 @@ func (f *LominusFormatter) Format(entry *log.Entry) ([]byte, error) {
 }
 
 // Init initialises the log file and the different loggers: WarningLogger, InfoLogger and ErrorLogger.
-func Init() error {
+func Init(logLevel string) error {
 	logPath, getLogPathErr := getLogPath()
 	if getLogPathErr != nil {
 		return getLogPathErr
@@ -38,19 +37,6 @@ func Init() error {
 	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
-	}
-
-	var logLevel string
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		return getPreferencesPathErr
-	}
-
-	preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
-	if loadPrefErr != nil {
-		logLevel = "info"
-	} else {
-		logLevel = preferences.LogLevel
 	}
 
 	Logger = log.New()

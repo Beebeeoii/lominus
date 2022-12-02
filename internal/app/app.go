@@ -8,10 +8,10 @@ import (
 	"time"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	"github.com/boltdb/bolt"
 )
 
 // Init initialises and ensures log and preference files that Lominus requires are available.
@@ -27,55 +27,42 @@ func Init() error {
 		os.Mkdir(baseDir, os.ModePerm)
 	}
 
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		return getPreferencesPathErr
+	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
+	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
+
+	if dbErr != nil {
+		return dbErr
 	}
+	defer db.Close()
 
-	if !file.Exists(preferencesPath) {
-		preferences := appPref.Preferences{
-			Directory: "",
-			Frequency: -1,
-			LogLevel:  "info",
+	err := db.Update(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("Auth"))
+		tx.CreateBucketIfNotExists([]byte("Integrations"))
+		prefBucket, prefBucketErr := tx.CreateBucketIfNotExists([]byte("Preferences"))
+		if prefBucketErr != nil {
+			return prefBucketErr
 		}
 
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-		if savePrefErr != nil {
-			return savePrefErr
-		}
-	} else {
-		preferences, getPreferencesErr := appPref.LoadPreferences(preferencesPath)
-		if getPreferencesErr != nil {
-			return getPreferencesErr
+		if prefBucket.Get([]byte("frequency")) == nil {
+			prefBucket.Put([]byte("frequency"), []byte("-1"))
 		}
 
-		if preferences.LogLevel != "info" && preferences.LogLevel != "debug" {
-			preferences.LogLevel = "info"
+		logLevel := prefBucket.Get([]byte("logLevel"))
+		if logLevel == nil {
+			logLevel = []byte("info")
+			prefBucket.Put([]byte("logLevel"), []byte(logLevel))
+
 		}
 
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-		if savePrefErr != nil {
-			return savePrefErr
+		logInitErr := logs.Init(string(logLevel))
+		if logInitErr != nil {
+			return logInitErr
 		}
-	}
 
-	logInitErr := logs.Init()
-	if logInitErr != nil {
-		return logInitErr
-	}
+		return nil
+	})
 
-	// TODO Consider moving this to its own module in the future.
-	gradesPath := filepath.Join(baseDir, appConstants.GRADES_FILE_NAME)
-
-	if !file.Exists(gradesPath) {
-		gradeFileErr := file.EncodeStructToFile(gradesPath, time.Now())
-
-		if gradeFileErr != nil {
-			return gradeFileErr
-		}
-	}
-
-	return nil
+	return err
 }
 
 // GetOs returns user's running program's operating system target:
