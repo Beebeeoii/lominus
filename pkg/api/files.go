@@ -285,6 +285,9 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 		for _, fileObject := range response {
 			lastUpdated, err := time.Parse(time.RFC3339, fileObject.LastUpdated)
+			tz, _ := time.LoadLocation("Asia/Singapore")
+			lastUpdated = lastUpdated.In(tz)
+
 			if err != nil {
 				return files, err
 			}
