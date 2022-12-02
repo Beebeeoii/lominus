@@ -10,20 +10,6 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// GetTelegramInfoPath returns the file path to user's telegram config file.
-func GetTelegramInfoPath() (string, error) {
-	var telegramInfoPath string
-
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return telegramInfoPath, retrieveBaseDirErr
-	}
-
-	telegramInfoPath = filepath.Join(baseDir, appConstants.TELEGRAM_FILE_NAME)
-
-	return telegramInfoPath, nil
-}
-
 // SaveTelegramCredentials saves the user's Telegram userId and botId locally.
 func SaveTelegramCredentials(userId string, botId string) error {
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
