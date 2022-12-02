@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
@@ -16,7 +15,6 @@ import (
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
-	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 	"github.com/boltdb/bolt"
@@ -104,6 +102,13 @@ func GetLastRan() time.Time {
 func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
+
+		// If directory for file sync is not set, exit from job.
+		if rootSyncDirectory == "" {
+			logs.Logger.Infoln("Root sync directory not set. Exiting from cron job !")
+			return
+		}
+
 		logs.Logger.Infoln("trying to access database in Read Only for credentials")
 
 		baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
@@ -129,27 +134,13 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 		telegramBotId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramBotId")))
 		tx.Commit()
 
-		return
-
 		logs.Logger.Debugln("building - module request")
 
-		canvasModules, canvasModErr := getModules(tokensData.CanvasToken.CanvasApiToken, constants.Canvas)
+		canvasModules, canvasModErr := getModules(canvasToken, constants.Canvas)
 		if canvasModErr != nil {
 			// TODO Somehow collate this error and display to user at the end
 			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModErr.Error()}
 			logs.Logger.Errorln(canvasModErr)
-		}
-
-		luminusModules, luninusModErr := getModules(tokensData.LuminusToken.JwtToken, constants.Luminus)
-		if luninusModErr != nil {
-			// TODO Somehow collate this error and display to user at the end
-			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luninusModErr.Error()}
-			logs.Logger.Errorln(luninusModErr)
-		}
-
-		// If directory for file sync is not set, exit from job.
-		if rootSyncDirectory == "" {
-			return
 		}
 
 		logs.Logger.Debugln("building - index map")
@@ -163,26 +154,8 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 		lmsFiles := []api.File{}
 		for _, module := range canvasModules {
 			foldersReq, foldersReqErr := api.BuildFoldersRequest(
-				tokensData.CanvasToken.CanvasApiToken,
+				canvasToken,
 				constants.Canvas,
-				module,
-			)
-			if foldersReqErr != nil {
-				logs.Logger.Errorln(foldersReqErr)
-			}
-
-			files, foldersErr := foldersReq.GetRootFiles()
-			if foldersErr != nil {
-				logs.Logger.Errorln(foldersErr)
-			}
-
-			lmsFiles = append(lmsFiles, files...)
-		}
-
-		for _, module := range luminusModules {
-			foldersReq, foldersReqErr := api.BuildFoldersRequest(
-				tokensData.LuminusToken.JwtToken,
-				constants.Luminus,
 				module,
 			)
 			if foldersReqErr != nil {
@@ -227,14 +200,12 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 			updatedFilesModulesNames := []string{}
 
 			for _, file := range filesUpdated {
-				if telegramInfoErr == nil {
-					message := telegram.GenerateFileUpdatedMessageFormat(file)
-					gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
+				message := telegram.GenerateFileUpdatedMessageFormat(file)
+				gradeMsgErr := telegram.SendMessage(telegramBotId, telegramUserId, message)
 
-					if gradeMsgErr != nil {
-						logs.Logger.Errorln(gradeMsgErr)
-						continue
-					}
+				if gradeMsgErr != nil {
+					logs.Logger.Errorln(gradeMsgErr)
+					continue
 				}
 
 				updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
@@ -261,24 +232,6 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 
 		logs.Logger.Infof("job completed: %s", time.Now().Format(time.RFC3339))
 	})
-}
-
-// loadTokensData is a helper function that retrieves locally stored Tokens
-// data into a TokensData object.
-func loadTokensData() (auth.TokensData, error) {
-	var tokensData auth.TokensData
-
-	tokensPath, credsErr := appAuth.GetTokensPath()
-	if credsErr != nil {
-		return tokensData, credsErr
-	}
-
-	tokensData, tokensErr := auth.LoadTokensData(tokensPath, true)
-	if tokensErr != nil {
-		return tokensData, tokensErr
-	}
-
-	return tokensData, nil
 }
 
 // getModules is a helper function that retrieves Module objects based on the platform
