@@ -225,7 +225,7 @@ func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
 			foldersRequest.Request.Url.Platform,
 			builder,
 		)
-		fmt.Println(builder)
+
 		if subFilesReqErr != nil {
 			return files, subFilesReqErr
 		}
