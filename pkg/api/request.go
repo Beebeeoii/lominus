@@ -64,6 +64,11 @@ type MultimediaVideoRequest struct {
 	Request           Request
 }
 
+type ModuleFolderRequest struct {
+	Request Request
+	Module  Module
+}
+
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
 const POST = "POST"
 const GET_METHOD = "GET"
@@ -205,6 +210,23 @@ func BuildFilesRequest(token string, platform constants.Platform, folder Folder)
 			UserAgent: USER_AGENT,
 		},
 		Folder: folder,
+	}, nil
+}
+
+func BuildModuleFolderRequest(token string, module Module) (ModuleFolderRequest, error) {
+	url := fmt.Sprintf(constants.CANVAS_MODULE_FOLDER_ENDPOINT, module.Id)
+
+	return ModuleFolderRequest{
+		Request: Request{
+			Method: GET_METHOD,
+			Token:  token,
+			Url: interfaces.Url{
+				Url:      url,
+				Platform: constants.Canvas,
+			},
+			UserAgent: USER_AGENT,
+		},
+		Module: module,
 	}, nil
 }
 
