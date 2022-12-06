@@ -110,12 +110,16 @@ func CleanseFolderFileName(name string) string {
 	name = strings.Replace(name, "|", " ", -1)
 	name = strings.Replace(name, "?", " ", -1)
 	name = strings.Replace(name, "*", " ", -1)
-	name = strings.TrimSpace(name)
 
 	// We can ignore the error (if any) because it would just mean
 	// that the "%XX" that appears in the name is legit, and not
 	// because of URL encoding.
 	name, _ = url.QueryUnescape(name)
+
+	// Removes leading and trailing spaces (32) and periods (46)
+	name = strings.TrimFunc(name, func(r rune) bool {
+		return r == 32 || r == 46
+	})
 
 	return name
 }

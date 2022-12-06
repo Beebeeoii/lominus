@@ -155,7 +155,7 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 			folders = append(folders, Folder{
 				Id:           folderObject.Id,
-				Name:         folderObject.Name,
+				Name:         appFile.CleanseFolderFileName(folderObject.Name),
 				Downloadable: folderObject.IsActive && !folderObject.AllowUpload,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
@@ -194,7 +194,7 @@ func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
 
 		moduleMainFolder := Folder{
 			Id:           builder.Id,
-			Name:         builder.Name,
+			Name:         appFile.CleanseFolderFileName(builder.Name),
 			Downloadable: true,
 			HasSubFolder: true,       // doesn't matter
 			Ancestors:    []string{}, // main folder does not have any ancestors

@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appFile "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/interfaces"
@@ -146,7 +147,7 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 
 			builder = Folder{
 				Id:           rootFolderId,
-				Name:         b.ModuleCode,
+				Name:         appFile.CleanseFolderFileName(b.ModuleCode),
 				Downloadable: b.IsAccessible,
 				HasSubFolder: true,
 				Ancestors:    []string{},
