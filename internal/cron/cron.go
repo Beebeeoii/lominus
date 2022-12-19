@@ -132,6 +132,19 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 		canvasToken := string(tx.Bucket([]byte("Auth")).Get([]byte("canvasToken")))
 		telegramUserId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramUserId")))
 		telegramBotId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramBotId")))
+
+		if telegramUserId == "" {
+			logs.Logger.Debugln("telegram userId - NOT FOUND")
+		} else {
+			logs.Logger.Debugln("telegram userId - " + telegramUserId)
+		}
+
+		if telegramBotId == "" {
+			logs.Logger.Debugln("telegram botId - NOT FOUND")
+		} else {
+			logs.Logger.Debugln("telegram botId - " + telegramBotId)
+		}
+
 		tx.Commit()
 
 		logs.Logger.Debugln("building - module request")
@@ -209,10 +222,11 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 			}
 		}
 
-		if nFilesToUpdate > 0 {
+		if nFilesToUpdate > 0 && telegramUserId != "" && telegramBotId != "" {
 			nFilesUpdated := len(filesUpdated)
 			updatedFilesModulesNames := []string{}
 
+			// TODO Send one message per module instead of one message per file as there can be many files
 			for _, file := range filesUpdated {
 				message := telegram.GenerateFileUpdatedMessageFormat(file)
 				gradeMsgErr := telegram.SendMessage(telegramBotId, telegramUserId, message)
