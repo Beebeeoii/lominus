@@ -125,7 +125,6 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 			return
 		}
 
-		defer db.Close()
 		logs.Logger.Infoln("database access: successful")
 
 		tx, _ := db.Begin(false)
@@ -146,6 +145,7 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 		}
 
 		tx.Commit()
+		db.Close()
 
 		logs.Logger.Debugln("building - module request")
 
@@ -191,6 +191,7 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 
 			files, foldersErr := foldersReq.GetRootFiles()
 			if foldersErr != nil {
+				fmt.Println("testsets")
 				logs.Logger.Errorln(foldersErr)
 			}
 
