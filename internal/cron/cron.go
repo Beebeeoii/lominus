@@ -97,14 +97,14 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 
 		canvasCredentials, credErr := appAuth.GetCanvasCredentials()
 		if credErr != nil {
-			logs.Logger.Errorln(credErr)
+			logs.Logger.Warnln(credErr)
 		} else {
 			logs.Logger.Infoln("canvasCredentials access: successful")
 		}
 
 		telegramIds, tIdsErr := appInt.GetTelegramIds()
 		if tIdsErr != nil {
-			logs.Logger.Errorln(tIdsErr)
+			logs.Logger.Warnln(tIdsErr)
 		} else {
 			logs.Logger.Infoln("telegramIds access: successful")
 		}
@@ -115,7 +115,7 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 		if canvasModErr != nil {
 			// TODO Somehow collate this error and display to user at the end
 			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModErr.Error()}
-			logs.Logger.Errorln(canvasModErr)
+			logs.Logger.Warnln(canvasModErr)
 		}
 
 		logs.Logger.Debugln("building - index map")
@@ -134,12 +134,12 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 			)
 
 			if moduleFolderReqErr != nil {
-				logs.Logger.Errorln(moduleFolderReqErr)
+				logs.Logger.Warnln(moduleFolderReqErr)
 			}
 
 			moduleFolder, moduleFolderErr := moduleFolderReq.GetModuleFolder()
 			if moduleFolderErr != nil {
-				logs.Logger.Errorln(moduleFolderErr)
+				logs.Logger.Warnln(moduleFolderErr)
 			}
 
 			foldersReq, foldersReqErr := api.BuildFoldersRequest(
@@ -148,13 +148,12 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 				moduleFolder,
 			)
 			if foldersReqErr != nil {
-				logs.Logger.Errorln(foldersReqErr)
+				logs.Logger.Warnln(foldersReqErr)
 			}
 
 			files, foldersErr := foldersReq.GetRootFiles()
 			if foldersErr != nil {
-				fmt.Println("testsets")
-				logs.Logger.Errorln(foldersErr)
+				logs.Logger.Warnln(foldersErr)
 			}
 
 			lmsFiles = append(lmsFiles, files...)
@@ -178,7 +177,7 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 				downloadErr := file.Download(filePath)
 				if downloadErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
-					logs.Logger.Errorln(downloadErr)
+					logs.Logger.Warnln(downloadErr)
 					continue
 				}
 				filesUpdated = append(filesUpdated, file)
@@ -195,7 +194,7 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 				gradeMsgErr := telegram.SendMessage(telegramIds.BotId, telegramIds.UserId, message)
 
 				if gradeMsgErr != nil {
-					logs.Logger.Errorln(gradeMsgErr)
+					logs.Logger.Warnln(gradeMsgErr)
 					continue
 				}
 
