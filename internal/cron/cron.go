@@ -87,6 +87,8 @@ func GetLastRan() time.Time {
 // putting technical logs in notifications.
 func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
+		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Sync Started!"}
+
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
 
 		// If directory for file sync is not set, exit from job.
