@@ -13,11 +13,12 @@ import (
 
 // Main is the starting point of where magic begins.
 func main() {
-	appInitErr := app.Init()
+	db, appInitErr := app.Init()
 	if appInitErr != nil {
 		logs.Logger.Fatalln(appInitErr)
 	}
 	logs.Logger.Infoln("app initialised")
+	defer db.Close()
 
 	lockPath, getLockPathErr := appLock.GetLockPath()
 	if getLockPathErr != nil {

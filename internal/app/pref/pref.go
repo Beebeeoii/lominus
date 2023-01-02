@@ -3,11 +3,9 @@ package appPref
 
 import (
 	"fmt"
-	"path/filepath"
-	"time"
+	"strconv"
 
-	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appConstants "github.com/beebeeoii/lominus/internal/constants"
+	"github.com/beebeeoii/lominus/internal/app"
 	"github.com/boltdb/bolt"
 )
 
@@ -18,23 +16,35 @@ type Preferences struct {
 	LogLevel  string
 }
 
+func GetPreferences() (Preferences, error) {
+	dbInstance := app.GetDBInstance()
+	var pref Preferences
+
+	err := dbInstance.View(func(tx *bolt.Tx) error {
+		prefBucket := tx.Bucket([]byte("Preferences"))
+		directory := string(prefBucket.Get([]byte("directory")))
+		frequency, _ := strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
+		logLevel := string(prefBucket.Get([]byte("logLevel")))
+
+		pref.Directory = directory
+		pref.Frequency = frequency
+		pref.LogLevel = logLevel
+
+		return nil
+	})
+
+	if err != nil {
+		return Preferences{}, err
+	}
+
+	return pref, nil
+}
+
 // SaveRootSyncDirectory saves the user's root sync directory locally.
 func SaveRootSyncDirectory(directory string) error {
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
-	}
+	dbInstance := app.GetDBInstance()
 
-	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
-
-	if dbErr != nil {
-		return dbErr
-	}
-
-	defer db.Close()
-
-	updateErr := db.Update(func(tx *bolt.Tx) error {
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
 		err := tx.Bucket([]byte("Preferences")).Put([]byte("directory"), []byte(directory))
 		return err
 	})
@@ -44,21 +54,9 @@ func SaveRootSyncDirectory(directory string) error {
 
 // SaveSyncFrequency saves the user's sync frequency locally.
 func SaveSyncFrequency(frequency int) error {
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
-	}
+	dbInstance := app.GetDBInstance()
 
-	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
-
-	if dbErr != nil {
-		return dbErr
-	}
-
-	defer db.Close()
-
-	updateErr := db.Update(func(tx *bolt.Tx) error {
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
 		err := tx.Bucket([]byte("Preferences")).Put([]byte("frequency"), []byte(fmt.Sprint(frequency)))
 		return err
 	})
@@ -68,21 +66,9 @@ func SaveSyncFrequency(frequency int) error {
 
 // SaveDebugMode saves the user's chosen debug mode locally.
 func SaveDebugMode(logLevel string) error {
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
-	}
+	dbInstance := app.GetDBInstance()
 
-	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
-
-	if dbErr != nil {
-		return dbErr
-	}
-
-	defer db.Close()
-
-	updateErr := db.Update(func(tx *bolt.Tx) error {
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
 		err := tx.Bucket([]byte("Preferences")).Put([]byte("logLevel"), []byte(logLevel))
 		return err
 	})

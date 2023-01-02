@@ -14,13 +14,15 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+var dbInstance *bolt.DB
+
 // Init initialises and ensures log and preference files that Lominus requires are available.
 // Directory in Preferences defaults to empty string ("").
 // Frequency in Preferences defaults to -1.
-func Init() error {
+func Init() (*bolt.DB, error) {
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
 	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
+		return nil, retrieveBaseDirErr
 	}
 
 	if !file.Exists(baseDir) {
@@ -31,9 +33,8 @@ func Init() error {
 	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
 
 	if dbErr != nil {
-		return dbErr
+		return nil, dbErr
 	}
-	defer db.Close()
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		tx.CreateBucketIfNotExists([]byte("Auth"))
@@ -62,7 +63,13 @@ func Init() error {
 		return nil
 	})
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	dbInstance = db
+
+	return db, nil
 }
 
 // GetOs returns user's running program's operating system target:
@@ -70,4 +77,8 @@ func Init() error {
 // To view possible combinations of GOOS and GOARCH, run "go tool dist list".
 func GetOs() string {
 	return runtime.GOOS
+}
+
+func GetDBInstance() *bolt.DB {
+	return dbInstance
 }

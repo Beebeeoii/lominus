@@ -4,12 +4,12 @@ package cron
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
-	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appConstants "github.com/beebeeoii/lominus/internal/constants"
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appInt "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
+	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
@@ -17,7 +17,6 @@ import (
 	"github.com/beebeeoii/lominus/pkg/api"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
-	"github.com/boltdb/bolt"
 
 	"github.com/go-co-op/gocron"
 )
@@ -30,30 +29,17 @@ var mainJob *gocron.Job
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
+	pref, err := appPref.GetPreferences()
+
+	if err != nil {
+		return err
 	}
 
-	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{ReadOnly: true})
-
-	if dbErr != nil {
-		return dbErr
-	}
-
-	tx, _ := db.Begin(false)
-	prefBucket := tx.Bucket([]byte("Preferences"))
-	directory := string(prefBucket.Get([]byte("directory")))
-	frequency, _ := strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
-
-	defer db.Close()
-
-	if frequency == -1 {
+	if pref.Frequency == -1 {
 		return nil
 	}
 
-	job, err := createJob(directory, frequency)
+	job, err := createJob(pref.Directory, pref.Frequency)
 	if err != nil {
 		return err
 	}
@@ -61,7 +47,7 @@ func Init() error {
 	mainJob = job
 	mainScheduler.StartAsync()
 
-	return nil
+	return err
 }
 
 // Rerun clears the job from the scheduler and reschedules the same job with the new frequency.
@@ -109,38 +95,27 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 			return
 		}
 
-		logs.Logger.Infoln("trying to access database in Read Only for credentials")
-
-		baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-		if retrieveBaseDirErr != nil {
-			logs.Logger.Errorln(retrieveBaseDirErr)
-			return
+		canvasCredentials, credErr := appAuth.GetCanvasCredentials()
+		if credErr != nil {
+			logs.Logger.Warnln(credErr)
+		} else {
+			logs.Logger.Infoln("canvasCredentials access: successful")
 		}
 
-		dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-		db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{ReadOnly: true})
-
-		if dbErr != nil {
-			logs.Logger.Errorln(dbErr)
-			return
+		telegramIds, tIdsErr := appInt.GetTelegramIds()
+		if tIdsErr != nil {
+			logs.Logger.Warnln(tIdsErr)
+		} else {
+			logs.Logger.Infoln("telegramIds access: successful")
 		}
-
-		defer db.Close()
-		logs.Logger.Infoln("database access: successful")
-
-		tx, _ := db.Begin(false)
-		canvasToken := string(tx.Bucket([]byte("Auth")).Get([]byte("canvasToken")))
-		telegramUserId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramUserId")))
-		telegramBotId := string(tx.Bucket([]byte("Integrations")).Get([]byte("telegramBotId")))
-		tx.Commit()
 
 		logs.Logger.Debugln("building - module request")
 
-		canvasModules, canvasModErr := getModules(canvasToken, constants.Canvas)
+		canvasModules, canvasModErr := getModules(canvasCredentials.CanvasApiToken, constants.Canvas)
 		if canvasModErr != nil {
 			// TODO Somehow collate this error and display to user at the end
 			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModErr.Error()}
-			logs.Logger.Errorln(canvasModErr)
+			logs.Logger.Warnln(canvasModErr)
 		}
 
 		logs.Logger.Debugln("building - index map")
@@ -153,18 +128,32 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 
 		lmsFiles := []api.File{}
 		for _, module := range canvasModules {
-			foldersReq, foldersReqErr := api.BuildFoldersRequest(
-				canvasToken,
-				constants.Canvas,
+			moduleFolderReq, moduleFolderReqErr := api.BuildModuleFolderRequest(
+				canvasCredentials.CanvasApiToken,
 				module,
 			)
+
+			if moduleFolderReqErr != nil {
+				logs.Logger.Warnln(moduleFolderReqErr)
+			}
+
+			moduleFolder, moduleFolderErr := moduleFolderReq.GetModuleFolder()
+			if moduleFolderErr != nil {
+				logs.Logger.Warnln(moduleFolderErr)
+			}
+
+			foldersReq, foldersReqErr := api.BuildFoldersRequest(
+				canvasCredentials.CanvasApiToken,
+				constants.Canvas,
+				moduleFolder,
+			)
 			if foldersReqErr != nil {
-				logs.Logger.Errorln(foldersReqErr)
+				logs.Logger.Warnln(foldersReqErr)
 			}
 
 			files, foldersErr := foldersReq.GetRootFiles()
 			if foldersErr != nil {
-				logs.Logger.Errorln(foldersErr)
+				logs.Logger.Warnln(foldersErr)
 			}
 
 			lmsFiles = append(lmsFiles, files...)
@@ -188,23 +177,24 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 				downloadErr := file.Download(filePath)
 				if downloadErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
-					logs.Logger.Errorln(downloadErr)
+					logs.Logger.Warnln(downloadErr)
 					continue
 				}
 				filesUpdated = append(filesUpdated, file)
 			}
 		}
 
-		if nFilesToUpdate > 0 {
+		if nFilesToUpdate > 0 && telegramIds.UserId != "" && telegramIds.BotId != "" {
 			nFilesUpdated := len(filesUpdated)
 			updatedFilesModulesNames := []string{}
 
+			// TODO Send one message per module instead of one message per file as there can be many files
 			for _, file := range filesUpdated {
 				message := telegram.GenerateFileUpdatedMessageFormat(file)
-				gradeMsgErr := telegram.SendMessage(telegramBotId, telegramUserId, message)
+				gradeMsgErr := telegram.SendMessage(telegramIds.BotId, telegramIds.UserId, message)
 
 				if gradeMsgErr != nil {
-					logs.Logger.Errorln(gradeMsgErr)
+					logs.Logger.Warnln(gradeMsgErr)
 					continue
 				}
 

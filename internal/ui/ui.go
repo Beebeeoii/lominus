@@ -3,9 +3,6 @@ package ui
 
 import (
 	"fmt"
-	"path/filepath"
-	"strconv"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -15,11 +12,12 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
-	appDir "github.com/beebeeoii/lominus/internal/app/dir"
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appInt "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
+	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
 	"github.com/beebeeoii/lominus/internal/notifications"
-	"github.com/boltdb/bolt"
 )
 
 var mainApp fyne.App
@@ -30,36 +28,20 @@ func Init() error {
 	mainApp = app.NewWithID(appConstants.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
 
-	var canvasToken, directory, logLevel, telegramUserId, telegramBotId string
-	var frequency int
-
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
+	canvasCredentials, credErr := appAuth.GetCanvasCredentials()
+	if credErr != nil {
+		return credErr
 	}
 
-	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
-
-	if dbErr != nil {
-		return dbErr
+	pref, prefErr := appPref.GetPreferences()
+	if prefErr != nil {
+		return prefErr
 	}
 
-	tx, _ := db.Begin(false)
-	authBucket := tx.Bucket([]byte("Auth"))
-	canvasToken = string(authBucket.Get([]byte("canvasToken")))
-
-	prefBucket := tx.Bucket([]byte("Preferences"))
-	directory = string(prefBucket.Get([]byte("directory")))
-	frequency, _ = strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
-	logLevel = string(prefBucket.Get([]byte("logLevel")))
-
-	intBucket := tx.Bucket([]byte("Integrations"))
-	telegramUserId = string(intBucket.Get([]byte("telegramUserId")))
-	telegramBotId = string(intBucket.Get([]byte("telegramBotId")))
-	tx.Rollback()
-
-	db.Close()
+	telegramIds, tIdsErr := appInt.GetTelegramIds()
+	if tIdsErr != nil {
+		return tIdsErr
+	}
 
 	go func() {
 		for {
@@ -76,24 +58,24 @@ func Init() error {
 	}
 
 	credentialsTab, credentialsUiErr := getCredentialsTab(CredentialsData{
-		CanvasApiToken: canvasToken,
+		CanvasApiToken: canvasCredentials.CanvasApiToken,
 	}, w)
 	if credentialsUiErr != nil {
 		return credentialsUiErr
 	}
 
 	preferencesTab, preferencesErr := getPreferencesTab(PreferencesData{
-		Directory: directory,
-		Frequency: frequency,
-		LogLevel:  logLevel,
+		Directory: pref.Directory,
+		Frequency: pref.Frequency,
+		LogLevel:  pref.LogLevel,
 	}, w)
 	if preferencesErr != nil {
 		return preferencesErr
 	}
 
 	integrationsTab, integrationsErr := getIntegrationsTab(IntegrationData{
-		TelegramUserId: telegramUserId,
-		TelegramBotId:  telegramBotId,
+		TelegramUserId: telegramIds.UserId,
+		TelegramBotId:  telegramIds.BotId,
 	}, w)
 	if integrationsErr != nil {
 		return integrationsErr
@@ -124,43 +106,31 @@ func Init() error {
 // getSyncButton builds the sync button in the main UI.
 func getSyncButton(parentWindow fyne.Window) *widget.Button {
 	return widget.NewButton(appConstants.SYNC_TEXT, func() {
-		baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-		if retrieveBaseDirErr != nil {
+		pref, prefErr := appPref.GetPreferences()
+		if prefErr != nil {
 			return
 		}
 
-		dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
-		db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{ReadOnly: true})
-
-		if dbErr != nil {
-			return
-		}
-
-		tx, _ := db.Begin(false)
-		prefBucket := tx.Bucket([]byte("Preferences"))
-		directory := string(prefBucket.Get([]byte("directory")))
-		frequency, _ := strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
-
-		defer db.Close()
-
-		if directory == "" {
+		if pref.Directory == "" {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.NO_FOLDER_DIRECTORY_SELECTED,
 				parentWindow,
 			).Show()
+
 			return
 		}
 
-		if frequency == -1 {
+		if pref.Frequency == -1 {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.NO_FREQUENCY_SELECTED,
 				parentWindow,
 			).Show()
+
 			return
 		}
 
-		cron.Rerun(directory, frequency)
+		cron.Rerun(pref.Directory, pref.Frequency)
 	})
 }

@@ -5,6 +5,7 @@ package constants
 const (
 	CANVAS_USER_SELF_ENDPOINT      = "https://canvas.nus.edu.sg/api/v1/users/self"
 	CANVAS_MODULES_ENDPOINT        = "https://canvas.nus.edu.sg/api/v1/courses?per_page=30"
+	CANVAS_MODULE_FOLDER_ENDPOINT  = "https://canvas.nus.edu.sg/api/v1/courses/%s/folders/by_path/"
 	CANVAS_MODULE_FOLDERS_ENDPOINT = "https://canvas.nus.edu.sg/api/v1/courses/%s/folders?per_page=30"
 	CANVAS_FOLDERS_ENDPOINT        = "https://canvas.nus.edu.sg/api/v1/folders/%s/folders?per_page=30"
 	CANVAS_FILES_ENDPOINT          = "https://canvas.nus.edu.sg/api/v1/folders/%s/files?per_page=30"
