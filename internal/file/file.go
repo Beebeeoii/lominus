@@ -60,17 +60,22 @@ func Exists(name string) bool {
 	return err == nil
 }
 
-// AutoRename renames a file by prepending "[vX]" to its fileName
+// AutoRename renames a file by appending "-old-vX" to its fileName
 // where X is a positive integer.
 // X increments itself starting from 1 until the there exists a
 // the new fileName does not exist in the directory.
 func AutoRename(filePath string) error {
-	FORMAT := "[v%d]%s"
-	directory, fileName := filepath.Split(filePath)
-	newFileName := fileName
+	FORMAT := "%s-old-v%d.%s"
+	directory, fileNameWithExt := filepath.Split(filePath)
+
+	n := strings.LastIndexByte(fileNameWithExt, '.')
+	fileNameWOExt := fileNameWithExt[:n]
+	fileExt := fileNameWithExt[n+1:]
+
+	newFileName := fileNameWOExt
 
 	for x := 1; ; x++ {
-		newFileName = fmt.Sprintf(FORMAT, x, fileName)
+		newFileName = fmt.Sprintf(FORMAT, fileNameWOExt, x, fileExt)
 
 		if !Exists(filepath.Join(directory, newFileName)) {
 			break
