@@ -130,6 +130,10 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 
 		lmsFiles := []api.File{}
 		for _, module := range canvasModules {
+			if !module.IsAccessible {
+				continue
+			}
+
 			moduleFolderReq, moduleFolderReqErr := api.BuildModuleFolderRequest(
 				canvasCredentials.CanvasApiToken,
 				module,
