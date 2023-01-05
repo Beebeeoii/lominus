@@ -7,10 +7,9 @@ package interfaces
 // relevant ones as of now.
 type CanvasModuleObject struct {
 	Id                       int    `json:"id"`
-	UUID                     string `json:"uuid"`
-	Name                     string `json:"name"`
-	ModuleCode               string `json:"course_code"`
-	IsAccessRestrictedByDate bool   `json:"access_restricted_by_date"`
+	Name                     string `json:"originalName"`
+	ModuleCode               string `json:"courseCode"`
+	IsAccessRestrictedByDate bool   // Automatically false since is still accessible by the Canvas dashboard
 }
 
 // LuminusModuleObject depicts the actual object return from Luminus.
