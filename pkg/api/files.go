@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -125,6 +126,33 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 				IsRootFolder: folderObject.ParentFolderId == 0 &&
 					folderObject.FullName == "course files",
 			})
+		}
+
+		if len(response) == 10 {
+			url, _ := url.Parse(foldersRequest.Request.Url.Url)
+
+			currPage, _ := strconv.Atoi(url.Query().Get("page"))
+			if currPage == 0 {
+				currPage = 2
+			} else {
+				currPage += 1
+			}
+
+			q := url.Query()
+			if q.Has("page") {
+				q.Set("page", strconv.Itoa(currPage))
+			} else {
+				q.Add("page", strconv.Itoa(currPage))
+			}
+			url.RawQuery = q.Encode()
+			foldersRequest.Request.Url.Url = url.String()
+			nextFolders, nextFoldersErr := foldersRequest.GetFolders()
+
+			if nextFoldersErr != nil {
+				return folders, nextFoldersErr
+			}
+
+			folders = append(folders, nextFolders...)
 		}
 	case constants.Luminus:
 		foldersData := []interfaces.LuminusFolderObject{}
@@ -322,6 +350,33 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 				Ancestors:   ancestors,
 				DownloadUrl: fileObject.Url,
 			})
+		}
+
+		if len(response) == 10 {
+			url, _ := url.Parse(filesRequest.Request.Url.Url)
+
+			currPage, _ := strconv.Atoi(url.Query().Get("page"))
+			if currPage == 0 {
+				currPage = 2
+			} else {
+				currPage += 1
+			}
+
+			q := url.Query()
+			if q.Has("page") {
+				q.Set("page", strconv.Itoa(currPage))
+			} else {
+				q.Add("page", strconv.Itoa(currPage))
+			}
+			url.RawQuery = q.Encode()
+			filesRequest.Request.Url.Url = url.String()
+			nextFiles, nextFilesErr := filesRequest.GetFiles()
+
+			if nextFilesErr != nil {
+				return files, nextFilesErr
+			}
+
+			files = append(files, nextFiles...)
 		}
 	case constants.Luminus:
 		filesData := []interfaces.LuminusFileObject{}
