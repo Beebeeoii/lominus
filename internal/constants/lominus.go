@@ -4,9 +4,11 @@ package constants
 
 const APP_NAME = "Lominus"
 const APP_ID = "com.lominus.beebeeoii"
-const APP_VERSION = "2.0.2"
+const APP_VERSION = "2.1.0"
 
 const LOCK_FILE_NAME = "lominus.lock"
+
+const DATABASE_FILE_NAME = "lominus.db"
 
 const CREDENTIALS_FILE_NAME = "credentials.gob"
 const PREFERENCES_FILE_NAME = "preferences.gob"

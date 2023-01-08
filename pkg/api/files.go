@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -47,6 +48,28 @@ type File struct {
 const FOLDER_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/?populate=totalFileCount,subFolderCount,TotalSize&ParentID=%s"
 const FILE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/%s/file?populate=Creator,lastUpdatedUser,comment"
 const DOWNLOAD_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/files/file/%s/downloadurl"
+
+func (moduleFolderRequest ModuleFolderRequest) GetModuleFolder() (Folder, error) {
+	folder := Folder{}
+
+	if moduleFolderRequest.Request.Token == "" {
+		return folder, nil
+	}
+
+	response := []interfaces.CanvasFolderObject{}
+	reqErr := moduleFolderRequest.Request.Send(&response)
+	if reqErr != nil {
+		return folder, reqErr
+	}
+
+	folder.Id = fmt.Sprint(response[0].Id)
+	folder.Name = moduleFolderRequest.Module.ModuleCode
+	folder.Downloadable = !response[0].HiddenForUser
+	folder.IsRootFolder = true
+	folder.HasSubFolder = response[0].FoldersCount > 0
+
+	return folder, nil
+}
 
 // GetFolders returns a slice of Folder objects from a given FoldersRequest.
 // Only the folders in the current Folder/Module (via the builder) provided
@@ -104,6 +127,33 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 					folderObject.FullName == "course files",
 			})
 		}
+
+		if len(response) == 10 {
+			url, _ := url.Parse(foldersRequest.Request.Url.Url)
+
+			currPage, _ := strconv.Atoi(url.Query().Get("page"))
+			if currPage == 0 {
+				currPage = 2
+			} else {
+				currPage += 1
+			}
+
+			q := url.Query()
+			if q.Has("page") {
+				q.Set("page", strconv.Itoa(currPage))
+			} else {
+				q.Add("page", strconv.Itoa(currPage))
+			}
+			url.RawQuery = q.Encode()
+			foldersRequest.Request.Url.Url = url.String()
+			nextFolders, nextFoldersErr := foldersRequest.GetFolders()
+
+			if nextFoldersErr != nil {
+				return folders, nextFoldersErr
+			}
+
+			folders = append(folders, nextFolders...)
+		}
 	case constants.Luminus:
 		foldersData := []interfaces.LuminusFolderObject{}
 
@@ -133,7 +183,7 @@ func (foldersRequest FoldersRequest) GetFolders() ([]Folder, error) {
 
 			folders = append(folders, Folder{
 				Id:           folderObject.Id,
-				Name:         folderObject.Name,
+				Name:         appFile.CleanseFolderFileName(folderObject.Name),
 				Downloadable: folderObject.IsActive && !folderObject.AllowUpload,
 				HasSubFolder: folderObject.FoldersCount > 0,
 				Ancestors:    ancestors,
@@ -172,7 +222,7 @@ func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
 
 		moduleMainFolder := Folder{
 			Id:           builder.Id,
-			Name:         builder.Name,
+			Name:         appFile.CleanseFolderFileName(builder.Name),
 			Downloadable: true,
 			HasSubFolder: true,       // doesn't matter
 			Ancestors:    []string{}, // main folder does not have any ancestors
@@ -203,6 +253,7 @@ func (foldersRequest FoldersRequest) GetRootFiles() ([]File, error) {
 			foldersRequest.Request.Url.Platform,
 			builder,
 		)
+
 		if subFilesReqErr != nil {
 			return files, subFilesReqErr
 		}
@@ -274,7 +325,7 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 		//
 		// The "course files" folder resembles the 'home directory' of a module.
 		if filesRequest.Folder.IsRootFolder {
-			ancestors = filesRequest.Folder.Ancestors
+			ancestors = []string{filesRequest.Folder.Name}
 		}
 
 		response := []interfaces.CanvasFileObject{}
@@ -285,6 +336,9 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 
 		for _, fileObject := range response {
 			lastUpdated, err := time.Parse(time.RFC3339, fileObject.LastUpdated)
+			tz, _ := time.LoadLocation("Asia/Singapore")
+			lastUpdated = lastUpdated.In(tz)
+
 			if err != nil {
 				return files, err
 			}
@@ -296,6 +350,33 @@ func (filesRequest FilesRequest) GetFiles() ([]File, error) {
 				Ancestors:   ancestors,
 				DownloadUrl: fileObject.Url,
 			})
+		}
+
+		if len(response) == 10 {
+			url, _ := url.Parse(filesRequest.Request.Url.Url)
+
+			currPage, _ := strconv.Atoi(url.Query().Get("page"))
+			if currPage == 0 {
+				currPage = 2
+			} else {
+				currPage += 1
+			}
+
+			q := url.Query()
+			if q.Has("page") {
+				q.Set("page", strconv.Itoa(currPage))
+			} else {
+				q.Add("page", strconv.Itoa(currPage))
+			}
+			url.RawQuery = q.Encode()
+			filesRequest.Request.Url.Url = url.String()
+			nextFiles, nextFilesErr := filesRequest.GetFiles()
+
+			if nextFilesErr != nil {
+				return files, nextFilesErr
+			}
+
+			files = append(files, nextFiles...)
 		}
 	case constants.Luminus:
 		filesData := []interfaces.LuminusFileObject{}

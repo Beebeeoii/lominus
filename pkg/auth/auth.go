@@ -3,7 +3,6 @@
 package auth
 
 import (
-	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	file "github.com/beebeeoii/lominus/internal/file"
 )
@@ -64,10 +63,10 @@ func LoadTokensData(tokensPath string, autoRenew bool) (TokensData, error) {
 		return tokensData, err
 	}
 
-	credentialsPath, getCredentialsPathErr := appAuth.GetCredentialsPath()
-	if getCredentialsPathErr != nil {
-		return tokensData, getCredentialsPathErr
-	}
+	credentialsPath := "appAuth.GetCredentialsPath()"
+	// if getCredentialsPathErr != nil {
+	// 	return tokensData, getCredentialsPathErr
+	// }
 
 	credentials, credentialsErr := LoadCredentialsData(credentialsPath)
 	if credentialsErr != nil {
@@ -112,7 +111,8 @@ func LoadCredentialsData(credentialsPath string) (CredentialsData, error) {
 // Merge takes n individual Token data encapsulated in TokensData and merge/combine them
 // into a TokensData that contains the individual Token data.
 // Eg. a := TokensData{CanvasToken}
-//     a.merge(TokensData{LuminusToken}) // a == TokensData{CanvasToken, LuminusToken}
+//
+//	a.merge(TokensData{LuminusToken}) // a == TokensData{CanvasToken, LuminusToken}
 func (t *TokensData) Merge(t2 TokensData) {
 	if t.CanvasToken == (CanvasTokenData{}) {
 		t.CanvasToken = t2.CanvasToken
@@ -126,7 +126,8 @@ func (t *TokensData) Merge(t2 TokensData) {
 // Merge takes n individual Credentials data encapsulated in CredentialsData and merge/combine them
 // into a CredentialsData that contains the individual Credentials data.
 // Eg. a := CredentialsData{CanvasCredentials}
-//     a.merge(CredentialsData{LuminusCredentials}) // a == CredentialsData{CanvasCredentials, LuminusCredentials}
+//
+//	a.merge(CredentialsData{LuminusCredentials}) // a == CredentialsData{CanvasCredentials, LuminusCredentials}
 func (t *CredentialsData) Merge(t2 CredentialsData) {
 	if t.CanvasCredentials == (CanvasCredentials{}) {
 		t.CanvasCredentials = t2.CanvasCredentials

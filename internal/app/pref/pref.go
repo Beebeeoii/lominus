@@ -2,14 +2,12 @@
 package appPref
 
 import (
-	"path/filepath"
+	"fmt"
+	"strconv"
 
-	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appConstants "github.com/beebeeoii/lominus/internal/constants"
-	"github.com/beebeeoii/lominus/internal/file"
+	"github.com/beebeeoii/lominus/internal/app"
+	"github.com/boltdb/bolt"
 )
-
-const PREFERENCES_FILE_NAME = appConstants.PREFERENCES_FILE_NAME
 
 // Preferences struct describes the data being stored in the user's preferences file.
 type Preferences struct {
@@ -18,32 +16,62 @@ type Preferences struct {
 	LogLevel  string
 }
 
-// GetJwtPath returns the file path to user's preferences.
-func GetPreferencesPath() (string, error) {
-	var preferencesPath string
+func GetPreferences() (Preferences, error) {
+	dbInstance := app.GetDBInstance()
+	var pref Preferences
 
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return preferencesPath, retrieveBaseDirErr
+	err := dbInstance.View(func(tx *bolt.Tx) error {
+		prefBucket := tx.Bucket([]byte("Preferences"))
+		directory := string(prefBucket.Get([]byte("directory")))
+		frequency, _ := strconv.Atoi(string(prefBucket.Get([]byte("frequency"))))
+		logLevel := string(prefBucket.Get([]byte("logLevel")))
+
+		pref.Directory = directory
+		pref.Frequency = frequency
+		pref.LogLevel = logLevel
+
+		return nil
+	})
+
+	if err != nil {
+		return Preferences{}, err
 	}
 
-	preferencesPath = filepath.Join(baseDir, appConstants.PREFERENCES_FILE_NAME)
-
-	return preferencesPath, nil
+	return pref, nil
 }
 
-// SavePreferences saves the user's preferences data onto local storage.
-func SavePreferences(filePath string, preferences Preferences) error {
-	return file.EncodeStructToFile(filePath, preferences)
+// SaveRootSyncDirectory saves the user's root sync directory locally.
+func SaveRootSyncDirectory(directory string) error {
+	dbInstance := app.GetDBInstance()
+
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket([]byte("Preferences")).Put([]byte("directory"), []byte(directory))
+		return err
+	})
+
+	return updateErr
 }
 
-// LoadPreferences loads the user's preferences data from local storage.
-func LoadPreferences(filePath string) (Preferences, error) {
-	preferences := Preferences{}
-	if !file.Exists(filePath) {
-		return preferences, &file.FileNotFoundError{FileName: filePath}
-	}
-	err := file.DecodeStructFromFile(filePath, &preferences)
+// SaveSyncFrequency saves the user's sync frequency locally.
+func SaveSyncFrequency(frequency int) error {
+	dbInstance := app.GetDBInstance()
 
-	return preferences, err
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket([]byte("Preferences")).Put([]byte("frequency"), []byte(fmt.Sprint(frequency)))
+		return err
+	})
+
+	return updateErr
+}
+
+// SaveDebugMode saves the user's chosen debug mode locally.
+func SaveDebugMode(logLevel string) error {
+	dbInstance := app.GetDBInstance()
+
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket([]byte("Preferences")).Put([]byte("logLevel"), []byte(logLevel))
+		return err
+	})
+
+	return updateErr
 }

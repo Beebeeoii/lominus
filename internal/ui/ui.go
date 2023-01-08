@@ -12,10 +12,11 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
+	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appInt "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
-	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 )
 
@@ -26,6 +27,21 @@ var w fyne.Window
 func Init() error {
 	mainApp = app.NewWithID(appConstants.APP_NAME)
 	mainApp.SetIcon(resourceAppIconPng)
+
+	canvasCredentials, credErr := appAuth.GetCanvasCredentials()
+	if credErr != nil {
+		return credErr
+	}
+
+	pref, prefErr := appPref.GetPreferences()
+	if prefErr != nil {
+		return prefErr
+	}
+
+	telegramIds, tIdsErr := appInt.GetTelegramIds()
+	if tIdsErr != nil {
+		return tIdsErr
+	}
 
 	go func() {
 		for {
@@ -41,17 +57,26 @@ func Init() error {
 		desk.SetSystemTrayMenu(m)
 	}
 
-	credentialsTab, credentialsUiErr := getCredentialsTab(w)
+	credentialsTab, credentialsUiErr := getCredentialsTab(CredentialsData{
+		CanvasApiToken: canvasCredentials.CanvasApiToken,
+	}, w)
 	if credentialsUiErr != nil {
 		return credentialsUiErr
 	}
 
-	preferencesTab, preferencesErr := getPreferencesTab(w)
+	preferencesTab, preferencesErr := getPreferencesTab(PreferencesData{
+		Directory: pref.Directory,
+		Frequency: pref.Frequency,
+		LogLevel:  pref.LogLevel,
+	}, w)
 	if preferencesErr != nil {
 		return preferencesErr
 	}
 
-	integrationsTab, integrationsErr := getIntegrationsTab(w)
+	integrationsTab, integrationsErr := getIntegrationsTab(IntegrationData{
+		TelegramUserId: telegramIds.UserId,
+		TelegramBotId:  telegramIds.BotId,
+	}, w)
 	if integrationsErr != nil {
 		return integrationsErr
 	}
@@ -78,42 +103,34 @@ func Init() error {
 	return nil
 }
 
-// getPreferences is a util function that retrieves the user's preferences.
-func getPreferences() appPref.Preferences {
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		logs.Logger.Fatalln(getPreferencesPathErr)
-	}
-
-	preference, err := appPref.LoadPreferences(preferencesPath)
-	if err != nil {
-		logs.Logger.Fatalln(err)
-	}
-
-	return preference
-}
-
 // getSyncButton builds the sync button in the main UI.
 func getSyncButton(parentWindow fyne.Window) *widget.Button {
 	return widget.NewButton(appConstants.SYNC_TEXT, func() {
-		preferences := getPreferences()
-		if preferences.Directory == "" {
+		pref, prefErr := appPref.GetPreferences()
+		if prefErr != nil {
+			return
+		}
+
+		if pref.Directory == "" {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.NO_FOLDER_DIRECTORY_SELECTED,
 				parentWindow,
 			).Show()
+
 			return
 		}
 
-		if preferences.Frequency == -1 {
+		if pref.Frequency == -1 {
 			dialog.NewInformation(
 				appConstants.APP_NAME,
 				appConstants.NO_FREQUENCY_SELECTED,
 				parentWindow,
 			).Show()
+
 			return
 		}
-		cron.Rerun(getPreferences().Frequency)
+
+		cron.Rerun(pref.Directory, pref.Frequency)
 	})
 }

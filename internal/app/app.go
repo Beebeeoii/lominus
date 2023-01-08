@@ -8,74 +8,68 @@ import (
 	"time"
 
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/file"
 	logs "github.com/beebeeoii/lominus/internal/log"
+	"github.com/boltdb/bolt"
 )
+
+var dbInstance *bolt.DB
 
 // Init initialises and ensures log and preference files that Lominus requires are available.
 // Directory in Preferences defaults to empty string ("").
 // Frequency in Preferences defaults to -1.
-func Init() error {
+func Init() (*bolt.DB, error) {
 	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
 	if retrieveBaseDirErr != nil {
-		return retrieveBaseDirErr
+		return nil, retrieveBaseDirErr
 	}
 
 	if !file.Exists(baseDir) {
 		os.Mkdir(baseDir, os.ModePerm)
 	}
 
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		return getPreferencesPathErr
+	dbFName := filepath.Join(baseDir, appConstants.DATABASE_FILE_NAME)
+	db, dbErr := bolt.Open(dbFName, 0600, &bolt.Options{Timeout: 3 * time.Second})
+
+	if dbErr != nil {
+		return nil, dbErr
 	}
 
-	if !file.Exists(preferencesPath) {
-		preferences := appPref.Preferences{
-			Directory: "",
-			Frequency: -1,
-			LogLevel:  "info",
+	err := db.Update(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("Auth"))
+		tx.CreateBucketIfNotExists([]byte("Integrations"))
+		prefBucket, prefBucketErr := tx.CreateBucketIfNotExists([]byte("Preferences"))
+		if prefBucketErr != nil {
+			return prefBucketErr
 		}
 
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-		if savePrefErr != nil {
-			return savePrefErr
-		}
-	} else {
-		preferences, getPreferencesErr := appPref.LoadPreferences(preferencesPath)
-		if getPreferencesErr != nil {
-			return getPreferencesErr
+		if prefBucket.Get([]byte("frequency")) == nil {
+			prefBucket.Put([]byte("frequency"), []byte("-1"))
 		}
 
-		if preferences.LogLevel != "info" && preferences.LogLevel != "debug" {
-			preferences.LogLevel = "info"
+		logLevel := prefBucket.Get([]byte("logLevel"))
+		if logLevel == nil {
+			logLevel = []byte("info")
+			prefBucket.Put([]byte("logLevel"), []byte(logLevel))
+
 		}
 
-		savePrefErr := appPref.SavePreferences(preferencesPath, preferences)
-		if savePrefErr != nil {
-			return savePrefErr
+		logInitErr := logs.Init(string(logLevel))
+		if logInitErr != nil {
+			return logInitErr
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	logInitErr := logs.Init()
-	if logInitErr != nil {
-		return logInitErr
-	}
+	dbInstance = db
 
-	// TODO Consider moving this to its own module in the future.
-	gradesPath := filepath.Join(baseDir, appConstants.GRADES_FILE_NAME)
-
-	if !file.Exists(gradesPath) {
-		gradeFileErr := file.EncodeStructToFile(gradesPath, time.Now())
-
-		if gradeFileErr != nil {
-			return gradeFileErr
-		}
-	}
-
-	return nil
+	return db, nil
 }
 
 // GetOs returns user's running program's operating system target:
@@ -83,4 +77,8 @@ func Init() error {
 // To view possible combinations of GOOS and GOARCH, run "go tool dist list".
 func GetOs() string {
 	return runtime.GOOS
+}
+
+func GetDBInstance() *bolt.DB {
+	return dbInstance
 }

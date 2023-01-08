@@ -64,25 +64,6 @@ func SendMessage(botApi string, userId string, message string) error {
 	return nil
 }
 
-// GenerateGradeMessageFormat creates a message text for grade notifications.
-func GenerateGradeMessageFormat(grade api.Grade) string {
-	gradeMessage := fmt.Sprintf("<b><u>Grades</u></b>\n<b>%s</b>: <i>%s</i>\n<b>Grade</b>: <i><tg-spoiler>%f</tg-spoiler>/%f</i>",
-		grade.Module.ModuleCode,
-		grade.Name,
-		grade.Marks,
-		grade.MaxMarks,
-	)
-
-	if grade.Comments != "" {
-		gradeMessage = fmt.Sprintf("%s\n\n<b>Comments</b>: %s",
-			gradeMessage,
-			grade.Comments,
-		)
-	}
-
-	return gradeMessage
-}
-
 // GenerateFileUpdatedMessageFormat creates a message text for file update notifications.
 func GenerateFileUpdatedMessageFormat(file api.File) string {
 	updatedFileMessage := fmt.Sprintf("<b><u>Files</u></b>\n<b>%s</b>: <i>%s</i>\n\nUpdated: %s",

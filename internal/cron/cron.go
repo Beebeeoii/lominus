@@ -8,16 +8,13 @@ import (
 	"time"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
-	appDir "github.com/beebeeoii/lominus/internal/app/dir"
-	intTelegram "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
+	appInt "github.com/beebeeoii/lominus/internal/app/integrations/telegram"
 	appPref "github.com/beebeeoii/lominus/internal/app/pref"
-	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	appFiles "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/internal/indexing"
 	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 	"github.com/beebeeoii/lominus/pkg/api"
-	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/integrations/telegram"
 
@@ -32,21 +29,17 @@ var mainJob *gocron.Job
 func Init() error {
 	mainScheduler = gocron.NewScheduler(time.Local)
 
-	preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-	if getPreferencesPathErr != nil {
-		return getPreferencesPathErr
+	pref, err := appPref.GetPreferences()
+
+	if err != nil {
+		return err
 	}
 
-	preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
-	if loadPrefErr != nil {
-		return loadPrefErr
-	}
-
-	if preferences.Frequency == -1 {
+	if pref.Frequency == -1 {
 		return nil
 	}
 
-	job, err := createJob(preferences.Frequency)
+	job, err := createJob(pref.Directory, pref.Frequency)
 	if err != nil {
 		return err
 	}
@@ -54,18 +47,18 @@ func Init() error {
 	mainJob = job
 	mainScheduler.StartAsync()
 
-	return nil
+	return err
 }
 
 // Rerun clears the job from the scheduler and reschedules the same job with the new frequency.
-func Rerun(frequency int) error {
+func Rerun(rootSyncDirectory string, frequency int) error {
 	mainScheduler.Clear()
 
 	if frequency == -1 {
 		return nil
 	}
 
-	job, err := createJob(frequency)
+	job, err := createJob(rootSyncDirectory, frequency)
 	if err != nil {
 		return err
 	}
@@ -92,81 +85,43 @@ func GetLastRan() time.Time {
 //
 // TODO Cleanup notifications - make it more user friendly. No point
 // putting technical logs in notifications.
-func createJob(frequency int) (*gocron.Job, error) {
+func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 	return mainScheduler.Every(frequency).Hours().Do(func() {
+		notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Sync Started!"}
+
 		logs.Logger.Infof("job started: %s", time.Now().Format(time.RFC3339))
 
-		logs.Logger.Debugln("retrieving - preferences path")
-		preferencesPath, getPreferencesPathErr := appPref.GetPreferencesPath()
-		if getPreferencesPathErr != nil {
-			logs.Logger.Errorln(getPreferencesPathErr)
+		// If directory for file sync is not set, exit from job.
+		if rootSyncDirectory == "" {
+			logs.Logger.Infoln("Root sync directory not set. Exiting from cron job !")
 			return
 		}
 
-		logs.Logger.Debugln("loading - preferences")
-		preferences, loadPrefErr := appPref.LoadPreferences(preferencesPath)
-		if loadPrefErr != nil {
-			logs.Logger.Errorln(loadPrefErr)
-			return
+		canvasCredentials, credErr := appAuth.GetCanvasCredentials()
+		if credErr != nil {
+			logs.Logger.Warnln(credErr)
+		} else {
+			logs.Logger.Infoln("canvasCredentials access: successful")
 		}
 
-		logs.Logger.Debugln("retrieving - telegram path")
-		telegramInfoPath, getTelegramInfoPathErr := intTelegram.GetTelegramInfoPath()
-		if getTelegramInfoPathErr != nil {
-			logs.Logger.Errorln(getTelegramInfoPathErr)
-			return
-		}
-
-		logs.Logger.Debugln("loading - telegram")
-		telegramInfo, telegramInfoErr := telegram.LoadTelegramData(telegramInfoPath)
-
-		logs.Logger.Debugln("loading - credentials and tokens")
-		tokensData, tokensErr := loadTokensData()
-		if tokensErr != nil {
-			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: tokensErr.Error()}
-			logs.Logger.Errorln(tokensErr)
-			return
+		telegramIds, tIdsErr := appInt.GetTelegramIds()
+		if tIdsErr != nil {
+			logs.Logger.Warnln(tIdsErr)
+		} else {
+			logs.Logger.Infoln("telegramIds access: successful")
 		}
 
 		logs.Logger.Debugln("building - module request")
 
-		canvasModules, canvasModErr := getModules(tokensData.CanvasToken.CanvasApiToken, constants.Canvas)
+		canvasModules, canvasModErr := getModules(canvasCredentials.CanvasApiToken, constants.Canvas)
 		if canvasModErr != nil {
 			// TODO Somehow collate this error and display to user at the end
 			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: canvasModErr.Error()}
-			logs.Logger.Errorln(canvasModErr)
-		}
-
-		luminusModules, luninusModErr := getModules(tokensData.LuminusToken.JwtToken, constants.Luminus)
-		if luninusModErr != nil {
-			// TODO Somehow collate this error and display to user at the end
-			// notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: luninusModErr.Error()}
-			logs.Logger.Errorln(luninusModErr)
-		}
-
-		// Note that grades is currently only supported for Luminus
-		grades, gradesErr := getGrades(luminusModules)
-		if gradesErr != nil {
-			logs.Logger.Errorln(gradesErr)
-		}
-
-		if telegramInfoErr != nil {
-			for _, grade := range grades {
-				message := telegram.GenerateGradeMessageFormat(grade)
-				sendErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
-				if sendErr != nil {
-					logs.Logger.Errorln(sendErr)
-				}
-			}
-		}
-
-		// If directory for file sync is not set, exit from job.
-		if preferences.Directory == "" {
-			return
+			logs.Logger.Warnln(canvasModErr)
 		}
 
 		logs.Logger.Debugln("building - index map")
-		currentFiles, currentFilesErr := indexing.Build(preferences.Directory)
+		currentFiles, currentFilesErr := indexing.Build(rootSyncDirectory)
 		if currentFilesErr != nil {
 			notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: "Failed to get current downloaded files"}
 			logs.Logger.Errorln(currentFilesErr)
@@ -175,36 +130,36 @@ func createJob(frequency int) (*gocron.Job, error) {
 
 		lmsFiles := []api.File{}
 		for _, module := range canvasModules {
+			if !module.IsAccessible {
+				continue
+			}
+
+			moduleFolderReq, moduleFolderReqErr := api.BuildModuleFolderRequest(
+				canvasCredentials.CanvasApiToken,
+				module,
+			)
+
+			if moduleFolderReqErr != nil {
+				logs.Logger.Warnln(moduleFolderReqErr)
+			}
+
+			moduleFolder, moduleFolderErr := moduleFolderReq.GetModuleFolder()
+			if moduleFolderErr != nil {
+				logs.Logger.Warnln(moduleFolderErr)
+			}
+
 			foldersReq, foldersReqErr := api.BuildFoldersRequest(
-				tokensData.CanvasToken.CanvasApiToken,
+				canvasCredentials.CanvasApiToken,
 				constants.Canvas,
-				module,
+				moduleFolder,
 			)
 			if foldersReqErr != nil {
-				logs.Logger.Errorln(foldersReqErr)
+				logs.Logger.Warnln(foldersReqErr)
 			}
 
 			files, foldersErr := foldersReq.GetRootFiles()
 			if foldersErr != nil {
-				logs.Logger.Errorln(foldersErr)
-			}
-
-			lmsFiles = append(lmsFiles, files...)
-		}
-
-		for _, module := range luminusModules {
-			foldersReq, foldersReqErr := api.BuildFoldersRequest(
-				tokensData.LuminusToken.JwtToken,
-				constants.Luminus,
-				module,
-			)
-			if foldersReqErr != nil {
-				logs.Logger.Errorln(foldersReqErr)
-			}
-
-			files, foldersErr := foldersReq.GetRootFiles()
-			if foldersErr != nil {
-				logs.Logger.Errorln(foldersErr)
+				logs.Logger.Warnln(foldersErr)
 			}
 
 			lmsFiles = append(lmsFiles, files...)
@@ -222,32 +177,31 @@ func createJob(frequency int) (*gocron.Job, error) {
 				nFilesToUpdate += 1
 
 				logs.Logger.Debugf("downloading - %s [%s vs %s]", key, localLastUpdated.String(), platformLastUpdated.String())
-				fileDirSlice := append([]string{preferences.Directory}, file.Ancestors...)
+				fileDirSlice := append([]string{rootSyncDirectory}, file.Ancestors...)
 				filePath := filepath.Join(fileDirSlice...)
 				appFiles.EnsureDir(filePath)
 				downloadErr := file.Download(filePath)
 				if downloadErr != nil {
 					notifications.NotificationChannel <- notifications.Notification{Title: "Sync", Content: fmt.Sprintf("Unable to download file: %s", file.Name)}
-					logs.Logger.Errorln(downloadErr)
+					logs.Logger.Warnln(downloadErr)
 					continue
 				}
 				filesUpdated = append(filesUpdated, file)
 			}
 		}
 
-		if nFilesToUpdate > 0 {
+		if nFilesToUpdate > 0 && telegramIds.UserId != "" && telegramIds.BotId != "" {
 			nFilesUpdated := len(filesUpdated)
 			updatedFilesModulesNames := []string{}
 
+			// TODO Send one message per module instead of one message per file as there can be many files
 			for _, file := range filesUpdated {
-				if telegramInfoErr == nil {
-					message := telegram.GenerateFileUpdatedMessageFormat(file)
-					gradeMsgErr := telegram.SendMessage(telegramInfo.BotApi, telegramInfo.UserId, message)
+				message := telegram.GenerateFileUpdatedMessageFormat(file)
+				gradeMsgErr := telegram.SendMessage(telegramIds.BotId, telegramIds.UserId, message)
 
-					if gradeMsgErr != nil {
-						logs.Logger.Errorln(gradeMsgErr)
-						continue
-					}
+				if gradeMsgErr != nil {
+					logs.Logger.Warnln(gradeMsgErr)
+					continue
 				}
 
 				updatedFilesModulesNames = append(updatedFilesModulesNames, fmt.Sprintf("[%s] %s ", file.Ancestors[0], file.Name))
@@ -276,24 +230,6 @@ func createJob(frequency int) (*gocron.Job, error) {
 	})
 }
 
-// loadTokensData is a helper function that retrieves locally stored Tokens
-// data into a TokensData object.
-func loadTokensData() (auth.TokensData, error) {
-	var tokensData auth.TokensData
-
-	tokensPath, credsErr := appAuth.GetTokensPath()
-	if credsErr != nil {
-		return tokensData, credsErr
-	}
-
-	tokensData, tokensErr := auth.LoadTokensData(tokensPath, true)
-	if tokensErr != nil {
-		return tokensData, tokensErr
-	}
-
-	return tokensData, nil
-}
-
 // getModules is a helper function that retrieves Module objects based on the platform
 // passed in the arguments.
 func getModules(token string, platform constants.Platform) ([]api.Module, error) {
@@ -310,42 +246,4 @@ func getModules(token string, platform constants.Platform) ([]api.Module, error)
 	}
 
 	return modules, nil
-}
-
-// getGrades is a helper function that retrieves Grade objects for Luminus LMS.
-func getGrades(modules []api.Module) ([]api.Grade, error) {
-	grades := []api.Grade{}
-
-	var lastSync time.Time
-	baseDir, _ := appDir.GetBaseDir()
-
-	existingGradeErr := appFiles.DecodeStructFromFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), &lastSync)
-	if existingGradeErr != nil {
-		return grades, existingGradeErr
-	}
-
-	for _, module := range modules {
-		logs.Logger.Debugln("building - grade request")
-		gradeRequest, gradeReqErr := api.BuildGradeRequest(module)
-		if gradeReqErr != nil {
-			logs.Logger.Errorln(gradeReqErr)
-			continue
-		}
-
-		logs.Logger.Debugln("retrieving - grade")
-		allGrades, gradesErr := gradeRequest.GetGrades()
-		if gradesErr != nil {
-			logs.Logger.Errorln(gradesErr)
-			continue
-		}
-
-		grades = append(grades, allGrades...)
-	}
-
-	err := appFiles.EncodeStructToFile(filepath.Join(baseDir, appConstants.GRADES_FILE_NAME), time.Now())
-	if err != nil {
-		return []api.Grade{}, err
-	}
-
-	return grades, nil
 }

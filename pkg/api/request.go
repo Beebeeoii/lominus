@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
+	appFile "github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/interfaces"
@@ -62,6 +63,11 @@ type MultimediaChannelRequest struct {
 type MultimediaVideoRequest struct {
 	MultimediaChannel MultimediaChannel
 	Request           Request
+}
+
+type ModuleFolderRequest struct {
+	Request Request
+	Module  Module
 }
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
@@ -141,7 +147,7 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 
 			builder = Folder{
 				Id:           rootFolderId,
-				Name:         b.ModuleCode,
+				Name:         appFile.CleanseFolderFileName(b.ModuleCode),
 				Downloadable: b.IsAccessible,
 				HasSubFolder: true,
 				Ancestors:    []string{},
@@ -208,25 +214,20 @@ func BuildFilesRequest(token string, platform constants.Platform, folder Folder)
 	}, nil
 }
 
-// BuildGradeRequest builds and returns a GradeRequest that can be used for Grade related operations
-// such as retrieving grades of a module.
-// A Module is required to build a GradeRequest as it is module specific.
-func BuildGradeRequest(module Module) (GradeRequest, error) {
-	jwtToken, jwtTokenErr := retrieveJwtToken()
-	if jwtTokenErr != nil {
-		return GradeRequest{}, jwtTokenErr
-	}
+func BuildModuleFolderRequest(token string, module Module) (ModuleFolderRequest, error) {
+	url := fmt.Sprintf(constants.CANVAS_MODULE_FOLDER_ENDPOINT, module.Id)
 
-	return GradeRequest{
-		Module: module,
+	return ModuleFolderRequest{
 		Request: Request{
+			Method: GET_METHOD,
+			Token:  token,
 			Url: interfaces.Url{
-				Url:      fmt.Sprintf(GRADE_URL_ENDPOINT, module.Id),
-				Platform: constants.Luminus,
+				Url:      url,
+				Platform: constants.Canvas,
 			},
-			Token:     jwtToken,
 			UserAgent: USER_AGENT,
 		},
+		Module: module,
 	}, nil
 }
 

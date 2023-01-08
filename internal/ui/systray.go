@@ -3,8 +3,10 @@ package ui
 
 import (
 	"fyne.io/fyne/v2"
+	appPref "github.com/beebeeoii/lominus/internal/app/pref"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
 	"github.com/beebeeoii/lominus/internal/cron"
+	logs "github.com/beebeeoii/lominus/internal/log"
 	"github.com/beebeeoii/lominus/internal/notifications"
 )
 
@@ -13,16 +15,22 @@ import (
 func BuildSystemTray() *fyne.Menu {
 	return fyne.NewMenu(appConstants.APP_NAME,
 		fyne.NewMenuItem("Sync Now", func() {
-			preferences := getPreferences()
-			if preferences.Directory == "" {
+			pref, err := appPref.GetPreferences()
+			if err != nil {
+				logs.Logger.Errorln("[systray]: Sync Now - Unable to get preferences")
+			}
+
+			if pref.Directory == "" {
 				notifications.NotificationChannel <- notifications.Notification{Title: "Unable to sync", Content: "Please set the directory to store your Luminus files"}
 				return
 			}
-			if preferences.Frequency == -1 {
+
+			if pref.Frequency == -1 {
 				notifications.NotificationChannel <- notifications.Notification{Title: "Unable to sync", Content: "Please choose a sync frequency to sync now."}
 				return
 			}
-			cron.Rerun(getPreferences().Frequency)
+
+			cron.Rerun(pref.Directory, pref.Frequency)
 		}),
 		fyne.NewMenuItem("Open Lominus", func() {
 			w.Show()

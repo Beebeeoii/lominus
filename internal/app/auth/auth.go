@@ -4,9 +4,35 @@ package appAuth
 import (
 	"path/filepath"
 
+	"github.com/beebeeoii/lominus/internal/app"
 	appDir "github.com/beebeeoii/lominus/internal/app/dir"
 	appConstants "github.com/beebeeoii/lominus/internal/constants"
+	"github.com/boltdb/bolt"
 )
+
+type CanvasCredentials struct {
+	CanvasApiToken string
+}
+
+func GetCanvasCredentials() (CanvasCredentials, error) {
+	dbInstance := app.GetDBInstance()
+	var canvasCredentials CanvasCredentials
+
+	err := dbInstance.View(func(tx *bolt.Tx) error {
+		authBucket := tx.Bucket([]byte("Auth"))
+		canvasToken := string(authBucket.Get([]byte("canvasToken")))
+
+		canvasCredentials.CanvasApiToken = canvasToken
+
+		return nil
+	})
+
+	if err != nil {
+		return CanvasCredentials{}, err
+	}
+
+	return canvasCredentials, nil
+}
 
 // GetJwtPath returns the file path to user's JWT data.
 func GetTokensPath() (string, error) {
@@ -22,16 +48,14 @@ func GetTokensPath() (string, error) {
 	return jwtPath, nil
 }
 
-// GetJwtPath returns the file path to user's credentials.
-func GetCredentialsPath() (string, error) {
-	var credentialsPath string
+// SaveCanvasCredentials saves the user's Canvas API token locally.
+func SaveCanvasCredentials(cred CanvasCredentials) error {
+	dbInstance := app.GetDBInstance()
 
-	baseDir, retrieveBaseDirErr := appDir.GetBaseDir()
-	if retrieveBaseDirErr != nil {
-		return credentialsPath, retrieveBaseDirErr
-	}
+	updateErr := dbInstance.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket([]byte("Auth")).Put([]byte("canvasToken"), []byte(cred.CanvasApiToken))
+		return err
+	})
 
-	credentialsPath = filepath.Join(baseDir, appConstants.CREDENTIALS_FILE_NAME)
-
-	return credentialsPath, nil
+	return updateErr
 }
