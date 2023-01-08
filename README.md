@@ -123,6 +123,8 @@ sudo make install
         ```
 
     - If you are on Linux Mint, you will require `libxapp-dev` as well.
+ 
+ 4. `libxxf86vm-dev` might help if Lominus keeps crashing on startup
 
 ### Build <a name="getting-started-building-build">
 
