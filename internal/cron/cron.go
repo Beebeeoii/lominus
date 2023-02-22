@@ -169,7 +169,7 @@ func createJob(rootSyncDirectory string, frequency int) (*gocron.Job, error) {
 		filesUpdated := []api.File{}
 
 		for _, file := range lmsFiles {
-			key := fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name)
+			key := strings.ToLower(fmt.Sprintf("%s/%s", strings.Join(file.Ancestors, "/"), file.Name))
 			localLastUpdated := currentFiles[key].LastUpdated
 			platformLastUpdated := file.LastUpdated
 

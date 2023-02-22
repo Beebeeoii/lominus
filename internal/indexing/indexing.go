@@ -47,7 +47,7 @@ func Build(dir string) (map[string]api.File, error) {
 
 		if !info.IsDir() {
 			ancestors := strings.Split(path[len(dir)+1:], string(os.PathSeparator))
-			key := strings.Join(ancestors, "/")
+			key := strings.ToLower(strings.Join(ancestors, "/"))
 			filesMap[key] = api.File{
 				Name:        info.Name(),
 				Ancestors:   ancestors,
