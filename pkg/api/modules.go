@@ -1,16 +1,14 @@
 // Package api provides functions that link up and communicate with LMS servers,
-// such as Canvas and Luminus (probably removed in near future).
+// such as Canvas.
 package api
 
 import (
 	"errors"
-	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/interfaces"
-	"github.com/mitchellh/mapstructure"
 )
 
 // Module struct is the datapack for containing details about every module
@@ -20,8 +18,6 @@ type Module struct {
 	ModuleCode   string
 	IsAccessible bool
 }
-
-const MODULE_URL_ENDPOINT = "https://luminus.nus.edu.sg/v2/api/module/?populate=Creator,termDetail,isMandatory"
 
 // GetModules retrieves all the modules being taken by the user on the specified LMS
 // via a ModulesRequest.
@@ -46,36 +42,6 @@ func (modulesRequest ModulesRequest) GetModules() ([]Module, error) {
 				Name:         moduleObject.Name,
 				ModuleCode:   cleanseModuleCode(moduleObject.ModuleCode),
 				IsAccessible: !moduleObject.IsAccessRestrictedByDate,
-			})
-		}
-	case constants.Luminus:
-		modulesData := []interfaces.LuminusModuleObject{}
-
-		response := interfaces.LuminusRawResponse{}
-		reqErr := modulesRequest.Request.Send(&response)
-
-		if reqErr != nil {
-			return modules, reqErr
-		}
-
-		data := reflect.ValueOf(response.Data)
-		if data.Kind() == reflect.Slice {
-			for i := 0; i < data.Len(); i++ {
-				moduleData := interfaces.LuminusModuleObject{}
-				decodeErr := mapstructure.Decode(data.Index(i).Interface(), &moduleData)
-				if decodeErr != nil {
-					return modules, decodeErr
-				}
-				modulesData = append(modulesData, moduleData)
-			}
-		}
-
-		for _, moduleObject := range modulesData {
-			modules = append(modules, Module{
-				Id:           moduleObject.Id,
-				Name:         moduleObject.Name,
-				ModuleCode:   cleanseModuleCode(moduleObject.ModuleCode),
-				IsAccessible: moduleObject.IsCourseSearchable && moduleObject.IsPublished,
 			})
 		}
 	default:

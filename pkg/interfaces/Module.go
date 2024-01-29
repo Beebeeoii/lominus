@@ -11,15 +11,3 @@ type CanvasModuleObject struct {
 	ModuleCode               string `json:"courseCode"`
 	IsAccessRestrictedByDate bool   // Automatically false since is still accessible by the Canvas dashboard
 }
-
-// LuminusModuleObject depicts the actual object return from Luminus.
-// There are more fields being returned by Luminus, but these are just the
-// relevant ones as of now.
-// For more details on what mapstructure means: https://github.com/mitchellh/mapstructure
-type LuminusModuleObject struct {
-	Id                 string `json:"id"`
-	Name               string `json:"courseName" mapstructure:"courseName"`
-	ModuleCode         string `json:"name" mapstructure:"name"`
-	IsCourseSearchable bool   `json:"courseSearchable" mapstructure:"courseSearchable"`
-	IsPublished        bool   `json:"publish" mapstructure:"publish"`
-}

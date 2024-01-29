@@ -14,17 +14,3 @@ type CanvasFolderObject struct {
 	FoldersCount   int    `json:"folders_count"`
 	ParentFolderId int    `json:"parent_folder_id"`
 }
-
-// LuminusFolderObject depicts the actual object return from Luminus.
-// There are more fields being returned by Luminus, but these are just the
-// relevant ones as of now.
-// For more details on what mapstructure means: https://github.com/mitchellh/mapstructure
-type LuminusFolderObject struct {
-	Id           string      `json:"id" `
-	Name         string      `json:"name"`
-	IsActive     bool        `json:"isActive"`
-	AllowUpload  bool        `json:"alowUpload"`
-	FilesCount   int         `json:"totalFilesCount" mapstructure:"totalFilesCount"`
-	FoldersCount int         `json:"subFolderCount" mapstructure:"subFolderCount"`
-	AccessObject interface{} `json:"access" mapstructure:"access"`
-}

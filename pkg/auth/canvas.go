@@ -1,4 +1,4 @@
-// Package auth provides functions that link up and communicate with LMS (Luminus/Canvas)
+// Package auth provides functions that link up and communicate with LMS (Canvas)
 // authentication server.
 package auth
 

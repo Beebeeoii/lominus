@@ -4,10 +4,9 @@ package constants
 type Platform int
 
 // This is an enum.
-// Eg. Canvas = 0, Luminus = 1, ...
+// Eg. Canvas = 0, ...
 const (
 	Canvas Platform = iota
-	Luminus
 )
 
 // Platforms is a list of available LMS platforms supported by Lominus.
@@ -15,5 +14,4 @@ const (
 // each platform works.
 var Platforms = []Platform{
 	Canvas,
-	Luminus,
 }
