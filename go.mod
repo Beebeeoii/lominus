@@ -9,7 +9,7 @@ require (
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
+	github.com/sqweek/dialog v0.0.0-20240226140203-065105509627
 )
 
 require (
