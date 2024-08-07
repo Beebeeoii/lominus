@@ -4,7 +4,7 @@ tidy:
 	go fmt ./...
 	go mod tidy -v
 
-## start: run the application
-.PHONY: start
+## run: run the application
+.PHONY: run
 start:
 	go run main.go
