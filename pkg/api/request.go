@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	appFile "github.com/beebeeoii/lominus/internal/file"
@@ -218,7 +218,7 @@ func (req Request) Send(res interface{}) error {
 		return err
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
