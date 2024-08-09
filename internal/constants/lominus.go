@@ -1,9 +1,7 @@
-// Package constants provide constants to be used internally within Lominus (not exported as API)
-// such as UI constants.
+// Package constants provide constants to be used internally within Lominus.
 package constants
 
 const APP_NAME = "Lominus"
-const APP_ID = "com.lominus.beebeeoii"
 const APP_VERSION = "2.1.0"
 
 const LOCK_FILE_NAME = "lominus.lock"
