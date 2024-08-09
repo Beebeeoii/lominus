@@ -48,8 +48,7 @@ type ModuleFolderRequest struct {
 }
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
-const POST = "POST"
-const GET_METHOD = "GET"
+const METHOD_GET = "GET"
 const CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
 const CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
 
@@ -67,7 +66,7 @@ func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequ
 
 	return ModulesRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -90,7 +89,7 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, b.Id)
 			folderRequest := FoldersRequest{
 				Request: Request{
-					Method: GET_METHOD,
+					Method: METHOD_GET,
 					Token:  token,
 					Url: interfaces.Url{
 						Url:      url,
@@ -145,7 +144,7 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 
 	return FoldersRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -171,7 +170,7 @@ func BuildFilesRequest(token string, platform constants.Platform, folder Folder)
 
 	return FilesRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -188,7 +187,7 @@ func BuildModuleFolderRequest(token string, module Module) (ModuleFolderRequest,
 
 	return ModuleFolderRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
