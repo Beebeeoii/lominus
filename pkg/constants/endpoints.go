@@ -11,3 +11,8 @@ const (
 	CANVAS_FILES_ENDPOINT          = "https://canvas.nus.edu.sg/api/v1/folders/%s/files"
 	CANVAS_FILE_ENDPOINT           = "https://canvas.nus.edu.sg/api/v1/files/%s"
 )
+
+// Telegram Endpoints
+const (
+	TELEGRAM_SEND_MESSAGE_ENDPOINT = "https://api.telegram.org/bot%s/sendMessage"
+)

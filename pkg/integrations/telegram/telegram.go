@@ -10,6 +10,7 @@ import (
 
 	"github.com/beebeeoii/lominus/internal/file"
 	"github.com/beebeeoii/lominus/pkg/api"
+	"github.com/beebeeoii/lominus/pkg/constants"
 )
 
 // TelegramInfo struct is the datapack that holds the data required for Telegram integration.
@@ -23,9 +24,8 @@ type TelegramError struct {
 	Description string
 }
 
-const SEND_MSG_URL = "https://api.telegram.org/bot%s/sendMessage"
 const CONTENT_TYPE = "application/x-www-form-urlencoded"
-const POST = "POST"
+const METHOD_POST = "POST"
 
 // SendMessage is a wrapper function that sends a message to the user using the Bot (specified by the botApi) created by the user.
 func SendMessage(botApi string, userId string, message string) error {
@@ -39,7 +39,7 @@ func SendMessage(botApi string, userId string, message string) error {
 	reqBody.Set("chat_id", userId)
 	reqBody.Set("text", message)
 	reqBody.Set("parse_mode", "HTML")
-	sendMsgReq, sendMsgErr := http.NewRequest(POST, fmt.Sprintf(SEND_MSG_URL, botApi), strings.NewReader(reqBody.Encode()))
+	sendMsgReq, sendMsgErr := http.NewRequest(METHOD_POST, fmt.Sprintf(constants.TELEGRAM_SEND_MESSAGE_ENDPOINT, botApi), strings.NewReader(reqBody.Encode()))
 
 	if sendMsgErr != nil {
 		return sendMsgErr
