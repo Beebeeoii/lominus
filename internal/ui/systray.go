@@ -21,7 +21,7 @@ func BuildSystemTray() *fyne.Menu {
 			}
 
 			if pref.Directory == "" {
-				notifications.NotificationChannel <- notifications.Notification{Title: "Unable to sync", Content: "Please set the directory to store your Luminus files"}
+				notifications.NotificationChannel <- notifications.Notification{Title: "Unable to sync", Content: "Please set the directory to store your files"}
 				return
 			}
 

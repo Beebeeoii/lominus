@@ -1,4 +1,4 @@
-// Package auth provides functions that link up and communicate with LMS (Luminus/Canvas)
+// Package auth provides functions that link up and communicate with LMS
 // authentication server.
 package auth
 
@@ -9,23 +9,10 @@ import (
 	"github.com/beebeeoii/lominus/pkg/constants"
 )
 
-// CanvasTokenData is a struct that encapsulates the token required for authentication.
-// In this case, it is the CanvasApiToken which is a string.
-type CanvasTokenData struct {
-	CanvasApiToken string
-}
-
 // CanvasCredentials is a struct that encapsulates the credentials required for authentication.
 // In this case, it is the CanvasApiToken which is a string.
 type CanvasCredentials struct {
 	CanvasApiToken string
-}
-
-// Save takes in the CanvasTokenData and saves it locally with the path provided as arguments.
-func (canvasTokenData CanvasTokenData) Save(tokensPath string) error {
-	return saveTokenData(tokensPath, TokensData{
-		CanvasToken: canvasTokenData,
-	})
 }
 
 // Save takes in the CanvasCredentials and saves it locally with the path provided as arguments.

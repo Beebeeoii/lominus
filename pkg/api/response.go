@@ -1,5 +1,5 @@
 // Package api provides functions that link up and communicate with LMS servers,
-// such as Canvas and Luminus (probably removed in near future).
+// such as Canvas.
 package api
 
 import (
@@ -8,33 +8,9 @@ import (
 	"net/http"
 )
 
-// RawResponse struct is the datapack for containing API response raw data for Luminus.
-type RawResponse struct {
-	Status string                   `json:"status"`
-	Code   int                      `json:"code"`
-	Total  int                      `json:"total"`
-	Offset int                      `json:"offset"`
-	Data   []map[string]interface{} `json:"data"`
-}
-
-// DownloadResponse struct is the datapack for containing API download response raw data.
-type LuminusDownloadResponse struct {
-	Code        int    `json:"code"`
-	Status      string `json:"status"`
-	DownloadUrl string `json:"data"`
-}
-
-// LTIDataResponse struct is the datapack for containing API response Panapto LTI data.
-type LTIDataResponse struct {
-	DataItems []map[string]interface{} `json:"dataItems"`
-	Html      string                   `json:"html"`
-	LaunchURL string                   `json:"launchURL"`
-}
-
 // GetRawResponse sends the HTTP request and marshals it into the pointer provided.
 // Argument provided must be a pointer.
 func (req Request) GetRawResponse(res interface{}) error {
-
 	request, err := http.NewRequest("GET", req.Url.Url, nil)
 	if err != nil {
 		return err

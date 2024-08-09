@@ -6,13 +6,6 @@ const (
 	// Credentials Tab
 	CREDENTIALS_TITLE = "Credentials"
 
-	LUMINUS_TAB_TITLE            = "Luminus"
-	LUMINUS_TAB_DESCRIPTION      = `Credentials are saved **locally**. It is used for logging into [Luminus](https://luminus.nus.edu.sg) **only**.`
-	LUMINUS_USERNAME_TEXT        = "Username"
-	LUMINUS_USERNAME_PLACEHOLDER = "Eg: nusstu\\e0123456"
-	LUMINUS_PASSWORD_TEXT        = "Password"
-	LUMINUS_PASSWORD_PLACEHOLDER = "Password"
-
 	CANVAS_TAB_TITLE         = "Canvas"
 	CANVAS_TAB_DESCRIPTION   = `Token is saved **locally**. It is used to access [Canvas](https://canvas.nus.edu.sg/) **only**.`
 	CANVAS_TOKEN_TEXT        = "Canvas Token"
