@@ -17,7 +17,7 @@ type CredentialsData struct {
 }
 
 // getCredentialsTab builds the credentials tab in the main UI.
-func getCredentialsTab(credentialsData CredentialsData, parentWindow fyne.Window) (*container.TabItem, error) {
+func getCredentialsTab(credentialsData CredentialsData, _ fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("credentials tab loaded")
 	tab := container.NewTabItem(appConstants.CREDENTIALS_TITLE, container.NewVBox())
 

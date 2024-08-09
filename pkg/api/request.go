@@ -1,17 +1,15 @@
 // Package api provides functions that link up and communicate with LMS servers,
-// such as Canvas and Luminus (probably removed in near future).
+// such as Canvas.
 package api
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	appAuth "github.com/beebeeoii/lominus/internal/app/auth"
 	appFile "github.com/beebeeoii/lominus/internal/file"
-	"github.com/beebeeoii/lominus/pkg/auth"
 	"github.com/beebeeoii/lominus/pkg/constants"
 	"github.com/beebeeoii/lominus/pkg/interfaces"
 )
@@ -24,13 +22,6 @@ type Request struct {
 	UserAgent string
 }
 
-// GradeRequest struct is the datapack for containing details about a specific
-// HTTP request used for grades (Luminus Gradebook only).
-type GradeRequest struct {
-	Module  Module
-	Request Request
-}
-
 // ModulesRequest struct is the datapack for containing details about a specific
 // HTTP request used for retrieving all the modules taken by the user.
 type ModulesRequest struct {
@@ -38,31 +29,17 @@ type ModulesRequest struct {
 }
 
 // FoldersRequest struct is the datapack for containing details about a specific
-// HTTP request used for retrieving folders in a module's uploaded files on Luminus/Canvas.
+// HTTP request used for retrieving folders in a module's uploaded files.
 type FoldersRequest struct {
 	Request Request
 	Builder interface{}
 }
 
 // FilesRequest struct is the datapack for containing details about a specific
-// HTTP request used for retrieving files in a module's uploaded files on Luminus/Canvas.
+// HTTP request used for retrieving files in a module's uploaded files.
 type FilesRequest struct {
 	Request Request
 	Folder  Folder
-}
-
-// MultimediaChannelRequest struct is the datapack for containing details about a
-// specific HTTP request used for multimedia channels (Luminus Multimedia).
-type MultimediaChannelRequest struct {
-	Module  Module
-	Request Request
-}
-
-// MultimediaVideoRequest struct is the datapack for containing details about a
-// specific HTTP request used for multimedia video (Luminus Multimedia).
-type MultimediaVideoRequest struct {
-	MultimediaChannel MultimediaChannel
-	Request           Request
 }
 
 type ModuleFolderRequest struct {
@@ -71,8 +48,7 @@ type ModuleFolderRequest struct {
 }
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0"
-const POST = "POST"
-const GET_METHOD = "GET"
+const METHOD_GET = "GET"
 const CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
 const CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
 
@@ -84,15 +60,13 @@ func BuildModulesRequest(token string, platform constants.Platform) (ModulesRequ
 	switch p := platform; p {
 	case constants.Canvas:
 		url = constants.CANVAS_MODULES_ENDPOINT
-	case constants.Luminus:
-		url = MODULE_URL_ENDPOINT
 	default:
 		return ModulesRequest{}, errors.New("invalid platform provided")
 	}
 
 	return ModulesRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -115,7 +89,7 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 			url = fmt.Sprintf(constants.CANVAS_MODULE_FOLDERS_ENDPOINT, b.Id)
 			folderRequest := FoldersRequest{
 				Request: Request{
-					Method: GET_METHOD,
+					Method: METHOD_GET,
 					Token:  token,
 					Url: interfaces.Url{
 						Url:      url,
@@ -152,8 +126,6 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 				HasSubFolder: true,
 				Ancestors:    []string{},
 			}
-		case constants.Luminus:
-			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, b.Id)
 		default:
 			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
@@ -161,8 +133,6 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 		switch p := platform; p {
 		case constants.Canvas:
 			url = fmt.Sprintf(constants.CANVAS_FOLDERS_ENDPOINT, b.Id)
-		case constants.Luminus:
-			url = fmt.Sprintf(FOLDER_URL_ENDPOINT, b.Id)
 		default:
 			return FoldersRequest{}, errors.New("invalid platform provided")
 		}
@@ -174,7 +144,7 @@ func BuildFoldersRequest(token string, platform constants.Platform, builder inte
 
 	return FoldersRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -194,15 +164,13 @@ func BuildFilesRequest(token string, platform constants.Platform, folder Folder)
 	switch p := platform; p {
 	case constants.Canvas:
 		url = fmt.Sprintf(constants.CANVAS_FILES_ENDPOINT, folder.Id)
-	case constants.Luminus:
-		url = fmt.Sprintf(FILE_URL_ENDPOINT, folder.Id)
 	default:
 		return FilesRequest{}, errors.New("invalid platform provided")
 	}
 
 	return FilesRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -219,7 +187,7 @@ func BuildModuleFolderRequest(token string, module Module) (ModuleFolderRequest,
 
 	return ModuleFolderRequest{
 		Request: Request{
-			Method: GET_METHOD,
+			Method: METHOD_GET,
 			Token:  token,
 			Url: interfaces.Url{
 				Url:      url,
@@ -229,65 +197,6 @@ func BuildModuleFolderRequest(token string, module Module) (ModuleFolderRequest,
 		},
 		Module: module,
 	}, nil
-}
-
-// BuildMultimediaChannelRequest builds and returns a MultimediaChannelRequuest that can be used for Multimedia
-// channel related operations such as retrieving all channels of a module.
-// A Module is required to build a BuildMultimediaChannelRequest as it is module specific.
-func BuildMultimediaChannelRequest(module Module) (MultimediaChannelRequest, error) {
-	jwtToken, jwtTokenErr := retrieveJwtToken()
-	if jwtTokenErr != nil {
-		return MultimediaChannelRequest{}, jwtTokenErr
-	}
-
-	return MultimediaChannelRequest{
-		Module: module,
-		Request: Request{
-			Url: interfaces.Url{
-				Url:      fmt.Sprintf(MULTIMEMDIA_CHANNEL_URL_ENDPOINT, module.Id),
-				Platform: constants.Luminus,
-			},
-			Token:     jwtToken,
-			UserAgent: USER_AGENT,
-		},
-	}, nil
-}
-
-// BuildMultimediaChannelRequest builds and returns a MultimediaChannelRequuest that can be used for Multimedia
-// channel related operations such as retrieving all channels of a module.
-// A Module is required to build a BuildMultimediaChannelRequest as it is module specific.
-func BuildMultimediaVideoRequest(multimediaChannel MultimediaChannel) (MultimediaVideoRequest, error) {
-	jwtToken, jwtTokenErr := retrieveJwtToken()
-	if jwtTokenErr != nil {
-		return MultimediaVideoRequest{}, jwtTokenErr
-	}
-
-	return MultimediaVideoRequest{
-		MultimediaChannel: multimediaChannel,
-		Request: Request{
-			Url: interfaces.Url{
-				Url:      fmt.Sprintf(LTI_DATA_URL_ENDPOINT, multimediaChannel.Id),
-				Platform: constants.Luminus,
-			},
-			Token:     jwtToken,
-			UserAgent: USER_AGENT,
-		},
-	}, nil
-}
-
-// retrieveJwtToken is a util function that loads user's JWT data to be used to communicate with Luminus servers.
-func retrieveJwtToken() (string, error) {
-	jwtPath, getJwtPathErr := appAuth.GetTokensPath()
-	if getJwtPathErr != nil {
-		return jwtPath, getJwtPathErr
-	}
-
-	tokensData, tokensErr := auth.LoadTokensData(jwtPath, true)
-	if tokensErr != nil {
-		return tokensData.LuminusToken.JwtToken, tokensErr
-	}
-
-	return tokensData.LuminusToken.JwtToken, tokensErr
 }
 
 // Send takes a Request that encapsulates a HTTP request and sends it. The response body is then
@@ -308,7 +217,7 @@ func (req Request) Send(res interface{}) error {
 		return err
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}

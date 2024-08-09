@@ -34,7 +34,7 @@
 
 # About <a name="about">
 
-Lominus is a tool written in Go to automatically sync [Luminus](https://luminus.nus.edu.sg) and [Canvas](https://canvas.nus.edu.sg/) files onto your local storage for easy access to updated files. It runs on Windows, macOS and Linux.
+Lominus is a tool written in Go to automatically sync [Canvas](https://canvas.nus.edu.sg/) files onto your local storage for easy access to updated files. It runs on Windows, macOS and Linux.
 
 **No credentials, files, or any other form of information is uploaded to any servers. Everything is stored locally on your system. Credentials are only used for authentication.**
 
@@ -171,31 +171,6 @@ import (
     "github.com/beebeeoii/lominus/pkg/constants"
 )
 
-func getLuminusModules() {
-    jwtToken, jwtTokenErr := auth.RetrieveJwtToken(auth.LuminusCredentials{
-        Username: "nusstu\\e0123456",
-        Password: "password",
-    }, false)
-
-    if jwtTokenErr != nil {
-        log.Fatalln(jwtTokenErr)
-    }
-
-    modulesReq, modReqErr := api.BuildModulesRequest(jwtToken, constants.Luminus)
-    if modReqErr != nil {
-        log.Fatalln(modReqErr)
-    }
-
-    modules, modulesErr := modulesReq.GetModules()
-    if modulesErr != nil {
-        log.Fatalln(modulesErr)
-    }
-
-    for _, module := range modules {
-        log.Println(module.ModuleCode, module.Name)
-    }
-}
-
 func getCanvasModules() {
     canvasToken := "your-canvas-token"
 
@@ -261,10 +236,6 @@ Lominus is far from perfect. All contributions, regardless large or small, are h
 
 # FAQ
 
-1. I am unable to verify my Luminus login credentials.
-
-    - Please ensure that you have trusted the SSL Certificate used by Luminus, **especially on Unix systems**.
-
-2. Will my annotated lecture notes be overwritten if there exists a newer version uploaded by the Professor?
+1. Will my annotated lecture notes be overwritten if there exists a newer version uploaded by the Professor?
 
     - Your annotated file will be renamed to `[v1] XXX.XXX` and the newer version will be downloaded.

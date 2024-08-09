@@ -33,7 +33,7 @@ type PreferencesData struct {
 }
 
 // getPreferencesTab builds the preferences tab in the main UI.
-func getPreferencesTab(preferencesData PreferencesData, parentWindow fyne.Window) (*container.TabItem, error) {
+func getPreferencesTab(preferencesData PreferencesData, _ fyne.Window) (*container.TabItem, error) {
 	logs.Logger.Debugln("preferences tab loaded")
 	tab := container.NewTabItem(appConstants.PREFERENCES_TITLE, container.NewVBox())
 
