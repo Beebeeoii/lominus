@@ -1,13 +1,12 @@
 module github.com/beebeeoii/lominus
 
-go 1.22
+go 1.25.0
 
 require (
 	fyne.io/fyne/v2 v2.5.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/go-co-op/gocron v1.15.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sqweek/dialog v0.0.0-20240226140203-065105509627
 )
@@ -21,7 +20,7 @@ require (
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	golang.org/x/mobile v0.0.0-20231127183840-76ac6878050a // indirect
-	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -44,8 +43,8 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/yuin/goldmark v1.7.1 // indirect
-	golang.org/x/image v0.18.0 // indirect
+	golang.org/x/image v0.38.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 )
